@@ -151,6 +151,25 @@ jobs:
         cd tech-validation
         npm run build
         
+    - name: Verify build artifacts
+      run: |
+        cd tech-validation
+        # 验证构建产物是否存在
+        if [ ! -d "dist" ]; then
+          echo "❌ Error: dist directory not found!"
+          exit 1
+        fi
+        
+        # 验证关键文件是否生成
+        if [ ! -f "dist/index.js" ]; then
+          echo "❌ Error: dist/index.js not found!"
+          exit 1
+        fi
+        
+        echo "✅ Build artifacts verified successfully"
+        echo "📁 Contents of dist directory:"
+        ls -la dist/
+        
     - name: Upload build artifacts
       uses: actions/upload-artifact@v3
       with:

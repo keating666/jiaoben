@@ -1,0 +1,27 @@
+{
+  "name": "jiaoben",
+  "version": "1.0.0",
+  "description": "AI API 技术验证和集成项目",
+  "private": true,
+  "scripts": {
+    "build": "npm run build:api && npm run build:tech",
+    "build:api": "echo 'API is JavaScript, no build needed'",
+    "build:tech": "cd tech-validation && npm run build",
+    "dev": "vercel dev",
+    "install:all": "npm install && cd tech-validation && npm install",
+    "test": "cd tech-validation && npm run test:all",
+    "lint": "cd tech-validation && npm run lint",
+    "typecheck": "cd tech-validation && npm run typecheck",
+    "verify-build": "ls -la api/ && ls -la tech-validation/dist/"
+  },
+  "workspaces": [
+    "tech-validation"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "devDependencies": {
+    "vercel": "^32.0.0"
+  }
+}
