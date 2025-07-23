@@ -1,34 +1,16 @@
 {
   "version": 2,
   "name": "jiaoben-tech-validation",
-  "builds": [
-    {
-      "src": "tech-validation/package.json",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/tech-validation/dist/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/tech-validation/dist/index.js"
-    }
-  ],
+  "buildCommand": "cd tech-validation && npm install && npm run build",
+  "outputDirectory": "tech-validation/dist",
+  "installCommand": "cd tech-validation && npm install",
+  "framework": null,
   "env": {
     "NODE_ENV": "production"
   },
   "build": {
     "env": {
       "NODE_VERSION": "18.x"
-    }
-  },
-  "functions": {
-    "tech-validation/dist/api/*.js": {
-      "maxDuration": 30,
-      "memory": 512
     }
   },
   "regions": ["sin1"],
