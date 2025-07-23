@@ -8,6 +8,8 @@ export class ApiClient {
   private client: AxiosInstance;
   private config: ServiceConfig;
   private metrics: PerformanceMetrics[] = [];
+  private metricsLock = false;
+  private disposed = false;
 
   constructor(config: ServiceConfig) {
     this.config = config;
@@ -54,7 +56,7 @@ export class ApiClient {
     
     let lastError: ApiError;
 
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
         const response = await requestFn();
         return response.data;
@@ -62,12 +64,14 @@ export class ApiClient {
         lastError = error as ApiError;
         
         // 如果是最后一次尝试或错误不可重试，直接抛出
-        if (attempt === maxRetries || !this.isRetryableError(lastError)) {
+        if (attempt === maxRetries - 1 || !this.isRetryableError(lastError)) {
           throw lastError;
         }
 
-        // 计算延迟时间（指数退避）
-        const delay = retryDelayBase * Math.pow(2, attempt);
+        // 计算延迟时间（指数退避 + 抖动）
+        const baseDelay = Math.min(retryDelayBase * Math.pow(2, attempt), 30000);
+        const jitter = 0.5 + Math.random() * 0.5; // 50% - 100% 的抖动
+        const delay = Math.floor(baseDelay * jitter);
         console.warn(`${operation} 第 ${attempt + 1} 次重试失败，${delay}ms 后重试:`, lastError.message);
         
         await this.delay(delay);
@@ -171,13 +175,15 @@ export class ApiClient {
   }
 
   /**
-   * 记录性能指标
+   * 记录性能指标（线程安全版本）
    */
-  private recordMetrics(
+  private async recordMetrics(
     response: AxiosResponse | any,
     success: boolean,
     error?: Error
-  ): void {
+  ): Promise<void> {
+    if (this.disposed) return;
+    
     const config = response?.config || response;
     const startTime = config.metadata?.startTime || Date.now();
     const endTime = Date.now();
@@ -198,19 +204,37 @@ export class ApiClient {
       },
     };
 
-    this.metrics.push(metric);
+    // 使用简单的锁机制避免并发问题
+    while (this.metricsLock) {
+      await this.delay(1);
+    }
     
-    // 保持最近1000条记录
-    if (this.metrics.length > 1000) {
-      this.metrics = this.metrics.slice(-1000);
+    this.metricsLock = true;
+    try {
+      this.metrics.push(metric);
+      
+      // 保持最近1000条记录
+      if (this.metrics.length > 1000) {
+        this.metrics.splice(0, this.metrics.length - 1000);
+      }
+    } finally {
+      this.metricsLock = false;
     }
   }
 
   /**
-   * 生成请求ID
+   * 生成请求ID（改进版，减少重复概率）
    */
   private generateRequestId(): string {
-    return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000000);
+    const counter = this.getAndIncrementCounter();
+    return `req_${timestamp}_${counter}_${random.toString(36)}`;
+  }
+
+  private requestCounter = 0;
+  private getAndIncrementCounter(): number {
+    return (this.requestCounter = (this.requestCounter + 1) % 10000);
   }
 
   /**
@@ -218,5 +242,16 @@ export class ApiClient {
    */
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * 销毁客户端，释放资源
+   */
+  dispose(): void {
+    this.disposed = true;
+    this.metrics = [];
+    // 清理拦截器
+    this.client.interceptors.request.clear();
+    this.client.interceptors.response.clear();
   }
 }

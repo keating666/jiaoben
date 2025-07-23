@@ -12,10 +12,21 @@
     "test:tongyi": "ts-node scripts/tongyi-text-generation.ts",
     "test:iflytek": "ts-node scripts/iflytek-speech-to-text.ts",
     "test:ip": "ts-node scripts/ip-diagnosis.ts",
-    "test:unit": "ts-node tests/api-client.test.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:coverage:open": "jest --coverage && open coverage/lcov-report/index.html",
+    "test:coverage:detailed": "jest --coverage --verbose",
+    "coverage:report": "ts-node scripts/coverage-report.ts",
+    "coverage:generate": "ts-node scripts/coverage-report.ts --generate",
+    "coverage:open": "ts-node scripts/coverage-report.ts --open",
+    "coverage:check": "ts-node scripts/coverage-report.ts --check",
+    "test:ci": "jest --ci --coverage --watchAll=false",
+    "test:critical": "jest --testNamePattern=\"critical|Critical\"",
+    "test:unit": "jest --testPathPattern=tests/.*\\.test\\.ts$",
+    "test:integration": "jest --testPathPattern=tests/.*\\.integration\\.ts$",
     "test:all": "npm run test:minimax && npm run test:tongyi && npm run test:iflytek && npm run test:ip",
     "test:comprehensive": "ts-node scripts/comprehensive-test.ts",
-    "test:coverage": "echo 'Coverage testing needs jest configuration'",
     "test:health": "ts-node scripts/health-check.ts || echo 'Health check script to be created'",
     "test:boundary": "ts-node tests/boundary-tests.ts",
     "test:e2e:prod": "echo 'E2E tests to be implemented'",
@@ -41,11 +52,15 @@
     "typescript": "^5.8.3"
   },
   "devDependencies": {
+    "@jest/globals": "^30.0.5",
     "@types/form-data": "^2.2.1",
+    "@types/jest": "^30.0.0",
     "@typescript-eslint/eslint-plugin": "^6.19.0",
     "@typescript-eslint/parser": "^6.19.0",
     "eslint": "^8.56.0",
     "eslint-plugin-import": "^2.29.1",
-    "eslint-plugin-promise": "^6.1.1"
+    "eslint-plugin-promise": "^6.1.1",
+    "jest": "^30.0.5",
+    "ts-jest": "^29.4.0"
   }
 }

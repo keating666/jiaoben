@@ -1,0 +1,134 @@
+name: Tech Validation Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'tech-validation/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'tech-validation/**'
+
+jobs:
+  test:
+    name: Run Jest Tests
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./tech-validation
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run TypeScript compilation check
+      run: npm run typecheck
+
+    - name: Run ESLint
+      run: npm run lint
+
+    - name: Run Jest tests
+      run: npm run test:ci
+      env:
+        NODE_ENV: test
+
+    - name: Generate test coverage
+      run: npm run test:coverage
+      env:
+        NODE_ENV: test
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./tech-validation/coverage/lcov.info
+        directory: ./tech-validation/coverage/
+        flags: tech-validation
+        name: tech-validation-coverage
+        fail_ci_if_error: true
+
+    - name: Build project
+      run: npm run build
+
+    - name: Verify build output
+      run: |
+        ls -la dist/
+        echo "✅ Build completed successfully"
+
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    needs: test
+    
+    defaults:
+      run:
+        working-directory: ./tech-validation
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Check test coverage threshold
+      run: npm run test:coverage -- --coverageThreshold='{"global":{"branches":80,"functions":80,"lines":80,"statements":80}}'
+      env:
+        NODE_ENV: test
+
+    - name: Run comprehensive tests
+      run: npm run test:all
+      continue-on-error: true
+      env:
+        NODE_ENV: test
+        # 使用测试密钥
+        MINIMAX_API_KEY: ${{ secrets.TEST_MINIMAX_API_KEY || 'test-key' }}
+        DASHSCOPE_API_KEY: ${{ secrets.TEST_DASHSCOPE_API_KEY || 'test-key' }}
+        IFLYTEK_API_KEY: ${{ secrets.TEST_IFLYTEK_API_KEY || 'test-key' }}
+
+    - name: Comment PR with test results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = './tech-validation/coverage/lcov-report/index.html';
+          
+          if (fs.existsSync(path)) {
+            const comment = `
+            ## 🧪 测试结果报告
+            
+            ✅ 所有 Jest 测试已通过
+            📊 测试覆盖率报告已生成
+            🏗️ 构建验证成功
+            
+            详细报告请查看 [Codecov](https://codecov.io/gh/${{ github.repository }})
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          }
