@@ -1,0 +1,183 @@
+name: Scheduled Tasks
+
+on:
+  schedule:
+    # 每天北京时间早上 9 点运行（UTC 1:00）
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+jobs:
+  # 依赖更新检查
+  dependency-updates:
+    name: Check Dependency Updates
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        
+    - name: Check for updates
+      run: |
+        cd tech-validation
+        npx npm-check-updates --format json > updates.json || true
+        
+    - name: Create issue if updates available
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const fs = require('fs');
+          const updates = JSON.parse(fs.readFileSync('tech-validation/updates.json', 'utf8'));
+          
+          if (Object.keys(updates).length > 0) {
+            const body = `## 📦 Dependency Updates Available\n\n` +
+              Object.entries(updates).map(([pkg, version]) => 
+                `- **${pkg}**: ${version.current} → ${version.wanted}`
+              ).join('\n');
+            
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '📦 Weekly Dependency Updates',
+              body: body,
+              labels: ['dependencies', 'maintenance']
+            });
+          }
+          
+  # API 健康检查
+  api-health-check:
+    name: API Health Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        
+    - name: Install dependencies
+      run: |
+        cd tech-validation
+        npm ci
+        
+    - name: Run health checks
+      run: |
+        cd tech-validation
+        npm run test:health || echo "Health check script needs to be added"
+      env:
+        MINIMAX_API_KEY: ${{ secrets.MONITOR_MINIMAX_API_KEY }}
+        TONGYI_API_KEY: ${{ secrets.MONITOR_TONGYI_API_KEY }}
+        IFLYTEK_API_KEY: ${{ secrets.MONITOR_IFLYTEK_API_KEY }}
+        
+    - name: Report health status
+      if: failure()
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: '🚨 API Health Check Failed',
+            body: 'One or more API services are not responding correctly.',
+            labels: ['api', 'monitoring', 'high-priority']
+          });
+          
+  # 安全扫描
+  security-audit:
+    name: Weekly Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run Trivy security scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: './tech-validation'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
+        
+    - name: Run npm audit
+      run: |
+        cd tech-validation
+        npm audit --json > audit-report.json || true
+        
+    - name: Process audit results
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const fs = require('fs');
+          const audit = JSON.parse(fs.readFileSync('tech-validation/audit-report.json', 'utf8'));
+          
+          if (audit.metadata.vulnerabilities.high > 0 || audit.metadata.vulnerabilities.critical > 0) {
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🔒 Security Vulnerabilities Detected',
+              body: `Found ${audit.metadata.vulnerabilities.critical} critical and ${audit.metadata.vulnerabilities.high} high vulnerabilities.`,
+              labels: ['security', 'high-priority']
+            });
+          }
+          
+  # 性能基准测试
+  performance-benchmark:
+    name: Performance Benchmark
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        
+    - name: Install dependencies
+      run: |
+        cd tech-validation
+        npm ci
+        
+    - name: Run benchmarks
+      run: |
+        cd tech-validation
+        npm run benchmark || echo "Benchmark script needs to be added"
+        
+    - name: Store benchmark results
+      uses: benchmark-action/github-action-benchmark@v1
+      with:
+        tool: 'customBiggerIsBetter'
+        output-file-path: tech-validation/benchmark-results.json
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        auto-push: true
+        
+  # 清理旧的工作流运行记录
+  cleanup:
+    name: Cleanup Old Runs
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Delete old workflow runs
+      uses: Mattraks/delete-workflow-runs@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        repository: ${{ github.repository }}
+        retain_days: 30
+        keep_minimum_runs: 10

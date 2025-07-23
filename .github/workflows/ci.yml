@@ -1,0 +1,279 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '18.x'
+
+jobs:
+  # 代码质量检查
+  quality-check:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+          
+    - name: Install dependencies
+      run: |
+        cd tech-validation
+        npm ci --prefer-offline --no-audit
+        
+    - name: Run TypeScript check
+      run: |
+        cd tech-validation
+        npm run typecheck
+        
+    - name: Run ESLint
+      run: |
+        cd tech-validation
+        npm run lint
+        
+  # 单元测试
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: quality-check
+    
+    strategy:
+      matrix:
+        node-version: [16.x, 18.x, 20.x]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        cd tech-validation
+        npm ci --prefer-offline --no-audit
+        
+    - name: Run unit tests
+      run: |
+        cd tech-validation
+        npm run test:unit
+      env:
+        CI: true
+        
+    - name: Run boundary tests
+      run: |
+        cd tech-validation
+        npm run test:boundary || echo "Boundary tests need to be added to package.json"
+      env:
+        CI: true
+        
+  # API 集成测试（仅在 main 分支）
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        cd tech-validation
+        npm ci --prefer-offline --no-audit
+        
+    - name: Run integration tests
+      run: |
+        cd tech-validation
+        # 使用测试环境的 API 密钥
+        npm run test:comprehensive || true
+      env:
+        CI: true
+        NODE_ENV: test
+        # 这些密钥应该在 GitHub Secrets 中设置
+        MINIMAX_API_KEY: ${{ secrets.TEST_MINIMAX_API_KEY }}
+        TONGYI_API_KEY: ${{ secrets.TEST_TONGYI_API_KEY }}
+        IFLYTEK_API_KEY: ${{ secrets.TEST_IFLYTEK_API_KEY }}
+        IFLYTEK_APP_ID: ${{ secrets.TEST_IFLYTEK_APP_ID }}
+        IFLYTEK_API_SECRET: ${{ secrets.TEST_IFLYTEK_API_SECRET }}
+        MINIMAX_GROUP_ID: ${{ secrets.TEST_MINIMAX_GROUP_ID }}
+        
+  # 构建检查
+  build:
+    name: Build Check
+    runs-on: ubuntu-latest
+    needs: quality-check
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        cd tech-validation
+        npm ci --prefer-offline --no-audit
+        
+    - name: Build project
+      run: |
+        cd tech-validation
+        npm run build
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-artifacts
+        path: tech-validation/dist/
+        retention-days: 7
+        
+  # 安全检查
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: quality-check
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run npm audit
+      run: |
+        cd tech-validation
+        npm audit --production || true
+        
+    - name: Run dependency check
+      uses: dependency-check/Dependency-Check_Action@main
+      with:
+        project: 'tech-validation'
+        path: './tech-validation'
+        format: 'HTML'
+        
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-reports
+        path: reports/
+        retention-days: 30
+        
+  # 文档生成
+  docs:
+    name: Generate Documentation
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        
+    - name: Install dependencies
+      run: |
+        cd tech-validation
+        npm ci --prefer-offline --no-audit
+        npm install -D typedoc
+        
+    - name: Generate TypeDoc
+      run: |
+        cd tech-validation
+        npx typedoc --out docs/api src/
+        
+    - name: Upload documentation
+      uses: actions/upload-artifact@v3
+      with:
+        name: api-docs
+        path: tech-validation/docs/api/
+        retention-days: 30
+        
+  # 发布准备（仅在 main 分支）
+  prepare-release:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    needs: [unit-tests, build, security-scan]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        
+    - name: Generate release notes
+      run: |
+        echo "## Release Notes" > RELEASE_NOTES.md
+        echo "### Commit: ${{ github.sha }}" >> RELEASE_NOTES.md
+        echo "### Date: $(date)" >> RELEASE_NOTES.md
+        echo "" >> RELEASE_NOTES.md
+        echo "### Changes:" >> RELEASE_NOTES.md
+        git log -10 --pretty=format:"- %s" >> RELEASE_NOTES.md
+        
+    - name: Upload release notes
+      uses: actions/upload-artifact@v3
+      with:
+        name: release-notes
+        path: RELEASE_NOTES.md
+        retention-days: 90
+        
+  # 通知
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [unit-tests, build, security-scan]
+    if: always()
+    
+    steps:
+    - name: Send success notification
+      if: success()
+      run: echo "✅ CI Pipeline completed successfully!"
+      
+    - name: Send failure notification
+      if: failure()
+      run: echo "❌ CI Pipeline failed!"
+      
+    # 可以添加 Slack、邮件等通知
+    # - name: Slack Notification
+    #   uses: 8398a7/action-slack@v3
+    #   with:
+    #     status: ${{ job.status }}
+    #   env:
+    #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}

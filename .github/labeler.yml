@@ -1,0 +1,52 @@
+# 根据文件变化自动添加标签
+
+documentation:
+  - '**/*.md'
+  - 'docs/**/*'
+  - '**/README*'
+
+dependencies:
+  - 'package.json'
+  - 'package-lock.json'
+  - 'yarn.lock'
+  - '**/requirements.txt'
+
+ci/cd:
+  - '.github/workflows/*'
+  - '.github/**/*'
+  - 'vercel.json'
+  - '.vercelignore'
+
+tests:
+  - '**/*.test.ts'
+  - '**/*.spec.ts'
+  - '**/tests/**/*'
+  - '**/test/**/*'
+
+api:
+  - 'tech-validation/scripts/*'
+  - 'tech-validation/interfaces/*'
+  - '**/api/**/*'
+
+utils:
+  - 'tech-validation/utils/*'
+  - '**/helpers/*'
+  - '**/lib/*'
+
+typescript:
+  - '**/*.ts'
+  - '**/*.tsx'
+  - 'tsconfig.json'
+
+config:
+  - '**/*.json'
+  - '**/*.yml'
+  - '**/*.yaml'
+  - '.*rc'
+  - '.env*'
+
+security:
+  - '**/auth/*'
+  - '**/security/*'
+  - '**/*secret*'
+  - '**/*token*'

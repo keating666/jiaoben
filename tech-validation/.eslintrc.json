@@ -1,0 +1,79 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 2020,
+    "sourceType": "module",
+    "project": "./tsconfig.json"
+  },
+  "plugins": ["@typescript-eslint", "import", "promise"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended-requiring-type-checking",
+    "plugin:import/errors",
+    "plugin:import/warnings",
+    "plugin:import/typescript",
+    "plugin:promise/recommended"
+  ],
+  "rules": {
+    // TypeScript 规则
+    "@typescript-eslint/explicit-function-return-type": "error",
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/no-floating-promises": "error",
+    "@typescript-eslint/no-misused-promises": "error",
+    "@typescript-eslint/await-thenable": "error",
+    "@typescript-eslint/no-unnecessary-type-assertion": "error",
+    "@typescript-eslint/prefer-string-starts-ends-with": "error",
+    "@typescript-eslint/prefer-nullish-coalescing": "error",
+    "@typescript-eslint/strict-boolean-expressions": "warn",
+    
+    // 导入规则
+    "import/order": ["error", {
+      "groups": ["builtin", "external", "internal", "parent", "sibling", "index"],
+      "newlines-between": "always"
+    }],
+    "import/no-unresolved": "error",
+    "import/no-cycle": "error",
+    
+    // Promise 规则
+    "promise/always-return": "error",
+    "promise/catch-or-return": "error",
+    "promise/no-return-wrap": "error",
+    
+    // 通用规则
+    "no-console": ["warn", { "allow": ["warn", "error", "info"] }],
+    "eqeqeq": ["error", "always"],
+    "curly": ["error", "all"],
+    "no-throw-literal": "error",
+    "prefer-const": "error",
+    "no-var": "error",
+    "object-shorthand": "error",
+    "prefer-template": "error",
+    "no-eval": "error",
+    "no-implied-eval": "error",
+    "no-new-func": "error",
+    "no-return-await": "error",
+    "require-await": "error",
+    "no-async-promise-executor": "error",
+    
+    // 代码风格
+    "max-len": ["error", { "code": 120, "ignoreComments": true, "ignoreStrings": true }],
+    "quotes": ["error", "single", { "avoidEscape": true }],
+    "semi": ["error", "always"],
+    "comma-dangle": ["error", "always-multiline"],
+    "arrow-parens": ["error", "always"],
+    "no-multiple-empty-lines": ["error", { "max": 1 }],
+    "padding-line-between-statements": [
+      "error",
+      { "blankLine": "always", "prev": "*", "next": "return" },
+      { "blankLine": "always", "prev": ["const", "let"], "next": "*" },
+      { "blankLine": "any", "prev": ["const", "let"], "next": ["const", "let"] }
+    ]
+  },
+  "env": {
+    "node": true,
+    "es2020": true
+  },
+  "ignorePatterns": ["dist/", "node_modules/", "*.js"]
+}

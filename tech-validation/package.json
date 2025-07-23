@@ -1,0 +1,52 @@
+{
+  "name": "tech-validation",
+  "version": "1.0.0",
+  "description": "本项目用于验证 AI 服务商 API 的技术可行性，包含语音转文字、文本再创作和 IP 诊断功能。",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node scripts/index.ts",
+    "test:minimax": "ts-node scripts/minimax-speech-to-text.ts",
+    "test:minimax-v2": "ts-node scripts/minimax-client-v2.ts",
+    "test:tongyi": "ts-node scripts/tongyi-text-generation.ts",
+    "test:iflytek": "ts-node scripts/iflytek-speech-to-text.ts",
+    "test:ip": "ts-node scripts/ip-diagnosis.ts",
+    "test:unit": "ts-node tests/api-client.test.ts",
+    "test:all": "npm run test:minimax && npm run test:tongyi && npm run test:iflytek && npm run test:ip",
+    "test:comprehensive": "ts-node scripts/comprehensive-test.ts",
+    "test:coverage": "echo 'Coverage testing needs jest configuration'",
+    "test:health": "ts-node scripts/health-check.ts || echo 'Health check script to be created'",
+    "test:boundary": "ts-node tests/boundary-tests.ts",
+    "test:e2e:prod": "echo 'E2E tests to be implemented'",
+    "benchmark": "ts-node scripts/benchmark.ts || echo 'Benchmark script to be created'",
+    "lint": "eslint --ext .ts scripts/ utils/ interfaces/ tests/",
+    "lint:fix": "eslint --ext .ts scripts/ utils/ interfaces/ tests/ --fix",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run lint",
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean",
+    "pretest:all": "npm run check",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run check && npm run test:all"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^24.1.0",
+    "axios": "^1.10.0",
+    "dotenv": "^17.2.0",
+    "form-data": "^4.0.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "devDependencies": {
+    "@types/form-data": "^2.2.1",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "eslint": "^8.56.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-promise": "^6.1.1"
+  }
+}

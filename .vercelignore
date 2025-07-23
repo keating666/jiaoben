@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+.npm/
+.yarn/
+
+# Testing
+tests/
+test/
+*.test.ts
+*.spec.ts
+coverage/
+.nyc_output/
+
+# Development
+.env.local
+.env.development
+*.log
+.DS_Store
+
+# Git
+.git/
+.gitignore
+.github/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Source files (only need compiled files)
+src/
+*.ts
+!*.d.ts
+
+# Build tools
+.eslintrc*
+.prettierrc*
+tsconfig.json
+jest.config.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# CI/CD
+.github/
+.circleci/
+.travis.yml
+
+# Misc
+.editorconfig
+.nvmrc
+renovate.json
