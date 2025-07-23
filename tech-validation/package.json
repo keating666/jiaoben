@@ -31,7 +31,7 @@
     "test:boundary": "ts-node tests/boundary-tests.ts",
     "test:e2e:prod": "echo 'E2E tests to be implemented'",
     "benchmark": "ts-node scripts/benchmark.ts || echo 'Benchmark script to be created'",
-    "lint": "eslint --ext .ts scripts/ utils/ interfaces/ tests/",
+    "lint": "eslint --ext .ts scripts/ utils/ interfaces/ tests/ --max-warnings 200",
     "lint:fix": "eslint --ext .ts scripts/ utils/ interfaces/ tests/ --fix",
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm run lint",

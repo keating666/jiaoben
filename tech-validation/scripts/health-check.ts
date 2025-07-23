@@ -1,9 +1,10 @@
 #!/usr/bin/env ts-node
 
-import { MiniMaxClientV2 } from './minimax-client-v2';
-import { TongyiClient } from './tongyi-text-generation';
 import { Config } from '../utils/config';
 import { logger } from '../utils/logger';
+
+import { MiniMaxClientV2 } from './minimax-client-v2';
+import { TongyiClient } from './tongyi-text-generation';
 
 /**
  * API 服务健康检查脚本
@@ -29,6 +30,7 @@ class HealthChecker {
 
     // 检查环境变量
     const validation = Config.validateEnv();
+
     if (!validation.valid) {
       console.error('❌ 环境变量配置不完整:', validation.missing.join(', '));
       console.log('提示: 在 CI 环境中，请使用 MONITOR_ 前缀的环境变量');
@@ -45,16 +47,18 @@ class HealthChecker {
     checks.forEach((result, index) => {
       if (result.status === 'rejected') {
         const serviceName = ['MiniMax', 'Tongyi'][index];
+
         this.results.push({
           service: serviceName,
           status: 'down',
           error: result.reason?.message || 'Unknown error',
-          timestamp: new Date()
+          timestamp: new Date(),
         });
       }
     });
 
     this.printReport();
+
     return this.results;
   }
 
@@ -78,16 +82,17 @@ class HealthChecker {
         service,
         status: isHealthy ? 'healthy' : 'degraded',
         responseTime,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
 
       // 额外测试：尝试一个简单的文本生成
       if (isHealthy) {
         const testStart = Date.now();
+
         await client.generateText({
           prompt: 'Hi',
           max_tokens: 5,
-          temperature: 0.1
+          temperature: 0.1,
         });
         const apiResponseTime = Date.now() - testStart;
         
@@ -101,7 +106,7 @@ class HealthChecker {
         status: 'down',
         responseTime,
         error: error.message,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     }
   }
@@ -126,7 +131,7 @@ class HealthChecker {
         service,
         status: isHealthy ? 'healthy' : 'degraded',
         responseTime,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     } catch (error: any) {
       const responseTime = Date.now() - startTime;
@@ -136,7 +141,7 @@ class HealthChecker {
         status: 'down',
         responseTime,
         error: error.message,
-        timestamp: new Date()
+        timestamp: new Date(),
       });
     }
   }
@@ -162,14 +167,14 @@ class HealthChecker {
           baseUrl: process.env.MINIMAX_API_BASE_URL || 'https://api.minimax.chat',
           timeout: 10000, // 健康检查使用较短超时
           maxRetries: 1,
-          groupId: process.env.MINIMAX_GROUP_ID || process.env.MONITOR_MINIMAX_GROUP_ID
+          groupId: process.env.MINIMAX_GROUP_ID || process.env.MONITOR_MINIMAX_GROUP_ID,
         };
       case 'TONGYI':
         return {
           apiKey,
           baseUrl: process.env.TONGYI_API_BASE_URL || 'https://dashscope.aliyuncs.com',
           timeout: 10000,
-          maxRetries: 1
+          maxRetries: 1,
         };
       default:
         throw new Error(`未知服务: ${service}`);
@@ -188,7 +193,7 @@ class HealthChecker {
     let degradedCount = 0;
     let downCount = 0;
 
-    this.results.forEach(result => {
+    this.results.forEach((result) => {
       const status = this.getStatusEmoji(result.status);
       const responseTime = result.responseTime ? `${result.responseTime}ms` : 'N/A';
       const error = result.error || '-';
@@ -246,10 +251,10 @@ class HealthChecker {
       services: this.results,
       summary: {
         total: this.results.length,
-        healthy: this.results.filter(r => r.status === 'healthy').length,
-        degraded: this.results.filter(r => r.status === 'degraded').length,
-        down: this.results.filter(r => r.status === 'down').length
-      }
+        healthy: this.results.filter((r) => r.status === 'healthy').length,
+        degraded: this.results.filter((r) => r.status === 'degraded').length,
+        down: this.results.filter((r) => r.status === 'down').length,
+      },
     }, null, 2);
   }
 }

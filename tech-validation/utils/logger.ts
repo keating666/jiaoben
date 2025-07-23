@@ -45,7 +45,7 @@ export class Logger {
       /secret/i,
       /authorization/i,
       /bearer/i,
-      /credential/i
+      /credential/i,
     ];
   }
 
@@ -94,7 +94,7 @@ export class Logger {
     this.log(level, metrics.service, metrics.operation, message, {
       duration: metrics.duration,
       success: metrics.success,
-      metadata: metrics.metadata
+      metadata: metrics.metadata,
     }, metrics.error ? new Error(metrics.error) : undefined).catch(() => {});
   }
 
@@ -109,7 +109,7 @@ export class Logger {
    * 获取指定级别的日志
    */
   getLogsByLevel(level: LogLevel): LogEntry[] {
-    return this.logs.filter(log => log.level === level);
+    return this.logs.filter((log) => log.level === level);
   }
 
   /**
@@ -132,6 +132,7 @@ export class Logger {
   printSummary(): void {
     const summary = this.logs.reduce((acc, log) => {
       acc[log.level] = (acc[log.level] || 0) + 1;
+
       return acc;
     }, {} as Record<string, number>);
 
@@ -141,9 +142,10 @@ export class Logger {
     });
 
     const errors = this.getLogsByLevel(LogLevel.ERROR);
+
     if (errors.length > 0) {
       console.log('\\n=== 错误详情 ===');
-      errors.forEach(error => {
+      errors.forEach((error) => {
         console.log(`[${error.timestamp}] ${error.service}:${error.operation} - ${error.message}`);
         if (error.error) {
           console.log(`  错误: ${error.error}`);
@@ -161,9 +163,9 @@ export class Logger {
     operation: string, 
     message: string, 
     data?: any, 
-    error?: Error
+    error?: Error,
   ): Promise<void> {
-    if (this.disposed) return;
+    if (this.disposed) {return;}
     
     // 检查是否应该记录此级别的日志
     if (!this.shouldLog(level)) {
@@ -183,7 +185,7 @@ export class Logger {
 
     // 使用简单的锁机制避免并发问题
     while (this.logLock) {
-      await new Promise(resolve => setTimeout(resolve, 1));
+      await new Promise((resolve) => setTimeout(resolve, 1));
     }
     
     this.logLock = true;
@@ -209,6 +211,7 @@ export class Logger {
     const levels = [LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR];
     const currentLevelIndex = levels.indexOf(this.logLevel);
     const targetLevelIndex = levels.indexOf(level);
+
     return targetLevelIndex >= currentLevelIndex;
   }
 
@@ -216,21 +219,21 @@ export class Logger {
    * 清理敏感数据（优化版）
    */
   private sanitizeData(data: any): any {
-    if (!data) return data;
+    if (!data) {return data;}
     
     // 对于简单类型，直接返回
-    if (typeof data !== 'object') return data;
+    if (typeof data !== 'object') {return data;}
     
     // 使用更高效的方法进行浅拷贝
     const sanitized = Array.isArray(data) ? [...data] : { ...data };
     
     const sanitizeObject = (obj: any, depth: number = 0): void => {
       // 限制递归深度，防止栈溢出
-      if (depth > 10 || typeof obj !== 'object' || obj === null) return;
+      if (depth > 10 || typeof obj !== 'object' || obj === null) {return;}
       
-      Object.keys(obj).forEach(key => {
+      Object.keys(obj).forEach((key) => {
         // 使用预编译的正则表达式检查敏感字段
-        if (this.sensitivePatterns.some(pattern => pattern.test(key))) {
+        if (this.sensitivePatterns.some((pattern) => pattern.test(key))) {
           obj[key] = '***MASKED***';
         } else if (typeof obj[key] === 'object') {
           // 对于嵌套对象，创建新的副本
@@ -245,6 +248,7 @@ export class Logger {
     };
     
     sanitizeObject(sanitized);
+
     return sanitized;
   }
 
@@ -281,5 +285,5 @@ export class Logger {
 
 // 创建全局日志实例
 export const logger = new Logger(
-  (process.env.LOG_LEVEL as LogLevel) || LogLevel.INFO
+  (process.env.LOG_LEVEL as LogLevel) || LogLevel.INFO,
 );

@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+
 import { Config } from '../utils/config';
 
 describe('Config 工具测试', () => {
@@ -26,6 +27,7 @@ describe('Config 工具测试', () => {
     process.env.MINIMAX_GROUP_ID = 'test-group-id';
     
     const config = Config.getMiniMaxConfig();
+
     expect(config.apiKey).toBeDefined();
     expect(config.baseUrl).toBeDefined();
   });
@@ -36,6 +38,7 @@ describe('Config 工具测试', () => {
     process.env.MINIMAX_GROUP_ID = 'test-group';
     
     const config = Config.getMiniMaxConfig();
+
     expect(config.timeout).toBeGreaterThan(0);
     expect(config.maxRetries).toBeGreaterThan(0);
   });
@@ -47,6 +50,7 @@ describe('Config 工具测试', () => {
     process.env.MINIMAX_MAX_RETRIES = '3';
     
     const config = Config.getMiniMaxConfig();
+
     expect(typeof config.timeout).toBe('number');
     expect(typeof config.maxRetries).toBe('number');
     expect(config.timeout).toBeGreaterThan(0);
@@ -81,6 +85,7 @@ describe('Config 工具测试', () => {
     
     // 测试配置对象的结构
     const config = Config.getMiniMaxConfig();
+
     expect(config).toHaveProperty('apiKey');
     expect(config).toHaveProperty('baseUrl');
     expect(config).toHaveProperty('timeout');
@@ -90,6 +95,7 @@ describe('Config 工具测试', () => {
   it('应该正确获取通义千问配置', () => {
     // 由于环境变量已设置，直接测试返回的配置结构
     const config = Config.getTongyiConfig();
+
     expect(config.apiKey).toBeDefined();
     expect(config.apiKey).toMatch(/^sk-/); // 通义千问 API key 格式
     expect(config.baseUrl).toBeDefined();

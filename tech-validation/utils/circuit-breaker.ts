@@ -40,7 +40,7 @@ export class CircuitBreaker {
    */
   async execute<T>(
     operation: () => Promise<T>,
-    operationName: string
+    operationName: string,
   ): Promise<T> {
     // 获取当前状态的快照
     const currentState = await this.getStateAtomic();
@@ -48,11 +48,13 @@ export class CircuitBreaker {
     // 检查断路器状态
     if (currentState === CircuitState.OPEN) {
       const now = this.getTime();
+
       if (now < this.nextAttemptTime!) {
         throw new Error(`断路器开启: ${operationName} 暂时不可用`);
       }
       // 尝试进入半开状态
       const transitioned = await this.transitionToHalfOpen();
+
       if (!transitioned) {
         throw new Error(`断路器开启: ${operationName} 暂时不可用`);
       }
@@ -71,6 +73,7 @@ export class CircuitBreaker {
       
       // 成功执行
       await this.onSuccess();
+
       return result;
     } catch (error) {
       // 执行失败
@@ -98,7 +101,7 @@ export class CircuitBreaker {
       state: this.state,
       failureCount: this.failureCount,
       successCount: this.successCount,
-      lastFailureTime: this.lastFailureTime
+      lastFailureTime: this.lastFailureTime,
     };
   }
 
@@ -123,9 +126,9 @@ export class CircuitBreaker {
 
     return Promise.race([
       operation(),
-      new Promise<T>((_, reject) => 
-        setTimeout(() => reject(new Error('请求超时')), this.config.requestTimeout)
-      )
+      new Promise<T>((_resolve, reject) => 
+        setTimeout(() => reject(new Error('请求超时')), this.config.requestTimeout),
+      ),
     ]);
   }
 
@@ -134,8 +137,9 @@ export class CircuitBreaker {
    */
   private async getStateAtomic(): Promise<CircuitState> {
     while (this.stateLock) {
-      await new Promise(resolve => setTimeout(resolve, 1));
+      await new Promise((resolve) => setTimeout(resolve, 1));
     }
+
     return this.state;
   }
 
@@ -144,7 +148,7 @@ export class CircuitBreaker {
    */
   private async transitionToHalfOpen(): Promise<boolean> {
     while (this.stateLock) {
-      await new Promise(resolve => setTimeout(resolve, 1));
+      await new Promise((resolve) => setTimeout(resolve, 1));
     }
     
     this.stateLock = true;
@@ -152,8 +156,10 @@ export class CircuitBreaker {
       if (this.state === CircuitState.OPEN && this.getTime() >= this.nextAttemptTime!) {
         this.state = CircuitState.HALF_OPEN;
         this.halfOpenRequests = 0;
+
         return true;
       }
+
       return false;
     } finally {
       this.stateLock = false;
@@ -165,7 +171,7 @@ export class CircuitBreaker {
    */
   private async onSuccess(): Promise<void> {
     while (this.stateLock) {
-      await new Promise(resolve => setTimeout(resolve, 1));
+      await new Promise((resolve) => setTimeout(resolve, 1));
     }
     
     this.stateLock = true;
@@ -191,7 +197,7 @@ export class CircuitBreaker {
    */
   private async onFailure(): Promise<void> {
     while (this.stateLock) {
-      await new Promise(resolve => setTimeout(resolve, 1));
+      await new Promise((resolve) => setTimeout(resolve, 1));
     }
     
     this.stateLock = true;
@@ -224,7 +230,8 @@ export class CircuitBreaker {
    * 检查是否应该重置计数器
    */
   private shouldResetCounters(): boolean {
-    if (!this.lastFailureTime) return false;
+    if (!this.lastFailureTime) {return false;}
+
     return this.getTime() - this.lastFailureTime > this.config.monitoringPeriod;
   }
 }

@@ -6,7 +6,7 @@ import {
   SpeechToTextRequest,
   SpeechToTextResponse,
   TextGenerationRequest,
-  TextGenerationResponse
+  TextGenerationResponse,
 } from '../interfaces/api-types';
 import { ApiClient } from '../utils/api-client';
 import { logger } from '../utils/logger';
@@ -30,12 +30,12 @@ export class TongyiClient implements AIServiceClient {
     this.apiClient = new ApiClient({
       ...config,
       // 使用 OpenAI 兼容模式的端点
-      baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1'
+      baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     });
 
     logger.info(this.name, 'initialize', '客户端初始化完成', {
       baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-      timeout: this.config.timeout
+      timeout: this.config.timeout,
     });
   }
 
@@ -50,19 +50,20 @@ export class TongyiClient implements AIServiceClient {
       const testRequest: TextGenerationRequest = {
         prompt: 'Hello',
         max_tokens: 10,
-        temperature: 0.1
+        temperature: 0.1,
       };
 
       const result = await this.generateText(testRequest);
       const isHealthy: boolean = !!(result && result.text && result.text.length > 0);
 
       logger.info(this.name, 'healthCheck', `健康检查${isHealthy ? '通过' : '失败'}`, {
-        responseLength: result?.text?.length || 0
+        responseLength: result?.text?.length || 0,
       });
       
       return isHealthy;
     } catch (error) {
       logger.error(this.name, 'healthCheck', '健康检查失败', error as Error);
+
       return false;
     }
   }
@@ -74,7 +75,7 @@ export class TongyiClient implements AIServiceClient {
     logger.info(this.name, 'generateText', '开始文本生成', {
       promptLength: request.prompt.length,
       model: request.model || 'qwen-plus',
-      maxTokens: request.max_tokens
+      maxTokens: request.max_tokens,
     });
 
     const startTime = Date.now();
@@ -86,13 +87,13 @@ export class TongyiClient implements AIServiceClient {
         messages: [
           {
             role: 'user',
-            content: request.prompt
-          }
+            content: request.prompt,
+          },
         ],
         max_tokens: request.max_tokens || 1000,
         temperature: request.temperature !== undefined ? request.temperature : 0.7,
         top_p: request.top_p !== undefined ? request.top_p : 0.8,
-        stream: Boolean(request.stream)
+        stream: Boolean(request.stream),
       };
 
       const response = await this.apiClient.post('/chat/completions', requestData);
@@ -111,16 +112,17 @@ export class TongyiClient implements AIServiceClient {
         inputLength: request.prompt.length,
         outputLength: result.text.length,
         model: result.model,
-        finishReason: result.finish_reason
+        finishReason: result.finish_reason,
       });
 
       return result;
 
     } catch (error: any) {
       const duration = Date.now() - startTime;
+
       logger.error(this.name, 'generateText', '文本生成失败', error, { 
         duration,
-        promptLength: request.prompt.length 
+        promptLength: request.prompt.length, 
       });
       throw error;
     }
@@ -148,7 +150,7 @@ export class TongyiClient implements AIServiceClient {
     logger.info(this.name, 'rewriteVideoScript', '开始短视频脚本仿写', {
       originalLength: originalScript.length,
       style: style || 'default',
-      duration: duration || 60
+      duration: duration || 60,
     });
 
     const stylePrompts = {
@@ -157,7 +159,7 @@ export class TongyiClient implements AIServiceClient {
       'casual': '轻松随意',
       'educational': '教育科普',
       'inspirational': '励志正能量',
-      'trendy': '时尚潮流'
+      'trendy': '时尚潮流',
     };
 
     const selectedStyle = stylePrompts[style as keyof typeof stylePrompts] || '自然流畅';
@@ -183,7 +185,7 @@ ${originalScript}
       model: 'qwen-plus', // 使用推荐的均衡模型
       max_tokens: Math.max(500, Math.floor(targetDuration * 8)), // 根据时长动态调整
       temperature: 0.8, // 稍高的创造性
-      top_p: 0.9
+      top_p: 0.9,
     };
 
     try {
@@ -193,7 +195,7 @@ ${originalScript}
         originalLength: originalScript.length,
         newLength: result.text.length,
         style: selectedStyle,
-        targetDuration
+        targetDuration,
       });
 
       return result;
@@ -209,12 +211,12 @@ ${originalScript}
   async batchRewriteScripts(
     originalScript: string, 
     styles: string[] = ['funny', 'educational', 'inspirational'],
-    duration: number = 60
+    duration: number = 60,
   ): Promise<{ style: string; script: TextGenerationResponse }[]> {
     logger.info(this.name, 'batchRewriteScripts', '开始批量脚本仿写', {
       originalLength: originalScript.length,
       styles: styles.length,
-      targetDuration: duration
+      targetDuration: duration,
     });
 
     const results: { style: string; script: TextGenerationResponse }[] = [];
@@ -223,10 +225,11 @@ ${originalScript}
       try {
         logger.debug(this.name, 'batchRewriteScripts', `处理风格: ${style}`);
         const result = await this.rewriteVideoScript(originalScript, style, duration);
+
         results.push({ style, script: result });
         
         // 避免API限流，短暂延迟
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
       } catch (error) {
         logger.error(this.name, 'batchRewriteScripts', `风格 ${style} 仿写失败`, error as Error);
         // 继续处理其他风格
@@ -236,7 +239,7 @@ ${originalScript}
 
     logger.info(this.name, 'batchRewriteScripts', '批量脚本仿写完成', {
       successCount: results.length,
-      totalCount: styles.length
+      totalCount: styles.length,
     });
 
     return results;
@@ -254,19 +257,23 @@ async function testTongyi() {
     Config.printConfigSummary();
 
     const validation = Config.validateEnv();
+
     if (!validation.valid) {
       console.error('\\n❌ 环境变量验证失败，请检查配置');
+
       return;
     }
 
     // 初始化客户端
     const client = new TongyiClient();
     const config = Config.getTongyiConfig();
+
     await client.initialize(config);
 
     // 健康检查
     console.log('\\n1. 执行健康检查...');
     const isHealthy = await client.healthCheck();
+
     console.log(`健康检查结果: ${isHealthy ? '✅ 通过' : '❌ 失败'}`);
 
     if (!isHealthy) {
@@ -283,9 +290,10 @@ async function testTongyi() {
       };
 
       const textResult = await client.generateText(textRequest);
+
       console.log('✅ 基础文本生成成功');
       console.log('生成内容:', textResult.text);
-      console.log('内容长度:', textResult.text.length + '字');
+      console.log('内容长度:', `${textResult.text.length  }字`);
       console.log('模型:', textResult.model);
     } catch (error: any) {
       console.log('❌ 基础文本生成失败:', error.message);
@@ -305,9 +313,10 @@ async function testTongyi() {
       `.trim();
 
       const rewriteResult = await client.rewriteVideoScript(originalScript, 'funny', 60);
+
       console.log('✅ 脚本仿写成功');
-      console.log('原始脚本长度:', originalScript.length + '字');
-      console.log('仿写脚本长度:', rewriteResult.text.length + '字');
+      console.log('原始脚本长度:', `${originalScript.length  }字`);
+      console.log('仿写脚本长度:', `${rewriteResult.text.length  }字`);
       console.log('\\n仿写结果:');
       console.log(rewriteResult.text);
     } catch (error: any) {
@@ -322,7 +331,7 @@ async function testTongyi() {
       const batchResults = await client.batchRewriteScripts(
         testScript, 
         ['educational', 'funny'], // 减少数量以节省时间
-        45
+        45,
       );
 
       console.log(`✅ 批量仿写成功，生成了 ${batchResults.length} 个版本:`);
@@ -338,7 +347,8 @@ async function testTongyi() {
     // 输出性能指标
     console.log('\\n=== 性能指标 ===');
     const metrics = client['apiClient']?.getMetrics() || [];
-    metrics.forEach(metric => {
+
+    metrics.forEach((metric) => {
       logger.logMetrics(metric);
     });
 

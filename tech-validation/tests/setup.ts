@@ -43,6 +43,7 @@ afterEach(() => {
 
 // 声明全局类型以支持 TypeScript
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
     interface Matchers<R> {
       toBeWithinRange(a: number, b: number): R;
@@ -54,6 +55,7 @@ declare global {
 expect.extend({
   toBeWithinRange(received: number, floor: number, ceiling: number) {
     const pass = received >= floor && received <= ceiling;
+
     if (pass) {
       return {
         message: () =>

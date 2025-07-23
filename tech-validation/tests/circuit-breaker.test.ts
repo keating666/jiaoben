@@ -3,7 +3,8 @@
  * 用于验证断路器模式的正确性
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach } from '@jest/globals';
+
 import { CircuitBreaker } from '../utils/circuit-breaker';
 
 describe('Circuit Breaker 测试', () => {
@@ -13,7 +14,7 @@ describe('Circuit Breaker 测试', () => {
     breaker = new CircuitBreaker({
       failureThreshold: 3,
       resetTimeout: 1000,
-      monitoringPeriod: 500
+      monitoringPeriod: 500,
     });
   });
 
@@ -83,7 +84,7 @@ describe('Circuit Breaker 测试', () => {
     expect(breaker.getState()).toBe('OPEN');
 
     // 等待重置超时
-    await new Promise(resolve => setTimeout(resolve, 1100));
+    await new Promise((resolve) => setTimeout(resolve, 1100));
 
     // 下一次调用应该尝试执行（半开状态）
     const testOperation = async () => 'success';
@@ -99,6 +100,7 @@ describe('Circuit Breaker 测试', () => {
     };
 
     let failureCount = 0;
+
     for (let i = 0; i < 2; i++) {
       try {
         await breaker.execute(failingOperation, 'test-op');
@@ -158,7 +160,7 @@ describe('Circuit Breaker 测试', () => {
 
   it('应该正确处理异步操作的超时', async () => {
     const slowOperation = async () => {
-      return new Promise(resolve => setTimeout(() => resolve('slow'), 2000));
+      return new Promise((resolve) => setTimeout(() => resolve('slow'), 2000));
     };
 
     // 这个测试验证断路器不会干扰正常的异步操作

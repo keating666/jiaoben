@@ -30,7 +30,7 @@ class CoverageReporter {
     try {
       execSync('npm run test:coverage', { 
         stdio: 'inherit',
-        cwd: process.cwd()
+        cwd: process.cwd(),
       });
       
       console.log('✅ 覆盖率报告生成完成');
@@ -46,6 +46,7 @@ class CoverageReporter {
   private parseCoverageData(): CoverageData | null {
     if (!fs.existsSync(this.coverageJsonPath)) {
       console.error('❌ 找不到覆盖率数据文件');
+
       return null;
     }
 
@@ -64,27 +65,27 @@ class CoverageReporter {
         // 语句覆盖率
         Object.values(s).forEach((hits: any) => {
           totalStatements++;
-          if (hits > 0) coveredStatements++;
+          if (hits > 0) {coveredStatements++;}
         });
 
         // 分支覆盖率
         Object.values(b).forEach((branches: any) => {
           branches.forEach((hits: any) => {
             totalBranches++;
-            if (hits > 0) coveredBranches++;
+            if (hits > 0) {coveredBranches++;}
           });
         });
 
         // 函数覆盖率
         Object.values(f).forEach((hits: any) => {
           totalFunctions++;
-          if (hits > 0) coveredFunctions++;
+          if (hits > 0) {coveredFunctions++;}
         });
 
         // 行覆盖率
         Object.values(l).forEach((hits: any) => {
           totalLines++;
-          if (hits > 0) coveredLines++;
+          if (hits > 0) {coveredLines++;}
         });
       });
 
@@ -92,26 +93,27 @@ class CoverageReporter {
         statements: {
           total: totalStatements,
           covered: coveredStatements,
-          percentage: Math.round((coveredStatements / totalStatements) * 100 * 100) / 100
+          percentage: Math.round((coveredStatements / totalStatements) * 100 * 100) / 100,
         },
         branches: {
           total: totalBranches,
           covered: coveredBranches,
-          percentage: Math.round((coveredBranches / totalBranches) * 100 * 100) / 100
+          percentage: Math.round((coveredBranches / totalBranches) * 100 * 100) / 100,
         },
         functions: {
           total: totalFunctions,
           covered: coveredFunctions,
-          percentage: Math.round((coveredFunctions / totalFunctions) * 100 * 100) / 100
+          percentage: Math.round((coveredFunctions / totalFunctions) * 100 * 100) / 100,
         },
         lines: {
           total: totalLines,
           covered: coveredLines,
-          percentage: Math.round((coveredLines / totalLines) * 100 * 100) / 100
-        }
+          percentage: Math.round((coveredLines / totalLines) * 100 * 100) / 100,
+        },
       };
     } catch (error) {
       console.error('❌ 解析覆盖率数据失败:', error);
+
       return null;
     }
   }
@@ -145,9 +147,9 @@ class CoverageReporter {
     }
 
     console.log('\n📄 详细报告:');
-    console.log(`- HTML 报告: coverage/lcov-report/index.html`);
-    console.log(`- LCOV 报告: coverage/lcov.info`);
-    console.log(`- JSON 报告: coverage/coverage-final.json`);
+    console.log('- HTML 报告: coverage/lcov-report/index.html');
+    console.log('- LCOV 报告: coverage/lcov.info');
+    console.log('- JSON 报告: coverage/coverage-final.json');
   }
 
   /**
@@ -158,6 +160,7 @@ class CoverageReporter {
     
     if (!fs.existsSync(htmlReportPath)) {
       console.error('❌ HTML 覆盖率报告不存在');
+
       return;
     }
 
@@ -194,7 +197,7 @@ class CoverageReporter {
       statements: 35,
       branches: 20,
       functions: 30,
-      lines: 35
+      lines: 35,
     };
 
     // 当前实际覆盖率
@@ -202,7 +205,7 @@ class CoverageReporter {
       statements: 49.4,
       branches: 30.55,
       functions: 44.11,
-      lines: 50
+      lines: 50,
     };
 
     console.log('\n🎯 覆盖率阈值检查:');
@@ -217,7 +220,7 @@ class CoverageReporter {
       
       console.log(`${status} ${metric}: ${current}% (阈值: ${threshold}%)`);
       
-      if (!passed) allPassed = false;
+      if (!passed) {allPassed = false;}
     });
 
     console.log('━'.repeat(50));
@@ -253,6 +256,7 @@ async function main(): Promise<void> {
   npm run coverage:report --generate --open
   npm run coverage:report --summary --check
     `);
+
     return;
   }
 
@@ -267,6 +271,7 @@ async function main(): Promise<void> {
 
     if (args.includes('--check') || args.includes('--all')) {
       const passed = reporter.checkThresholds();
+
       if (!passed) {
         console.log('\n⚠️ 某些覆盖率阈值未达标');
       }

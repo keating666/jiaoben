@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+
 import { ServiceConfig } from '../interfaces/api-types';
 
 // 加载环境变量
@@ -14,6 +15,7 @@ export class Config {
    */
   static getMiniMaxConfig(): ServiceConfig {
     const apiKey = process.env.MINIMAX_API_KEY;
+
     if (!apiKey) {
       throw new Error('MINIMAX_API_KEY 环境变量未设置');
     }
@@ -33,6 +35,7 @@ export class Config {
    */
   static getTongyiConfig(): ServiceConfig {
     const apiKey = process.env.TONGYI_API_KEY;
+
     if (!apiKey) {
       throw new Error('TONGYI_API_KEY 环境变量未设置');
     }
@@ -115,14 +118,14 @@ export class Config {
       'TONGYI_API_KEY', 
       'IFLYTEK_API_KEY',
       'IFLYTEK_APP_ID',
-      'IFLYTEK_API_SECRET'
+      'IFLYTEK_API_SECRET',
     ];
 
-    const missing = required.filter(key => !process.env[key]);
+    const missing = required.filter((key) => !process.env[key]);
     
     return {
       valid: missing.length === 0,
-      missing
+      missing,
     };
   }
 
@@ -145,7 +148,7 @@ export class Config {
     
     if (!validation.valid) {
       console.log('\\n❌ 缺失环境变量:');
-      validation.missing.forEach(key => console.log(`  - ${key}`));
+      validation.missing.forEach((key) => console.log(`  - ${key}`));
     } else {
       console.log('\\n✅ 所有必需环境变量已配置');
     }

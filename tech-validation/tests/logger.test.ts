@@ -4,7 +4,8 @@
  */
 
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
-import { Logger, LogLevel, logger } from '../utils/logger';
+
+import { Logger, LogLevel } from '../utils/logger';
 
 describe('Logger 工具测试', () => {
   let testLogger: Logger;
@@ -24,10 +25,11 @@ describe('Logger 工具测试', () => {
 
   it('应该正确记录 info 级别日志', async () => {
     const message = 'This is an info message';
+
     testLogger.info('test-service', 'test-operation', message);
     
     // 等待异步日志处理完成
-    await new Promise(resolve => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
     
     expect(consoleSpy).toHaveBeenCalled();
     expect(consoleSpy.mock.calls[0][0]).toContain('[INFO]');
@@ -41,7 +43,7 @@ describe('Logger 工具测试', () => {
     testLogger.error('test-service', 'test-operation', errorMessage);
     
     // 等待异步日志处理完成
-    await new Promise(resolve => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
     
     expect(errorSpy).toHaveBeenCalled();
     expect(errorSpy.mock.calls[0][0]).toContain('[ERROR]');
@@ -57,7 +59,7 @@ describe('Logger 工具测试', () => {
     testLogger.warn('test-service', 'test-operation', warnMessage);
     
     // 等待异步日志处理完成
-    await new Promise(resolve => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
     
     expect(warnSpy).toHaveBeenCalled();
     expect(warnSpy.mock.calls[0][0]).toContain('[WARN]');
@@ -73,7 +75,7 @@ describe('Logger 工具测试', () => {
     testLogger.debug('test-service', 'test-operation', debugMessage);
     
     // 等待异步日志处理完成
-    await new Promise(resolve => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
     
     expect(debugSpy).toHaveBeenCalled();
     expect(debugSpy.mock.calls[0][0]).toContain('[DEBUG]');
@@ -84,16 +86,18 @@ describe('Logger 工具测试', () => {
 
   it('应该包含时间戳', async () => {
     const message = 'Test message with timestamp';
+
     testLogger.info('test-service', 'test-operation', message);
     
     // 等待异步日志处理完成
-    await new Promise(resolve => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
     
     expect(consoleSpy).toHaveBeenCalled();
     const logOutput = consoleSpy.mock.calls[0][0];
     
     // 检查是否包含时间戳格式 (使用 toLocaleString 的格式)
     const timestampRegex = /\[.*\d{1,2}\/\d{1,2}\/\d{4}.*\]/; // [7/23/2025, 4:40:11 AM]
+
     expect(logOutput).toMatch(timestampRegex);
   });
 
@@ -104,10 +108,11 @@ describe('Logger 工具测试', () => {
     testLogger.info('test-service', 'test-operation', message, data);
     
     // 等待异步日志处理完成
-    await new Promise(resolve => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
     
     expect(consoleSpy).toHaveBeenCalled();
     const logOutput = consoleSpy.mock.calls[0][0];
+
     expect(logOutput).toContain('[INFO]');
     expect(logOutput).toContain(message);
     expect(logOutput).toContain('test-service:test-operation');

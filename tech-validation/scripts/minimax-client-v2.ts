@@ -1,13 +1,14 @@
 #!/usr/bin/env ts-node
 
 import FormData from 'form-data';
+
 import { 
   AIServiceClient, 
   ServiceConfig, 
   SpeechToTextRequest, 
   SpeechToTextResponse,
   TextGenerationRequest,
-  TextGenerationResponse
+  TextGenerationResponse,
 } from '../interfaces/api-types';
 import { EnhancedApiClient } from '../utils/enhanced-api-client';
 import { logger } from '../utils/logger';
@@ -37,18 +38,18 @@ export class MiniMaxClientV2 implements AIServiceClient {
         failureThreshold: 5,
         resetTimeout: 60000,
         monitoringPeriod: 30000,
-        requestTimeout: config.timeout
+        requestTimeout: config.timeout,
       },
       rateLimitConfig: {
         maxRequestsPerMinute: 60,
-        maxRequestsPerHour: 1000
-      }
+        maxRequestsPerHour: 1000,
+      },
     });
     
     logger.info(this.name, 'initialize', '增强版客户端初始化完成', { 
       baseUrl: config.baseUrl,
       timeout: config.timeout,
-      features: ['断路器', '限流', '智能重试']
+      features: ['断路器', '限流', '智能重试'],
     });
   }
 
@@ -63,19 +64,21 @@ export class MiniMaxClientV2 implements AIServiceClient {
       const healthEndpoints = [
         '/v1/models',
         '/v1/health',
-        '/health'
+        '/health',
       ];
       
       for (const endpoint of healthEndpoints) {
         try {
           const isHealthy = await this.apiClient.healthCheck(endpoint);
+
           if (isHealthy) {
             logger.info(this.name, 'healthCheck', '健康检查通过', { endpoint });
+
             return true;
           }
         } catch (error) {
           logger.debug(this.name, 'healthCheck', `端点 ${endpoint} 检查失败`, { 
-            error: (error as Error).message 
+            error: (error as Error).message, 
           });
         }
       }
@@ -85,16 +88,19 @@ export class MiniMaxClientV2 implements AIServiceClient {
         await this.generateText({
           prompt: 'Hi',
           max_tokens: 10,
-          temperature: 0.1
+          temperature: 0.1,
         });
         logger.info(this.name, 'healthCheck', '通过文本生成测试验证服务可用');
+
         return true;
       } catch (error) {
         logger.error(this.name, 'healthCheck', '所有健康检查方式都失败', error as Error);
+
         return false;
       }
     } catch (error) {
       logger.error(this.name, 'healthCheck', '健康检查失败', error as Error);
+
       return false;
     }
   }
@@ -107,7 +113,7 @@ export class MiniMaxClientV2 implements AIServiceClient {
       hasFile: !!request.audioFile,
       hasUrl: !!request.audioUrl,
       language: request.language,
-      format: request.format
+      format: request.format,
     });
     
     try {
@@ -119,6 +125,7 @@ export class MiniMaxClientV2 implements AIServiceClient {
       // 验证音频格式
       const supportedFormats = ['mp3', 'wav', 'flac', 'm4a', 'ogg'];
       const format = request.format || 'mp3';
+
       if (!supportedFormats.includes(format)) {
         throw new Error(`不支持的音频格式: ${format}。支持的格式: ${supportedFormats.join(', ')}`);
       }
@@ -156,6 +163,7 @@ export class MiniMaxClientV2 implements AIServiceClient {
       
       // 创建FormData
       const formData = new FormData();
+
       formData.append('audio', request.audioFile!, {
         filename: `audio.${request.format || 'mp3'}`,
         contentType: `audio/${request.format || 'mp3'}`,
@@ -183,7 +191,7 @@ export class MiniMaxClientV2 implements AIServiceClient {
               'Authorization': `Bearer ${this.config.apiKey}`,
             },
             // 针对音频上传使用更长的超时时间
-            timeout: 60000
+            timeout: 60000,
           });
           
           successfulEndpoint = endpoint;
@@ -193,7 +201,7 @@ export class MiniMaxClientV2 implements AIServiceClient {
           logger.warn(this.name, 'speechToTextWithFile', 
             `端点 ${endpoint.path} 失败: ${error.message}`, {
               status: error.status,
-              endpoint: endpoint.path
+              endpoint: endpoint.path,
             });
           
           // 如果是认证错误，不再尝试其他端点
@@ -208,6 +216,7 @@ export class MiniMaxClientV2 implements AIServiceClient {
         if (this.config.baseUrl.includes('localhost') || process.env.NODE_ENV === 'development') {
           logger.warn(this.name, 'speechToTextWithFile', 
             'MiniMax STT不可用，返回开发模式模拟响应');
+
           return this.createMockResponse(request, startTime);
         }
         
@@ -223,16 +232,17 @@ export class MiniMaxClientV2 implements AIServiceClient {
         duration,
         textLength: result.text.length,
         confidence: result.confidence,
-        endpoint: successfulEndpoint?.path
+        endpoint: successfulEndpoint?.path,
       });
 
       return result;
 
     } catch (error: any) {
       const duration = Date.now() - startTime;
+
       logger.error(this.name, 'speechToTextWithFile', '语音转文字处理失败', error, { 
         duration,
-        fileSize: request.audioFile?.length 
+        fileSize: request.audioFile?.length, 
       });
       throw error;
     }
@@ -256,7 +266,7 @@ export class MiniMaxClientV2 implements AIServiceClient {
         format: request.format || 'mp3',
         // 添加更多参数以提高识别准确率
         enable_punctuation: true,
-        enable_word_time_offset: false
+        enable_word_time_offset: false,
       };
 
       const response = await this.apiClient.post('/v1/speech-to-text', requestData);
@@ -267,16 +277,17 @@ export class MiniMaxClientV2 implements AIServiceClient {
       logger.info(this.name, 'speechToTextWithUrl', '语音转文字完成', {
         duration,
         textLength: result.text.length,
-        url: request.audioUrl
+        url: request.audioUrl,
       });
 
       return result;
 
     } catch (error: any) {
       const duration = Date.now() - startTime;
+
       logger.error(this.name, 'speechToTextWithUrl', '语音转文字处理失败', error, { 
         duration,
-        url: request.audioUrl 
+        url: request.audioUrl, 
       });
       
       // 开发模式返回模拟响应
@@ -296,7 +307,7 @@ export class MiniMaxClientV2 implements AIServiceClient {
       promptLength: request.prompt.length,
       model: request.model,
       maxTokens: request.max_tokens,
-      temperature: request.temperature
+      temperature: request.temperature,
     });
     
     const startTime = Date.now();
@@ -311,7 +322,7 @@ export class MiniMaxClientV2 implements AIServiceClient {
           {
             role: 'user',
             content: optimizedRequest.prompt,
-          }
+          },
         ],
         max_tokens: optimizedRequest.max_tokens,
         temperature: optimizedRequest.temperature,
@@ -320,7 +331,7 @@ export class MiniMaxClientV2 implements AIServiceClient {
         // 添加更多控制参数
         frequency_penalty: 0,
         presence_penalty: 0,
-        stop: null
+        stop: null,
       };
 
       // 添加group_id（如果配置了）
@@ -338,7 +349,7 @@ export class MiniMaxClientV2 implements AIServiceClient {
         inputLength: request.prompt.length,
         outputLength: result.text.length,
         model: result.model,
-        finishReason: result.finish_reason
+        finishReason: result.finish_reason,
       });
 
       // 记录token使用情况（如果有）
@@ -346,7 +357,7 @@ export class MiniMaxClientV2 implements AIServiceClient {
         logger.info(this.name, 'generateText', 'Token使用情况', {
           promptTokens: (response as any).usage.prompt_tokens,
           completionTokens: (response as any).usage.completion_tokens,
-          totalTokens: (response as any).usage.total_tokens
+          totalTokens: (response as any).usage.total_tokens,
         });
       }
 
@@ -354,9 +365,10 @@ export class MiniMaxClientV2 implements AIServiceClient {
 
     } catch (error: any) {
       const duration = Date.now() - startTime;
+
       logger.error(this.name, 'generateText', '文本生成失败', error, { 
         duration,
-        model: request.model 
+        model: request.model, 
       });
       
       // 提供更详细的错误信息
@@ -379,7 +391,7 @@ export class MiniMaxClientV2 implements AIServiceClient {
       { path: '/v1/speech-to-text', priority: 1 },
       { path: '/v1/audio/transcriptions', priority: 2 },
       { path: '/v1/t2a_v2', priority: 3 },
-      { path: '/v1/speech/transcriptions', priority: 4 }
+      { path: '/v1/speech/transcriptions', priority: 4 },
     ].sort((a, b) => a.priority - b.priority);
   }
 
@@ -404,14 +416,14 @@ export class MiniMaxClientV2 implements AIServiceClient {
       confidence,
       duration,
       language: response.language || language || 'zh-CN',
-      segments: response.segments || response.data?.segments
+      segments: response.segments || response.data?.segments,
     };
   }
 
   /**
    * 解析文本生成响应
    */
-  private parseTextGenerationResponse(response: any, duration: number): TextGenerationResponse {
+  private parseTextGenerationResponse(response: any, _duration: number): TextGenerationResponse {
     const choice = response.choices?.[0] || response.data?.choices?.[0];
     
     if (!choice) {
@@ -422,7 +434,7 @@ export class MiniMaxClientV2 implements AIServiceClient {
       text: choice.message?.content || choice.text || '',
       finish_reason: choice.finish_reason,
       model: response.model || response.data?.model,
-      created: response.created || response.data?.created || Date.now()
+      created: response.created || response.data?.created || Date.now(),
     };
   }
 
@@ -435,7 +447,7 @@ export class MiniMaxClientV2 implements AIServiceClient {
       model: request.model || 'abab6.5s-chat',
       max_tokens: Math.min(request.max_tokens || 1024, 4096),
       temperature: Math.max(0, Math.min(request.temperature ?? 0.7, 2)),
-      top_p: Math.max(0, Math.min(request.top_p ?? 0.95, 1))
+      top_p: Math.max(0, Math.min(request.top_p ?? 0.95, 1)),
     };
   }
 
@@ -453,9 +465,9 @@ export class MiniMaxClientV2 implements AIServiceClient {
           start: 0,
           end: 3,
           text: '[开发模式] 这是语音转文字的模拟响应。',
-          confidence: 0.99
-        }
-      ]
+          confidence: 0.99,
+        },
+      ],
     };
   }
 
@@ -465,6 +477,7 @@ export class MiniMaxClientV2 implements AIServiceClient {
   private isValidUrl(url: string): boolean {
     try {
       new URL(url);
+
       return true;
     } catch {
       return false;
@@ -487,8 +500,8 @@ export class MiniMaxClientV2 implements AIServiceClient {
       endpoints: {
         stt: true, // 根据实际测试结果
         tts: false, // MiniMax主要做TTS
-        textGen: true
-      }
+        textGen: true,
+      },
     };
   }
 }
@@ -504,24 +517,29 @@ async function testMiniMaxV2() {
     Config.printConfigSummary();
     
     const validation = Config.validateEnv();
+
     if (!validation.valid) {
       console.error('\\n❌ 环境变量验证失败，请检查配置');
+
       return;
     }
 
     // 初始化客户端
     const client = new MiniMaxClientV2();
     const config = Config.getMiniMaxConfig();
+
     await client.initialize(config);
 
     // 获取服务状态
     console.log('\\n1. 检查服务状态...');
     const status = await client.getServiceStatus();
+
     console.log('服务状态:', JSON.stringify(status, null, 2));
 
     // 健康检查
     console.log('\\n2. 执行健康检查...');
     const isHealthy = await client.healthCheck();
+
     console.log(`健康检查结果: ${isHealthy ? '✅ 通过' : '❌ 失败'}`);
 
     // 测试文本生成
@@ -534,6 +552,7 @@ async function testMiniMaxV2() {
       };
 
       const textResult = await client.generateText(textRequest);
+
       console.log('✅ 文本生成成功');
       console.log('生成内容:', textResult.text);
       console.log('模型:', textResult.model);
@@ -554,10 +573,11 @@ async function testMiniMaxV2() {
       };
 
       const sttResult = await client.speechToText(sttRequest);
+
       console.log('✅ 语音转文字完成');
       console.log('转录结果:', sttResult.text);
       console.log('置信度:', sttResult.confidence);
-      console.log('处理时间:', sttResult.duration + 'ms');
+      console.log('处理时间:', `${sttResult.duration  }ms`);
       if (sttResult.segments) {
         console.log('分段数量:', sttResult.segments.length);
       }
@@ -568,11 +588,13 @@ async function testMiniMaxV2() {
     // 获取性能指标
     console.log('\\n5. 性能指标...');
     const metrics = client['apiClient']?.getMetrics() || [];
+
     console.log(`总请求数: ${metrics.length}`);
     
     if (metrics.length > 0) {
       const avgDuration = metrics.reduce((sum, m) => sum + m.duration, 0) / metrics.length;
-      const successRate = (metrics.filter(m => m.success).length / metrics.length) * 100;
+      const successRate = (metrics.filter((m) => m.success).length / metrics.length) * 100;
+
       console.log(`平均响应时间: ${avgDuration.toFixed(2)}ms`);
       console.log(`成功率: ${successRate.toFixed(2)}%`);
     }

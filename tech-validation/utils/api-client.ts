@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
+
 import { ApiError, ServiceConfig, PerformanceMetrics } from '../interfaces/api-types';
 
 /**
@@ -26,21 +27,24 @@ export class ApiClient {
     this.client.interceptors.request.use(
       (config: any) => {
         config.metadata = { startTime: Date.now() };
+
         return config;
       },
-      (error) => Promise.reject(error)
+      (error) => Promise.reject(error),
     );
 
     // 添加响应拦截器
     this.client.interceptors.response.use(
       (response) => {
         this.recordMetrics(response, true);
+
         return response;
       },
       (error) => {
         this.recordMetrics(error.response || error, false, error);
+
         return Promise.reject(this.transformError(error));
-      }
+      },
     );
   }
 
@@ -49,7 +53,7 @@ export class ApiClient {
    */
   async requestWithRetry<T>(
     requestFn: () => Promise<AxiosResponse<T>>,
-    operation: string
+    operation: string,
   ): Promise<T> {
     const maxRetries = this.config.maxRetries || 3;
     const retryDelayBase = this.config.retryDelayBase || 1000;
@@ -59,6 +63,7 @@ export class ApiClient {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
         const response = await requestFn();
+
         return response.data;
       } catch (error) {
         lastError = error as ApiError;
@@ -72,13 +77,14 @@ export class ApiClient {
         const baseDelay = Math.min(retryDelayBase * Math.pow(2, attempt), 30000);
         const jitter = 0.5 + Math.random() * 0.5; // 50% - 100% 的抖动
         const delay = Math.floor(baseDelay * jitter);
+
         console.warn(`${operation} 第 ${attempt + 1} 次重试失败，${delay}ms 后重试:`, lastError.message);
         
         await this.delay(delay);
       }
     }
 
-    throw lastError!;
+    throw lastError instanceof Error ? lastError : new Error(String(lastError));
   }
 
   /**
@@ -87,7 +93,7 @@ export class ApiClient {
   async get<T>(url: string, params?: any): Promise<T> {
     return this.requestWithRetry(
       () => this.client.get<T>(url, { params }),
-      `GET ${url}`
+      `GET ${url}`,
     );
   }
 
@@ -97,7 +103,7 @@ export class ApiClient {
   async post<T>(url: string, data?: any, config?: any): Promise<T> {
     return this.requestWithRetry(
       () => this.client.post<T>(url, data, config),
-      `POST ${url}`
+      `POST ${url}`,
     );
   }
 
@@ -107,7 +113,7 @@ export class ApiClient {
   async put<T>(url: string, data?: any): Promise<T> {
     return this.requestWithRetry(
       () => this.client.put<T>(url, data),
-      `PUT ${url}`
+      `PUT ${url}`,
     );
   }
 
@@ -117,7 +123,7 @@ export class ApiClient {
   async delete<T>(url: string): Promise<T> {
     return this.requestWithRetry(
       () => this.client.delete<T>(url),
-      `DELETE ${url}`
+      `DELETE ${url}`,
     );
   }
 
@@ -127,9 +133,11 @@ export class ApiClient {
   async healthCheck(): Promise<boolean> {
     try {
       await this.get('/health');
+
       return true;
     } catch (error) {
       console.warn('Health check failed:', error);
+
       return false;
     }
   }
@@ -167,10 +175,12 @@ export class ApiClient {
    */
   private transformError(error: any): ApiError {
     const apiError: ApiError = new Error(error.message || '请求失败') as ApiError;
+
     apiError.code = error.code;
     apiError.status = error.response?.status;
     apiError.response = error.response?.data;
     apiError.retryable = this.isRetryableError(apiError);
+
     return apiError;
   }
 
@@ -180,9 +190,9 @@ export class ApiClient {
   private async recordMetrics(
     response: AxiosResponse | any,
     success: boolean,
-    error?: Error
+    error?: Error,
   ): Promise<void> {
-    if (this.disposed) return;
+    if (this.disposed) {return;}
     
     const config = response?.config || response;
     const startTime = config.metadata?.startTime || Date.now();
@@ -229,6 +239,7 @@ export class ApiClient {
     const timestamp = Date.now();
     const random = Math.floor(Math.random() * 1000000);
     const counter = this.getAndIncrementCounter();
+
     return `req_${timestamp}_${counter}_${random.toString(36)}`;
   }
 
@@ -241,7 +252,7 @@ export class ApiClient {
    * 延迟函数
    */
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**

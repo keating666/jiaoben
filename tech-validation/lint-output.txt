@@ -1,0 +1,453 @@
+
+> tech-validation@1.0.0 lint
+> eslint --ext .ts scripts/ utils/ interfaces/ tests/ --max-warnings 200
+
+
+/Users/keating/Desktop/appdev/jiaoben/tech-validation/interfaces/api-types.ts
+   6:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  74:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  88:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/keating/Desktop/appdev/jiaoben/tech-validation/scripts/coverage-report.ts
+   27:3   warning  Async method 'generateReport' has no 'await' expression  require-await
+   28:5   warning  Unexpected console statement                             no-console
+   36:7   warning  Unexpected console statement                             no-console
+   62:54  warning  Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+   66:41  warning  Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+   72:45  warning  Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+   73:35  warning  Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+   80:41  warning  Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+   86:41  warning  Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
+  125:5   warning  Unexpected console statement                             no-console
+  126:5   warning  Unexpected console statement                             no-console
+  129:5   warning  Unexpected console statement                             no-console
+  130:5   warning  Unexpected console statement                             no-console
+  131:5   warning  Unexpected console statement                             no-console
+  132:5   warning  Unexpected console statement                             no-console
+  134:5   warning  Unexpected console statement                             no-console
+  140:7   warning  Unexpected console statement                             no-console
+  142:7   warning  Unexpected console statement                             no-console
+  144:7   warning  Unexpected console statement                             no-console
+  146:7   warning  Unexpected console statement                             no-console
+  149:5   warning  Unexpected console statement                             no-console
+  150:5   warning  Unexpected console statement                             no-console
+  151:5   warning  Unexpected console statement                             no-console
+  152:5   warning  Unexpected console statement                             no-console
+  184:7   warning  Unexpected console statement                             no-console
+  187:7   warning  Unexpected console statement                             no-console
+  211:5   warning  Unexpected console statement                             no-console
+  212:5   warning  Unexpected console statement                             no-console
+  221:7   warning  Unexpected console statement                             no-console
+  226:5   warning  Unexpected console statement                             no-console
+  227:5   warning  Unexpected console statement                             no-console
+  239:5   warning  Unexpected console statement                             no-console
+  276:9   warning  Unexpected console statement                             no-console
+
+/Users/keating/Desktop/appdev/jiaoben/tech-validation/scripts/health-check.ts
+   29:5   warning  Unexpected console statement                                                                          no-console
+   36:7   warning  Unexpected console statement                                                                          no-console
+   54:18  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  101:21  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  136:21  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  152:51  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  156:20  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+  158:10  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+  167:20  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+  170:20  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+  175:20  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+  188:5   warning  Unexpected console statement                                                                          no-console
+  189:5   warning  Unexpected console statement                                                                          no-console
+  190:5   warning  Unexpected console statement                                                                          no-console
+  198:28  warning  Unexpected nullable number value in conditional. Please handle the nullish/zero/NaN cases explicitly  @typescript-eslint/strict-boolean-expressions
+  199:21  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+  201:7   warning  Unexpected console statement                                                                          no-console
+  216:5   warning  Unexpected console statement                                                                          no-console
+  217:5   warning  Unexpected console statement                                                                          no-console
+  218:5   warning  Unexpected console statement                                                                          no-console
+  219:5   warning  Unexpected console statement                                                                          no-console
+  220:5   warning  Unexpected console statement                                                                          no-console
+  221:5   warning  Unexpected console statement                                                                          no-console
+  265:1   warning  Missing return type on function                                                                       @typescript-eslint/explicit-function-return-type
+  272:9   warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+  273:7   warning  Unexpected console statement                                                                          no-console
+  274:7   warning  Unexpected console statement                                                                          no-console
+
+/Users/keating/Desktop/appdev/jiaoben/tech-validation/scripts/ip-diagnosis.ts
+  450:1   warning  Missing return type on function                                       @typescript-eslint/explicit-function-return-type
+  451:3   warning  Unexpected console statement                                          no-console
+  476:5   warning  Unexpected console statement                                          no-console
+  477:5   warning  Unexpected console statement                                          no-console
+  478:5   warning  Unexpected console statement                                          no-console
+  479:5   warning  Unexpected console statement                                          no-console
+  481:5   warning  Unexpected console statement                                          no-console
+  484:5   warning  Unexpected console statement                                          no-console
+  500:7   warning  Unexpected console statement                                          no-console
+  505:5   warning  Unexpected console statement                                          no-console
+  507:5   warning  Unexpected console statement                                          no-console
+  511:5   warning  Unexpected console statement                                          no-console
+  512:5   warning  Unexpected console statement                                          no-console
+  513:5   warning  Unexpected console statement                                          no-console
+  515:5   warning  Unexpected console statement                                          no-console
+  516:5   warning  Unexpected console statement                                          no-console
+  519:5   warning  Unexpected console statement                                          no-console
+  520:21  warning  Unexpected object value in conditional. The condition is always true  @typescript-eslint/strict-boolean-expressions
+  529:5   warning  Unexpected console statement                                          no-console
+  531:19  warning  Unexpected any. Specify a different type                              @typescript-eslint/no-explicit-any
+
+/Users/keating/Desktop/appdev/jiaoben/tech-validation/scripts/minimax-client-v2.ts
+   25:50  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+   31:3   warning  Async method 'initialize' has no 'await' expression                                                   require-await
+  114:17  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+  121:34  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+  142:21  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  144:28  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  173:11  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+  199:25  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  214:12  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  223:15  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  240:21  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  265:19  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+  285:21  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  338:11  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+  339:25  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  356:11  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  356:24  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  358:38  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  359:42  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  360:37  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  366:21  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  388:3   warning  Async method 'getAvailableSTTEndpoints' has no 'await' expression                                     require-await
+  401:38  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  403:18  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  404:18  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  405:18  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  406:18  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  407:18  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  410:24  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  411:23  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  412:24  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  418:17  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  418:38  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+  419:17  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  426:49  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  426:54  error    'duration' is defined but never used. Allowed unused args must match /^_/u                            @typescript-eslint/no-unused-vars
+  427:20  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  429:10  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  434:13  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  434:40  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  436:14  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  437:16  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  437:36  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  447:14  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+  448:28  warning  Unexpected nullable number value in conditional. Please handle the nullish/zero/NaN cases explicitly  @typescript-eslint/strict-boolean-expressions
+  462:17  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+  492:27  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  512:1   warning  Missing return type on function                                                                       @typescript-eslint/explicit-function-return-type
+  513:3   warning  Unexpected console statement                                                                          no-console
+  534:5   warning  Unexpected console statement                                                                          no-console
+  537:5   warning  Unexpected console statement                                                                          no-console
+  540:5   warning  Unexpected console statement                                                                          no-console
+  543:5   warning  Unexpected console statement                                                                          no-console
+  546:5   warning  Unexpected console statement                                                                          no-console
+  556:7   warning  Unexpected console statement                                                                          no-console
+  557:7   warning  Unexpected console statement                                                                          no-console
+  558:7   warning  Unexpected console statement                                                                          no-console
+  559:7   warning  Unexpected console statement                                                                          no-console
+  560:21  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  561:7   warning  Unexpected console statement                                                                          no-console
+  565:5   warning  Unexpected console statement                                                                          no-console
+  577:7   warning  Unexpected console statement                                                                          no-console
+  578:7   warning  Unexpected console statement                                                                          no-console
+  579:7   warning  Unexpected console statement                                                                          no-console
+  580:7   warning  Unexpected console statement                                                                          no-console
+  582:9   warning  Unexpected console statement                                                                          no-console
+  584:21  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  585:7   warning  Unexpected console statement                                                                          no-console
+  589:5   warning  Unexpected console statement                                                                          no-console
+  590:21  warning  Unexpected object value in conditional. The condition is always true                                  @typescript-eslint/strict-boolean-expressions
+  592:5   warning  Unexpected console statement                                                                          no-console
+  598:7   warning  Unexpected console statement                                                                          no-console
+  599:7   warning  Unexpected console statement                                                                          no-console
+  605:19  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+
+/Users/keating/Desktop/appdev/jiaoben/tech-validation/scripts/minimax-speech-to-text.ts
+   28:3   warning  Async method 'initialize' has no 'await' expression                                                   require-await
+   70:18  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+   97:11  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+  124:25  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  141:12  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  142:15  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  148:27  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  150:15  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  150:36  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  150:66  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  153:19  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  164:21  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  170:35  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  177:21  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+  194:19  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+  202:27  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  204:15  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  204:36  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  204:66  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  207:19  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  218:21  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  231:21  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+  249:16  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+  256:21  warning  Unexpected nullable number value in conditional. Please handle the nullish/zero/NaN cases explicitly  @typescript-eslint/strict-boolean-expressions
+  257:22  warning  Unexpected nullable number value in conditional. Please handle the nullish/zero/NaN cases explicitly  @typescript-eslint/strict-boolean-expressions
+  258:16  warning  Unexpected nullable number value in conditional. Please handle the nullish/zero/NaN cases explicitly  @typescript-eslint/strict-boolean-expressions
+  266:27  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  268:15  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  268:62  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  282:21  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  294:1   warning  Missing return type on function                                                                       @typescript-eslint/explicit-function-return-type
+  295:3   warning  Unexpected console statement                                                                          no-console
+  316:5   warning  Unexpected console statement                                                                          no-console
+  319:5   warning  Unexpected console statement                                                                          no-console
+  322:5   warning  Unexpected console statement                                                                          no-console
+  332:7   warning  Unexpected console statement                                                                          no-console
+  333:7   warning  Unexpected console statement                                                                          no-console
+  334:7   warning  Unexpected console statement                                                                          no-console
+  335:21  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  336:7   warning  Unexpected console statement                                                                          no-console
+  340:5   warning  Unexpected console statement                                                                          no-console
+  353:7   warning  Unexpected console statement                                                                          no-console
+  354:7   warning  Unexpected console statement                                                                          no-console
+  355:7   warning  Unexpected console statement                                                                          no-console
+  356:7   warning  Unexpected console statement                                                                          no-console
+  357:21  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  358:7   warning  Unexpected console statement                                                                          no-console
+  362:5   warning  Unexpected console statement                                                                          no-console
+  363:21  warning  Unexpected object value in conditional. The condition is always true                                  @typescript-eslint/strict-boolean-expressions
+  372:19  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+
+/Users/keating/Desktop/appdev/jiaoben/tech-validation/scripts/tongyi-text-generation.ts
+   26:3   warning  Async method 'initialize' has no 'await' expression                                                   require-await
+   57:37  warning  Unexpected object value in conditional. The condition is always true                                  @typescript-eslint/strict-boolean-expressions
+   77:14  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+   86:16  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+   93:21  warning  Unexpected nullable number value in conditional. Please handle the nullish/zero/NaN cases explicitly  @typescript-eslint/strict-boolean-expressions
+  102:27  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  104:15  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  120:21  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  134:3   warning  Async method 'speechToText' has no 'await' expression                                                 require-await
+  142:17  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+  152:14  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly     @typescript-eslint/strict-boolean-expressions
+  153:17  warning  Unexpected nullable number value in conditional. Please handle the nullish/zero/NaN cases explicitly  @typescript-eslint/strict-boolean-expressions
+  166:28  warning  Unexpected nullable number value in conditional. Please handle the nullish/zero/NaN cases explicitly  @typescript-eslint/strict-boolean-expressions
+  252:1   warning  Missing return type on function                                                                       @typescript-eslint/explicit-function-return-type
+  253:3   warning  Unexpected console statement                                                                          no-console
+  274:5   warning  Unexpected console statement                                                                          no-console
+  277:5   warning  Unexpected console statement                                                                          no-console
+  280:7   warning  Unexpected console statement                                                                          no-console
+  284:5   warning  Unexpected console statement                                                                          no-console
+  294:7   warning  Unexpected console statement                                                                          no-console
+  295:7   warning  Unexpected console statement                                                                          no-console
+  296:7   warning  Unexpected console statement                                                                          no-console
+  297:7   warning  Unexpected console statement                                                                          no-console
+  298:21  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  299:7   warning  Unexpected console statement                                                                          no-console
+  303:5   warning  Unexpected console statement                                                                          no-console
+  317:7   warning  Unexpected console statement                                                                          no-console
+  318:7   warning  Unexpected console statement                                                                          no-console
+  319:7   warning  Unexpected console statement                                                                          no-console
+  320:7   warning  Unexpected console statement                                                                          no-console
+  321:7   warning  Unexpected console statement                                                                          no-console
+  322:21  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  323:7   warning  Unexpected console statement                                                                          no-console
+  327:5   warning  Unexpected console statement                                                                          no-console
+  337:7   warning  Unexpected console statement                                                                          no-console
+  339:9   warning  Unexpected console statement                                                                          no-console
+  340:9   warning  Unexpected console statement                                                                          no-console
+  341:9   warning  Unexpected console statement                                                                          no-console
+  343:21  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  344:7   warning  Unexpected console statement                                                                          no-console
+  348:5   warning  Unexpected console statement                                                                          no-console
+  349:21  warning  Unexpected object value in conditional. The condition is always true                                  @typescript-eslint/strict-boolean-expressions
+  358:19  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+
+/Users/keating/Desktop/appdev/jiaoben/tech-validation/tests/api-client.test.ts
+   64:31  warning  Async arrow function has no 'await' expression  require-await
+  287:41  warning  Missing return type on function                 @typescript-eslint/explicit-function-return-type
+  287:41  warning  Async arrow function has no 'await' expression  require-await
+  317:41  warning  Missing return type on function                 @typescript-eslint/explicit-function-return-type
+  317:41  warning  Async arrow function has no 'await' expression  require-await
+  337:38  warning  Missing return type on function                 @typescript-eslint/explicit-function-return-type
+  337:38  warning  Async arrow function has no 'await' expression  require-await
+  497:29  warning  Async arrow function has no 'await' expression  require-await
+
+/Users/keating/Desktop/appdev/jiaoben/tech-validation/tests/circuit-breaker.test.ts
+   26:42  warning  Missing return type on function                 @typescript-eslint/explicit-function-return-type
+   26:42  warning  Async arrow function has no 'await' expression  require-await
+   35:39  warning  Missing return type on function                 @typescript-eslint/explicit-function-return-type
+   35:39  warning  Async arrow function has no 'await' expression  require-await
+   52:39  warning  Missing return type on function                 @typescript-eslint/explicit-function-return-type
+   52:39  warning  Async arrow function has no 'await' expression  require-await
+   71:39  warning  Missing return type on function                 @typescript-eslint/explicit-function-return-type
+   71:39  warning  Async arrow function has no 'await' expression  require-await
+   90:36  warning  Missing return type on function                 @typescript-eslint/explicit-function-return-type
+   90:36  warning  Async arrow function has no 'await' expression  require-await
+   98:39  warning  Missing return type on function                 @typescript-eslint/explicit-function-return-type
+   98:39  warning  Async arrow function has no 'await' expression  require-await
+  127:39  warning  Missing return type on function                 @typescript-eslint/explicit-function-return-type
+  127:39  warning  Async arrow function has no 'await' expression  require-await
+  130:42  warning  Missing return type on function                 @typescript-eslint/explicit-function-return-type
+  130:42  warning  Async arrow function has no 'await' expression  require-await
+  162:36  warning  Missing return type on function                 @typescript-eslint/explicit-function-return-type
+  162:36  warning  Async arrow function has no 'await' expression  require-await
+
+/Users/keating/Desktop/appdev/jiaoben/tech-validation/tests/logger.test.ts
+  12:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/keating/Desktop/appdev/jiaoben/tech-validation/tests/setup.ts
+  61:9  warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  67:9  warning  Missing return type on function  @typescript-eslint/explicit-function-return-type
+
+/Users/keating/Desktop/appdev/jiaoben/tech-validation/utils/api-client.ts
+   19:16  warning  Unexpected nullable number value in conditional. Please handle the nullish/zero/NaN cases explicitly                                                                @typescript-eslint/strict-boolean-expressions
+   28:16  warning  Unexpected any. Specify a different type                                                                                                                            @typescript-eslint/no-explicit-any
+   33:18  warning  Avoid using promises inside of callbacks                                                                                                                            promise/no-promise-in-callback
+   39:9   warning  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
+   44:9   warning  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
+   44:28  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                                                                                @typescript-eslint/strict-boolean-expressions
+   58:24  warning  Unexpected nullable number value in conditional. Please handle the nullish/zero/NaN cases explicitly                                                                @typescript-eslint/strict-boolean-expressions
+   59:28  warning  Unexpected nullable number value in conditional. Please handle the nullish/zero/NaN cases explicitly                                                                @typescript-eslint/strict-boolean-expressions
+   93:3   warning  Async method 'get' has no 'await' expression                                                                                                                        require-await
+   93:38  warning  Unexpected any. Specify a different type                                                                                                                            @typescript-eslint/no-explicit-any
+  103:3   warning  Async method 'post' has no 'await' expression                                                                                                                       require-await
+  103:37  warning  Unexpected any. Specify a different type                                                                                                                            @typescript-eslint/no-explicit-any
+  103:51  warning  Unexpected any. Specify a different type                                                                                                                            @typescript-eslint/no-explicit-any
+  113:3   warning  Async method 'put' has no 'await' expression                                                                                                                        require-await
+  113:36  warning  Unexpected any. Specify a different type                                                                                                                            @typescript-eslint/no-explicit-any
+  123:3   warning  Async method 'delete' has no 'await' expression                                                                                                                     require-await
+  165:8   warning  Unexpected nullable number value in conditional. Please handle the nullish/zero/NaN cases explicitly                                                                @typescript-eslint/strict-boolean-expressions
+  176:33  warning  Unexpected any. Specify a different type                                                                                                                            @typescript-eslint/no-explicit-any
+  177:42  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                                                                                @typescript-eslint/strict-boolean-expressions
+  191:31  warning  Unexpected any. Specify a different type                                                                                                                            @typescript-eslint/no-explicit-any
+  197:20  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                                                                                @typescript-eslint/strict-boolean-expressions
+  198:23  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                                                                                @typescript-eslint/strict-boolean-expressions
+
+/Users/keating/Desktop/appdev/jiaoben/tech-validation/utils/circuit-breaker.ts
+   29:47  warning  Unexpected object value in conditional. The condition is always true                                  @typescript-eslint/strict-boolean-expressions
+   30:25  warning  Missing return type on function                                                                       @typescript-eslint/explicit-function-return-type
+   32:25  warning  Missing return type on function                                                                       @typescript-eslint/explicit-function-return-type
+   99:3   warning  Missing return type on function                                                                       @typescript-eslint/explicit-function-return-type
+  122:3   warning  Async method 'executeWithTimeout' has no 'await' expression                                           require-await
+  123:10  warning  Unexpected nullable number value in conditional. Please handle the nullish/zero/NaN cases explicitly  @typescript-eslint/strict-boolean-expressions
+  129:23  error    Promise constructor parameters must be named to match "^_?resolve$"                                   promise/param-names
+  233:10  warning  Unexpected nullable number value in conditional. Please handle the nullish/zero/NaN cases explicitly  @typescript-eslint/strict-boolean-expressions
+
+/Users/keating/Desktop/appdev/jiaoben/tech-validation/utils/config.ts
+   19:10  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+   25:16  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+   26:25  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+   27:28  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+   28:32  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+   39:10  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+   45:16  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+   46:25  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+   47:28  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+   48:32  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+   63:10  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+   63:21  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+   63:31  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+   69:16  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+   70:25  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+   71:28  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+   72:32  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+   89:3   warning  Missing return type on function                                                                    @typescript-eslint/explicit-function-return-type
+   91:21  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+   92:21  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+   93:21  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+   94:21  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+  101:3   warning  Missing return type on function                                                                    @typescript-eslint/explicit-function-return-type
+  103:16  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+  104:17  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+  105:28  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+  106:28  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+  107:32  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+  124:47  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+  138:5   warning  Unexpected console statement                                                                       no-console
+  139:5   warning  Unexpected console statement                                                                       no-console
+  140:5   warning  Unexpected console statement                                                                       no-console
+  141:5   warning  Unexpected console statement                                                                       no-console
+  142:5   warning  Unexpected console statement                                                                       no-console
+  144:5   warning  Unexpected console statement                                                                       no-console
+  145:5   warning  Unexpected console statement                                                                       no-console
+  145:29  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+  146:5   warning  Unexpected console statement                                                                       no-console
+  146:26  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+  147:5   warning  Unexpected console statement                                                                       no-console
+  147:26  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+  150:7   warning  Unexpected console statement                                                                       no-console
+  151:43  warning  Unexpected console statement                                                                       no-console
+  153:7   warning  Unexpected console statement                                                                       no-console
+
+/Users/keating/Desktop/appdev/jiaoben/tech-validation/utils/enhanced-api-client.ts
+   23:26  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+   24:20  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+   25:19  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+   59:16  warning  Unexpected nullable number value in conditional. Please handle the nullish/zero/NaN cases explicitly  @typescript-eslint/strict-boolean-expressions
+   75:16  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+   82:18  warning  Avoid using promises inside of callbacks                                                              promise/no-promise-in-callback
+   92:33  warning  Async arrow function has no 'await' expression                                                        require-await
+  133:24  warning  Unexpected nullable number value in conditional. Please handle the nullish/zero/NaN cases explicitly  @typescript-eslint/strict-boolean-expressions
+  134:28  warning  Unexpected nullable number value in conditional. Please handle the nullish/zero/NaN cases explicitly  @typescript-eslint/strict-boolean-expressions
+  177:66  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  180:21  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  180:32  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  187:9   warning  Unexpected nullable number value in conditional. Please handle the nullish/zero/NaN cases explicitly  @typescript-eslint/strict-boolean-expressions
+  199:3   warning  Async method 'checkRateLimit' has no 'await' expression                                               require-await
+  248:23  warning  Unexpected object value in conditional. The condition is always true                                  @typescript-eslint/strict-boolean-expressions
+  252:10  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  275:3   warning  Async method 'get' has no 'await' expression                                                          require-await
+  275:38  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  285:3   warning  Async method 'post' has no 'await' expression                                                         require-await
+  285:37  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  285:51  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  295:3   warning  Async method 'put' has no 'await' expression                                                          require-await
+  295:36  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  305:3   warning  Async method 'delete' has no 'await' expression                                                       require-await
+  347:3   warning  Missing return type on function                                                                       @typescript-eslint/explicit-function-return-type
+  363:9   warning  Unexpected nullable number value in conditional. Please handle the nullish/zero/NaN cases explicitly  @typescript-eslint/strict-boolean-expressions
+  369:8   warning  Unexpected nullable number value in conditional. Please handle the nullish/zero/NaN cases explicitly  @typescript-eslint/strict-boolean-expressions
+  382:33  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  384:7   warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  385:7   warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  386:7   warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  390:21  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  396:9   warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  397:20  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  411:31  warning  Unexpected any. Specify a different type                                                              @typescript-eslint/no-explicit-any
+  415:20  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  416:23  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  420:18  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+  433:21  warning  Unexpected any value in conditional. An explicit comparison or type cast is required                  @typescript-eslint/strict-boolean-expressions
+
+/Users/keating/Desktop/appdev/jiaoben/tech-validation/utils/logger.ts
+   22:10  warning  Unexpected any. Specify a different type                                                           @typescript-eslint/no-explicit-any
+   62:69  warning  Unexpected any. Specify a different type                                                           @typescript-eslint/no-explicit-any
+   69:68  warning  Unexpected any. Specify a different type                                                           @typescript-eslint/no-explicit-any
+   76:68  warning  Unexpected any. Specify a different type                                                           @typescript-eslint/no-explicit-any
+   83:84  warning  Unexpected any. Specify a different type                                                           @typescript-eslint/no-explicit-any
+   98:8   warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+  139:5   warning  Unexpected console statement                                                                       no-console
+  141:7   warning  Unexpected console statement                                                                       no-console
+  147:7   warning  Unexpected console statement                                                                       no-console
+  149:9   warning  Unexpected console statement                                                                       no-console
+  150:13  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+  151:11  warning  Unexpected console statement                                                                       no-console
+  165:12  warning  Unexpected any. Specify a different type                                                           @typescript-eslint/no-explicit-any
+  221:30  warning  Unexpected any. Specify a different type                                                           @typescript-eslint/no-explicit-any
+  221:36  warning  Unexpected any. Specify a different type                                                           @typescript-eslint/no-explicit-any
+  222:10  warning  Unexpected any value in conditional. An explicit comparison or type cast is required               @typescript-eslint/strict-boolean-expressions
+  230:34  warning  Unexpected any. Specify a different type                                                           @typescript-eslint/no-explicit-any
+  264:58  warning  Unexpected nullable string value in conditional. Please handle the nullish/empty cases explicitly  @typescript-eslint/strict-boolean-expressions
+  270:9   warning  Unexpected console statement                                                                       no-console
+  270:58  warning  Unexpected any value in conditional. An explicit comparison or type cast is required               @typescript-eslint/strict-boolean-expressions
+  273:9   warning  Unexpected console statement                                                                       no-console
+  288:4   warning  Unexpected value in conditional. A boolean expression is required                                  @typescript-eslint/strict-boolean-expressions
+
+✖ 414 problems (2 errors, 412 warnings)
+

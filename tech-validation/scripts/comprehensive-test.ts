@@ -1,11 +1,12 @@
 #!/usr/bin/env ts-node
 
-import { MiniMaxClient } from './minimax-speech-to-text';
-import { TongyiClient } from './tongyi-text-generation';
-import { IPDiagnosisService, IPDiagnosisInput } from './ip-diagnosis';
-import { checkAudioFiles } from './check-audio-files';
 import { Config } from '../utils/config';
 import { logger, LogLevel } from '../utils/logger';
+
+import { checkAudioFiles } from './check-audio-files';
+import { IPDiagnosisService, IPDiagnosisInput } from './ip-diagnosis';
+import { MiniMaxClient } from './minimax-speech-to-text';
+import { TongyiClient } from './tongyi-text-generation';
 
 /**
  * 综合测试结果接口
