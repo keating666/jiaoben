@@ -30,9 +30,23 @@ export interface LogEntry {
 export class Logger {
   private logs: LogEntry[] = [];
   private logLevel: LogLevel;
+  private logLock = false;
+  private disposed = false;
+  private maxLogSize = 5000;
+  private sensitivePatterns: RegExp[];
 
   constructor(logLevel: LogLevel = LogLevel.INFO) {
     this.logLevel = logLevel;
+    // 预编译敏感信息正则表达式
+    this.sensitivePatterns = [
+      /api[_-]?key/i,
+      /password/i,
+      /token/i,
+      /secret/i,
+      /authorization/i,
+      /bearer/i,
+      /credential/i,
+    ];
   }
 
   /**
@@ -46,28 +60,28 @@ export class Logger {
    * 记录调试信息
    */
   debug(service: string, operation: string, message: string, data?: any): void {
-    this.log(LogLevel.DEBUG, service, operation, message, data);
+    this.log(LogLevel.DEBUG, service, operation, message, data).catch(() => {});
   }
 
   /**
    * 记录信息
    */
   info(service: string, operation: string, message: string, data?: any): void {
-    this.log(LogLevel.INFO, service, operation, message, data);
+    this.log(LogLevel.INFO, service, operation, message, data).catch(() => {});
   }
 
   /**
    * 记录警告
    */
   warn(service: string, operation: string, message: string, data?: any): void {
-    this.log(LogLevel.WARN, service, operation, message, data);
+    this.log(LogLevel.WARN, service, operation, message, data).catch(() => {});
   }
 
   /**
    * 记录错误
    */
   error(service: string, operation: string, message: string, error?: Error, data?: any): void {
-    this.log(LogLevel.ERROR, service, operation, message, data, error);
+    this.log(LogLevel.ERROR, service, operation, message, data, error).catch(() => {});
   }
 
   /**
@@ -80,8 +94,8 @@ export class Logger {
     this.log(level, metrics.service, metrics.operation, message, {
       duration: metrics.duration,
       success: metrics.success,
-      metadata: metrics.metadata
-    }, metrics.error ? new Error(metrics.error) : undefined);
+      metadata: metrics.metadata,
+    }, metrics.error ? new Error(metrics.error) : undefined).catch(() => {});
   }
 
   /**
@@ -95,7 +109,7 @@ export class Logger {
    * 获取指定级别的日志
    */
   getLogsByLevel(level: LogLevel): LogEntry[] {
-    return this.logs.filter(log => log.level === level);
+    return this.logs.filter((log) => log.level === level);
   }
 
   /**
@@ -118,6 +132,7 @@ export class Logger {
   printSummary(): void {
     const summary = this.logs.reduce((acc, log) => {
       acc[log.level] = (acc[log.level] || 0) + 1;
+
       return acc;
     }, {} as Record<string, number>);
 
@@ -127,9 +142,10 @@ export class Logger {
     });
 
     const errors = this.getLogsByLevel(LogLevel.ERROR);
+
     if (errors.length > 0) {
       console.log('\\n=== 错误详情 ===');
-      errors.forEach(error => {
+      errors.forEach((error) => {
         console.log(`[${error.timestamp}] ${error.service}:${error.operation} - ${error.message}`);
         if (error.error) {
           console.log(`  错误: ${error.error}`);
@@ -139,16 +155,18 @@ export class Logger {
   }
 
   /**
-   * 核心日志记录方法
+   * 核心日志记录方法（线程安全版本）
    */
-  private log(
+  private async log(
     level: LogLevel, 
     service: string, 
     operation: string, 
     message: string, 
     data?: any, 
-    error?: Error
-  ): void {
+    error?: Error,
+  ): Promise<void> {
+    if (this.disposed) {return;}
+    
     // 检查是否应该记录此级别的日志
     if (!this.shouldLog(level)) {
       return;
@@ -165,15 +183,25 @@ export class Logger {
       duration: data?.duration,
     };
 
-    this.logs.push(logEntry);
+    // 使用简单的锁机制避免并发问题
+    while (this.logLock) {
+      await new Promise((resolve) => setTimeout(resolve, 1));
+    }
+    
+    this.logLock = true;
+    try {
+      this.logs.push(logEntry);
 
-    // 保持最近5000条记录
-    if (this.logs.length > 5000) {
-      this.logs = this.logs.slice(-5000);
+      // 使用循环缓冲区策略，避免频繁创建新数组
+      if (this.logs.length > this.maxLogSize) {
+        this.logs.splice(0, this.logs.length - this.maxLogSize);
+      }
+    } finally {
+      this.logLock = false;
     }
 
-    // 输出到控制台
-    this.printToConsole(logEntry);
+    // 异步输出到控制台，避免阻塞
+    setImmediate(() => this.printToConsole(logEntry));
   }
 
   /**
@@ -183,33 +211,44 @@ export class Logger {
     const levels = [LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR];
     const currentLevelIndex = levels.indexOf(this.logLevel);
     const targetLevelIndex = levels.indexOf(level);
+
     return targetLevelIndex >= currentLevelIndex;
   }
 
   /**
-   * 清理敏感数据
+   * 清理敏感数据（优化版）
    */
   private sanitizeData(data: any): any {
-    if (!data) return data;
+    if (!data) {return data;}
     
-    const sanitized = JSON.parse(JSON.stringify(data));
+    // 对于简单类型，直接返回
+    if (typeof data !== 'object') {return data;}
     
-    // 移除或遮蔽敏感字段
-    const sensitiveFields = ['api_key', 'apiKey', 'password', 'token', 'secret'];
+    // 使用更高效的方法进行浅拷贝
+    const sanitized = Array.isArray(data) ? [...data] : { ...data };
     
-    const sanitizeObject = (obj: any): void => {
-      if (typeof obj !== 'object' || obj === null) return;
+    const sanitizeObject = (obj: any, depth: number = 0): void => {
+      // 限制递归深度，防止栈溢出
+      if (depth > 10 || typeof obj !== 'object' || obj === null) {return;}
       
-      Object.keys(obj).forEach(key => {
-        if (sensitiveFields.some(field => key.toLowerCase().includes(field))) {
+      Object.keys(obj).forEach((key) => {
+        // 使用预编译的正则表达式检查敏感字段
+        if (this.sensitivePatterns.some((pattern) => pattern.test(key))) {
           obj[key] = '***MASKED***';
         } else if (typeof obj[key] === 'object') {
-          sanitizeObject(obj[key]);
+          // 对于嵌套对象，创建新的副本
+          if (Array.isArray(obj[key])) {
+            obj[key] = [...obj[key]];
+          } else {
+            obj[key] = { ...obj[key] };
+          }
+          sanitizeObject(obj[key], depth + 1);
         }
       });
     };
     
     sanitizeObject(sanitized);
+
     return sanitized;
   }
 
@@ -234,9 +273,17 @@ export class Logger {
         console.log(`${prefix} - ${logEntry.message}`);
     }
   }
+
+  /**
+   * 销毁日志器，释放资源
+   */
+  dispose(): void {
+    this.disposed = true;
+    this.logs = [];
+  }
 }
 
 // 创建全局日志实例
 export const logger = new Logger(
-  (process.env.LOG_LEVEL as LogLevel) || LogLevel.INFO
+  (process.env.LOG_LEVEL as LogLevel) || LogLevel.INFO,
 );

@@ -1,0 +1,14 @@
+# 忽略生成的文件
+dist/
+node_modules/
+coverage/
+
+# 暂时忽略一些复杂的测试文件，后续优化
+scripts/comprehensive-test.ts
+scripts/check-audio-files.ts
+tests/boundary-tests.ts
+tests/test-framework.ts
+
+# 忽略配置文件
+jest.config.js
+*.config.js

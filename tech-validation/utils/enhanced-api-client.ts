@@ -1,5 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
+
 import { ApiError, ServiceConfig, PerformanceMetrics } from '../interfaces/api-types';
+
 import { CircuitBreaker, CircuitBreakerConfig } from './circuit-breaker';
 import { logger } from './logger';
 
@@ -35,7 +37,7 @@ export class EnhancedApiClient {
   private requestQueue: QueuedRequest[] = [];
   private requestCounts = {
     minute: { count: 0, resetTime: Date.now() + 60000 },
-    hour: { count: 0, resetTime: Date.now() + 3600000 }
+    hour: { count: 0, resetTime: Date.now() + 3600000 },
   };
 
   constructor(config: EnhancedServiceConfig) {
@@ -47,8 +49,8 @@ export class EnhancedApiClient {
         failureThreshold: 5,
         resetTimeout: 60000,
         monitoringPeriod: 30000,
-        requestTimeout: config.timeout
-      }
+        requestTimeout: config.timeout,
+      },
     );
 
     // 创建axios实例
@@ -74,15 +76,17 @@ export class EnhancedApiClient {
         config.metadata = { startTime: Date.now() };
         // 添加请求ID
         config.headers['X-Request-ID'] = this.generateRequestId();
+
         return config;
       },
-      (error) => Promise.reject(error)
+      (error) => Promise.reject(error),
     );
 
     // 响应拦截器
     this.client.interceptors.response.use(
       (response) => {
         this.recordMetrics(response, true);
+
         return response;
       },
       async (error: AxiosError) => {
@@ -92,8 +96,9 @@ export class EnhancedApiClient {
         }
         
         this.recordMetrics(error.response || error, false, error);
+
         return Promise.reject(this.transformError(error));
-      }
+      },
     );
   }
 
@@ -102,7 +107,7 @@ export class EnhancedApiClient {
    */
   async requestWithProtection<T>(
     requestFn: () => Promise<AxiosResponse<T>>,
-    operation: string
+    operation: string,
   ): Promise<T> {
     // 检查限流
     await this.checkRateLimit();
@@ -111,9 +116,10 @@ export class EnhancedApiClient {
     return this.circuitBreaker.execute(
       async () => {
         const response = await this.requestWithRetry(requestFn, operation);
+
         return response;
       },
-      operation
+      operation,
     );
   }
 
@@ -122,17 +128,18 @@ export class EnhancedApiClient {
    */
   private async requestWithRetry<T>(
     requestFn: () => Promise<AxiosResponse<T>>,
-    operation: string
+    operation: string,
   ): Promise<T> {
     const maxRetries = this.config.maxRetries || 3;
     const retryDelayBase = this.config.retryDelayBase || 1000;
     
-    let lastError: ApiError;
+    let lastError: ApiError = new Error('No retry attempts were made');
     let attempt = 0;
 
     while (attempt <= maxRetries) {
       try {
         const response = await requestFn();
+
         return response.data;
       } catch (error) {
         lastError = error as ApiError;
@@ -152,8 +159,8 @@ export class EnhancedApiClient {
           { 
             error: lastError.message,
             statusCode: lastError.status,
-            attempt: attempt + 1
-          }
+            attempt: attempt + 1,
+          },
         );
         
         await this.delay(delay);
@@ -161,7 +168,7 @@ export class EnhancedApiClient {
       }
     }
 
-    throw lastError!;
+    throw lastError instanceof Error ? lastError : new Error(String(lastError));
   }
 
   /**
@@ -169,14 +176,17 @@ export class EnhancedApiClient {
    */
   private async handleRetryableError(error: AxiosError): Promise<any> {
     const config = error.config;
+
     if (!config || !(config as any).metadata) {
       throw error;
     }
 
     // 实现智能重试逻辑
     const retryAfter = this.getRetryAfterHeader(error.response);
+
     if (retryAfter) {
       await this.delay(retryAfter * 1000);
+
       return this.client.request(config);
     }
 
@@ -187,7 +197,7 @@ export class EnhancedApiClient {
    * 检查限流
    */
   private async checkRateLimit(): Promise<void> {
-    if (!this.config.rateLimitConfig) return;
+    if (!this.config.rateLimitConfig) {return;}
 
     const now = Date.now();
     
@@ -204,11 +214,13 @@ export class EnhancedApiClient {
     
     if (this.requestCounts.minute.count >= maxRequestsPerMinute) {
       const waitTime = this.requestCounts.minute.resetTime - now;
+
       throw new Error(`限流：每分钟请求超限，请等待 ${Math.ceil(waitTime / 1000)} 秒`);
     }
     
     if (this.requestCounts.hour.count >= maxRequestsPerHour) {
       const waitTime = this.requestCounts.hour.resetTime - now;
+
       throw new Error(`限流：每小时请求超限，请等待 ${Math.ceil(waitTime / 60000)} 分钟`);
     }
 
@@ -225,6 +237,7 @@ export class EnhancedApiClient {
     const exponentialDelay = baseDelay * Math.pow(2, attempt);
     // 添加抖动（0.5x 到 1.5x）
     const jitter = 0.5 + Math.random();
+
     return Math.min(exponentialDelay * jitter, 30000); // 最大延迟30秒
   }
 
@@ -232,13 +245,15 @@ export class EnhancedApiClient {
    * 从响应头获取重试延迟时间
    */
   private getRetryAfterHeader(response?: AxiosResponse): number | null {
-    if (!response || !response.headers) return null;
+    if (!response || !response.headers) {return null;}
     
     const retryAfter = response.headers['retry-after'];
-    if (!retryAfter) return null;
+
+    if (!retryAfter) {return null;}
     
     // 如果是数字，表示秒数
     const seconds = parseInt(retryAfter, 10);
+
     return isNaN(seconds) ? null : seconds;
   }
 
@@ -250,6 +265,7 @@ export class EnhancedApiClient {
     if (error.response?.status === 429) {
       return true;
     }
+
     return false;
   }
 
@@ -259,7 +275,7 @@ export class EnhancedApiClient {
   async get<T>(url: string, params?: any): Promise<T> {
     return this.requestWithProtection(
       () => this.client.get<T>(url, { params }),
-      `GET ${url}`
+      `GET ${url}`,
     );
   }
 
@@ -269,7 +285,7 @@ export class EnhancedApiClient {
   async post<T>(url: string, data?: any, config?: any): Promise<T> {
     return this.requestWithProtection(
       () => this.client.post<T>(url, data, config),
-      `POST ${url}`
+      `POST ${url}`,
     );
   }
 
@@ -279,7 +295,7 @@ export class EnhancedApiClient {
   async put<T>(url: string, data?: any): Promise<T> {
     return this.requestWithProtection(
       () => this.client.put<T>(url, data),
-      `PUT ${url}`
+      `PUT ${url}`,
     );
   }
 
@@ -289,7 +305,7 @@ export class EnhancedApiClient {
   async delete<T>(url: string): Promise<T> {
     return this.requestWithProtection(
       () => this.client.delete<T>(url),
-      `DELETE ${url}`
+      `DELETE ${url}`,
     );
   }
 
@@ -302,16 +318,18 @@ export class EnhancedApiClient {
       const healthCheckClient = axios.create({
         baseURL: this.config.baseUrl,
         timeout: 5000,
-        headers: this.client.defaults.headers
+        headers: this.client.defaults.headers,
       });
 
       await healthCheckClient.get(endpoint);
       logger.info('EnhancedApiClient', 'healthCheck', '健康检查通过');
+
       return true;
     } catch (error) {
       logger.warn('EnhancedApiClient', 'healthCheck', '健康检查失败', { 
-        error: (error as Error).message 
+        error: (error as Error).message, 
       });
+
       return false;
     }
   }
@@ -366,7 +384,7 @@ export class EnhancedApiClient {
       error.response?.data?.message || 
       error.response?.data?.error || 
       error.message || 
-      '请求失败'
+      '请求失败',
     ) as ApiError;
     
     apiError.code = error.code || error.response?.data?.code;
@@ -379,7 +397,7 @@ export class EnhancedApiClient {
       (apiError as any).requestInfo = {
         method: error.config.method,
         url: error.config.url,
-        baseURL: error.config.baseURL
+        baseURL: error.config.baseURL,
       };
     }
     
@@ -392,7 +410,7 @@ export class EnhancedApiClient {
   private recordMetrics(
     response: AxiosResponse | any,
     success: boolean,
-    error?: Error
+    error?: Error,
   ): void {
     const config = response?.config || response;
     const startTime = config.metadata?.startTime || Date.now();
@@ -412,7 +430,7 @@ export class EnhancedApiClient {
         method: config.method,
         url: config.url,
         circuitBreakerState: this.circuitBreaker.getState(),
-        retryCount: config.metadata?.retryCount || 0
+        retryCount: config.metadata?.retryCount || 0,
       },
     };
 
@@ -428,7 +446,7 @@ export class EnhancedApiClient {
       logger.warn('EnhancedApiClient', 'recordMetrics', '检测到慢请求', {
         duration: metric.duration,
         operation: metric.operation,
-        status: metric.metadata?.status
+        status: metric.metadata?.status,
       });
     }
   }
@@ -444,6 +462,6 @@ export class EnhancedApiClient {
    * 延迟函数
    */
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

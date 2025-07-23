@@ -2,13 +2,14 @@
 
 import fs from 'fs';
 import path from 'path';
+
 import { Config } from '../utils/config';
 import { logger } from '../utils/logger';
 
 /**
  * 检查测试音频文件
  */
-async function checkAudioFiles() {
+function checkAudioFiles(): boolean {
   console.log('\\n=== 测试音频文件检查 ===\\n');
   
   const testConfig = Config.getTestConfig();
@@ -39,7 +40,7 @@ async function checkAudioFiles() {
       
     } catch (error) {
       console.log(`❌ ${file.name}: ${fullPath}`);
-      console.log(`   错误: 文件不存在或无法访问`);
+      console.log('   错误: 文件不存在或无法访问');
       
       logger.error('AudioFileCheck', 'check', `${file.name}文件检查失败`, error as Error, {
         path: fullPath,
@@ -60,7 +61,7 @@ async function checkAudioFiles() {
     console.log('⚠️  部分音频文件缺失，请参考 test-data/README.md 准备文件');
     
     console.log('\\n📋 需要准备的文件:');
-    audioFiles.forEach(file => {
+    audioFiles.forEach((file) => {
       console.log(`  - ${path.basename(file.path)} (${file.name})`);
     });
     
@@ -77,9 +78,10 @@ async function checkAudioFiles() {
     'test-data',
   ];
 
-  requiredDirs.forEach(dir => {
+  requiredDirs.forEach((dir) => {
     const dirPath = path.join(projectRoot, dir);
     const exists = fs.existsSync(dirPath);
+    
     console.log(`${exists ? '✅' : '❌'} ${dir}/`);
   });
 
@@ -91,7 +93,11 @@ async function checkAudioFiles() {
 
 // 如果直接运行此文件，执行检查
 if (require.main === module) {
-  checkAudioFiles().catch(console.error);
+  try {
+    checkAudioFiles();
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 export { checkAudioFiles };

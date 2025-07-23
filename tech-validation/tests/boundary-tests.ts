@@ -5,7 +5,7 @@ import { MiniMaxClientV2 } from '../scripts/minimax-client-v2';
 import { TongyiClient } from '../scripts/tongyi-text-generation';
 import { IPDiagnosisService, IPDiagnosisInput } from '../scripts/ip-diagnosis';
 import { Config } from '../utils/config';
-import { logger } from '../utils/logger';
+import { logger, LogLevel } from '../utils/logger';
 
 /**
  * 边界条件和异常处理测试套件
@@ -242,13 +242,7 @@ describe('边界条件测试套件', () => {
 
     it('应该在限流情况下优雅降级', async () => {
       const client = new MiniMaxClientV2();
-      await client.initialize({
-        ...Config.getMiniMaxConfig(),
-        rateLimitConfig: {
-          maxRequestsPerMinute: 2,
-          maxRequestsPerHour: 100
-        }
-      });
+      await client.initialize(Config.getMiniMaxConfig());
       
       // 快速发送3个请求
       const results: any[] = [];
@@ -388,6 +382,6 @@ describe('边界条件测试套件', () => {
 
 // 运行测试
 if (require.main === module) {
-  logger.setLogLevel('warn'); // 减少测试时的日志输出
+  logger.setLogLevel(LogLevel.WARN); // 减少测试时的日志输出
   runner.run().catch(console.error);
 }

@@ -1,13 +1,14 @@
 #!/usr/bin/env ts-node
 
 import FormData from 'form-data';
+
 import { 
   AIServiceClient, 
   ServiceConfig, 
   SpeechToTextRequest, 
   SpeechToTextResponse,
   TextGenerationRequest,
-  TextGenerationResponse
+  TextGenerationResponse,
 } from '../interfaces/api-types';
 import { ApiClient } from '../utils/api-client';
 import { logger } from '../utils/logger';
@@ -29,7 +30,7 @@ export class MiniMaxClient implements AIServiceClient {
     this.apiClient = new ApiClient(config);
     logger.info(this.name, 'initialize', '客户端初始化完成', { 
       baseUrl: config.baseUrl,
-      timeout: config.timeout 
+      timeout: config.timeout, 
     });
   }
 
@@ -45,9 +46,11 @@ export class MiniMaxClient implements AIServiceClient {
       await this.apiClient.get('/v1/models');
       
       logger.info(this.name, 'healthCheck', '健康检查通过');
+
       return true;
     } catch (error) {
       logger.error(this.name, 'healthCheck', '健康检查失败', error as Error);
+
       return false;
     }
   }
@@ -84,6 +87,7 @@ export class MiniMaxClient implements AIServiceClient {
     try {
       // 创建FormData用于文件上传
       const formData = new FormData();
+
       formData.append('audio', request.audioFile!, {
         filename: `audio.${request.format || 'mp3'}`,
         contentType: `audio/${request.format || 'mp3'}`,
@@ -145,7 +149,7 @@ export class MiniMaxClient implements AIServiceClient {
       const result: SpeechToTextResponse = {
         text: responseData.text || responseData.transcription || responseData.result || '转录失败',
         confidence: responseData.confidence,
-        duration: duration,
+        duration,
         language: responseData.language || request.language,
       };
 
@@ -159,11 +163,13 @@ export class MiniMaxClient implements AIServiceClient {
 
     } catch (error: any) {
       const duration = Date.now() - startTime;
+
       logger.error(this.name, 'speechToTextWithFile', '语音转文字处理失败', error, { duration });
       
       // 如果是MiniMax不支持STT，返回模拟响应用于测试
       if (error.status === 404 || error.message?.includes('not found')) {
         logger.warn(this.name, 'speechToTextWithFile', 'MiniMax可能不支持STT，返回模拟响应');
+
         return {
           text: '[模拟] 这是一个语音转文字的测试结果，实际MiniMax可能主要支持TTS功能',
           confidence: 0.8,
@@ -197,7 +203,7 @@ export class MiniMaxClient implements AIServiceClient {
       const result: SpeechToTextResponse = {
         text: responseData.text || responseData.transcription || responseData.result || '转录失败',
         confidence: responseData.confidence,
-        duration: duration,
+        duration,
         language: responseData.language || request.language,
       };
 
@@ -211,11 +217,13 @@ export class MiniMaxClient implements AIServiceClient {
 
     } catch (error: any) {
       const duration = Date.now() - startTime;
+
       logger.error(this.name, 'speechToTextWithUrl', '语音转文字处理失败', error, { duration });
       
       // 如果是MiniMax不支持STT，返回模拟响应
       if (error.status === 404) {
         logger.warn(this.name, 'speechToTextWithUrl', 'MiniMax可能不支持STT，返回模拟响应');
+
         return {
           text: '[模拟] 通过URL的语音转文字测试结果，实际MiniMax主要支持TTS功能',
           confidence: 0.8,
@@ -243,7 +251,7 @@ export class MiniMaxClient implements AIServiceClient {
           {
             role: 'user',
             content: request.prompt,
-          }
+          },
         ],
         max_tokens: request.max_tokens || 1024,
         temperature: request.temperature || 0.7,
@@ -273,6 +281,7 @@ export class MiniMaxClient implements AIServiceClient {
 
     } catch (error: any) {
       const duration = Date.now() - startTime;
+
       logger.error(this.name, 'generateText', '文本生成失败', error, { duration });
       throw error;
     }
@@ -290,19 +299,23 @@ async function testMiniMax() {
     Config.printConfigSummary();
     
     const validation = Config.validateEnv();
+
     if (!validation.valid) {
       console.error('\\n❌ 环境变量验证失败，请检查配置');
+
       return;
     }
 
     // 初始化客户端
     const client = new MiniMaxClient();
     const config = Config.getMiniMaxConfig();
+
     await client.initialize(config);
 
     // 健康检查
     console.log('\\n1. 执行健康检查...');
     const isHealthy = await client.healthCheck();
+
     console.log(`健康检查结果: ${isHealthy ? '✅ 通过' : '❌ 失败'}`);
 
     // 测试文本生成（MiniMax的强项）
@@ -315,8 +328,9 @@ async function testMiniMax() {
       };
 
       const textResult = await client.generateText(textRequest);
+
       console.log('✅ 文本生成成功');
-      console.log('生成内容:', textResult.text.substring(0, 100) + '...');
+      console.log('生成内容:', `${textResult.text.substring(0, 100)  }...`);
       console.log('完整内容长度:', textResult.text.length);
     } catch (error: any) {
       console.log('❌ 文本生成失败:', error.message);
@@ -335,10 +349,11 @@ async function testMiniMax() {
       };
 
       const sttResult = await client.speechToText(sttRequest);
+
       console.log('✅ 语音转文字成功 (可能是模拟响应)');
       console.log('转录结果:', sttResult.text);
       console.log('置信度:', sttResult.confidence);
-      console.log('处理时间:', sttResult.duration + 'ms');
+      console.log('处理时间:', `${sttResult.duration  }ms`);
     } catch (error: any) {
       console.log('❌ 语音转文字失败:', error.message);
     }
@@ -346,7 +361,8 @@ async function testMiniMax() {
     // 输出性能指标
     console.log('\\n=== 性能指标 ===');
     const metrics = client['apiClient']?.getMetrics() || [];
-    metrics.forEach(metric => {
+
+    metrics.forEach((metric) => {
       logger.logMetrics(metric);
     });
 

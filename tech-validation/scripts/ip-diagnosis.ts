@@ -1,11 +1,12 @@
 #!/usr/bin/env ts-node
 
 import {
-  TextGenerationRequest
+  TextGenerationRequest,
 } from '../interfaces/api-types';
-import { TongyiClient } from './tongyi-text-generation';
 import { logger } from '../utils/logger';
 import { Config } from '../utils/config';
+
+import { TongyiClient } from './tongyi-text-generation';
 
 /**
  * IP诊断用户信息接口
@@ -95,6 +96,7 @@ export class IPDiagnosisService {
    */
   async initialize(): Promise<void> {
     const config = Config.getTongyiConfig();
+
     await this.tongyiClient.initialize(config);
     logger.info('IPDiagnosisService', 'initialize', 'IP诊断服务初始化完成');
   }
@@ -105,7 +107,7 @@ export class IPDiagnosisService {
   async generateDiagnosisReport(input: IPDiagnosisInput): Promise<IPDiagnosisReport> {
     logger.info('IPDiagnosisService', 'generateDiagnosisReport', '开始生成IP诊断报告', {
       industry: input.industry,
-      profession: input.profession
+      profession: input.profession,
     });
 
     const startTime = Date.now();
@@ -131,22 +133,24 @@ export class IPDiagnosisService {
         businessStandards,
         positioningAndExecution,
         contentTopics,
-        additionalAdvice
+        additionalAdvice,
       };
 
       const duration = Date.now() - startTime;
+
       logger.info('IPDiagnosisService', 'generateDiagnosisReport', 'IP诊断报告生成完成', {
         duration,
-        reportSections: 5
+        reportSections: 5,
       });
 
       return report;
 
     } catch (error) {
       const duration = Date.now() - startTime;
+
       logger.error('IPDiagnosisService', 'generateDiagnosisReport', 'IP诊断报告生成失败', error as Error, {
         duration,
-        industry: input.industry
+        industry: input.industry,
       });
       throw error;
     }
@@ -181,7 +185,7 @@ IP领域个人信息：[简洁概括用户的基本信息]
     const request: TextGenerationRequest = {
       prompt,
       max_tokens: 800,
-      temperature: 0.3 // 较低温度确保专业性
+      temperature: 0.3, // 较低温度确保专业性
     };
 
     const result = await this.tongyiClient.generateText(request);
@@ -193,7 +197,7 @@ IP领域个人信息：[简洁概括用户的基本信息]
       summary: this.extractSection(content, 'IP领域个人信息：') || '基本信息分析',
       targetAudience: this.extractSection(content, '目标受众：') || '目标受众分析',
       audiencePain: this.extractSection(content, '受众痛点：') || '受众痛点分析',
-      businessGoal: this.extractSection(content, '商业目标：') || '商业目标分析'
+      businessGoal: this.extractSection(content, '商业目标：') || '商业目标分析',
     };
   }
 
@@ -205,7 +209,7 @@ IP领域个人信息：[简洁概括用户的基本信息]
       uniqueness: 'IP是独一无二的，生活处处是标准，为啥却更需要为生活',
       coreConsistency: '日更前，一定要核心理念是清晰的。',
       contentQuality: '商业社群中，有受众加微信，且提出了针对业务的问题解答，就是好内容。',
-      valueFirst: '当答不到精准时，跟同行业区别，你的看法态度比率就是解答方法'
+      valueFirst: '当答不到精准时，跟同行业区别，你的看法态度比率就是解答方法',
     };
   }
 
@@ -234,7 +238,7 @@ IP领域个人信息：[简洁概括用户的基本信息]
     const request: TextGenerationRequest = {
       prompt,
       max_tokens: 200,
-      temperature: 0.4
+      temperature: 0.4,
     };
 
     const result = await this.tongyiClient.generateText(request);
@@ -244,7 +248,7 @@ IP领域个人信息：[简洁概括用户的基本信息]
       ipPositioning,
       publishFrequency: '日更，日更，日更',
       contentFormat: '原创为主（搭配账号技术及IP标准积累积累好）',
-      durationAdvice: '30-40秒'
+      durationAdvice: '30-40秒',
     };
   }
 
@@ -274,7 +278,7 @@ IP领域个人信息：[简洁概括用户的基本信息]
     const request: TextGenerationRequest = {
       prompt,
       max_tokens: 1200,
-      temperature: 0.6
+      temperature: 0.6,
     };
 
     const result = await this.tongyiClient.generateText(request);
@@ -288,7 +292,7 @@ IP领域个人信息：[简洁概括用户的基本信息]
       serviceStandards: this.extractTopicSection(content, '4.') || '服务标准话题建议',
       aiIntegration: this.extractTopicSection(content, '5.') || 'AI结合话题建议',
       seasonalTopics: this.extractTopicSection(content, '6.') || '季节营销话题建议',
-      personalLife: this.extractTopicSection(content, '7.') || '生活化内容建议'
+      personalLife: this.extractTopicSection(content, '7.') || '生活化内容建议',
     };
 
     return topics;
@@ -326,7 +330,7 @@ IP领域个人信息：[简洁概括用户的基本信息]
     const request: TextGenerationRequest = {
       prompt,
       max_tokens: 1000,
-      temperature: 0.5
+      temperature: 0.5,
     };
 
     const result = await this.tongyiClient.generateText(request);
@@ -335,7 +339,7 @@ IP领域个人信息：[简洁概括用户的基本信息]
     return {
       contentStrategy: this.extractAdviceSection(content, '1.') || '内容策略建议',
       monetizationSuggestions: this.extractAdviceSection(content, '2.') || '商业变现建议',
-      nextSteps: this.extractAdviceSection(content, '3.') || '下一步行动计划'
+      nextSteps: this.extractAdviceSection(content, '3.') || '下一步行动计划',
     };
   }
 
@@ -415,6 +419,7 @@ ${report.additionalAdvice.nextSteps}
   private extractSection(content: string, sectionName: string): string {
     const regex = new RegExp(`${sectionName}\\s*([^\\n]*(?:\\n(?!\\w+：)[^\\n]*)*)`, 'i');
     const match = content.match(regex);
+
     return match ? match[1].trim() : '';
   }
 
@@ -424,6 +429,7 @@ ${report.additionalAdvice.nextSteps}
   private extractTopicSection(content: string, prefix: string): string {
     const regex = new RegExp(`${prefix}[^\\d\\.]*?(?=\\d+\\.|$)`, 's');
     const match = content.match(regex);
+
     return match ? match[0].replace(prefix, '').trim() : '';
   }
 
@@ -433,6 +439,7 @@ ${report.additionalAdvice.nextSteps}
   private extractAdviceSection(content: string, prefix: string): string {
     const regex = new RegExp(`${prefix}[^\\d\\.]*?(?=\\d+\\.|$)`, 's');
     const match = content.match(regex);
+
     return match ? match[0].replace(prefix, '').trim() : '';
   }
 }
@@ -446,6 +453,7 @@ async function testIPDiagnosis() {
   try {
     // 初始化服务
     const ipService = new IPDiagnosisService();
+
     await ipService.initialize();
 
     // 准备测试数据
@@ -462,7 +470,7 @@ async function testIPDiagnosis() {
       contentFrequency: '每周2-3次',
       currentChallenges: '不知道如何持续输出有价值的内容',
       currentBusiness: '兼职做营销咨询',
-      targetRevenue: '年收入100万'
+      targetRevenue: '年收入100万',
     };
 
     console.log('1. 测试数据准备完成');
@@ -485,14 +493,15 @@ async function testIPDiagnosis() {
       { section: '选题方向建议', valid: !!report.contentTopics.competitiveTopics },
       { section: '内容策略建议', valid: !!report.additionalAdvice.contentStrategy },
       { section: '商业变现建议', valid: !!report.additionalAdvice.monetizationSuggestions },
-      { section: '行动计划建议', valid: !!report.additionalAdvice.nextSteps }
+      { section: '行动计划建议', valid: !!report.additionalAdvice.nextSteps },
     ];
 
-    validationResults.forEach(result => {
+    validationResults.forEach((result) => {
       console.log(`   ${result.valid ? '✅' : '❌'} ${result.section}`);
     });
 
-    const allValid = validationResults.every(r => r.valid);
+    const allValid = validationResults.every((r) => r.valid);
+
     console.log(`\\n报告完整性验证: ${allValid ? '✅ 通过' : '❌ 失败'}`);
 
     console.log('\\n4. 输出格式化报告预览...');
@@ -500,7 +509,7 @@ async function testIPDiagnosis() {
     
     // 显示报告的前500字符作为预览
     console.log('\\n--- 报告预览 ---');
-    console.log(formattedReport.substring(0, 500) + '...');
+    console.log(`${formattedReport.substring(0, 500)  }...`);
     console.log(`\\n完整报告长度: ${formattedReport.length} 字符`);
 
     console.log('\\n5. IP定位核心结果:');
@@ -509,7 +518,8 @@ async function testIPDiagnosis() {
     // 输出性能指标
     console.log('\\n=== 性能指标 ===');
     const metrics = ipService['tongyiClient']['apiClient']?.getMetrics() || [];
-    metrics.forEach(metric => {
+
+    metrics.forEach((metric) => {
       logger.logMetrics(metric);
     });
 
