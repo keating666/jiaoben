@@ -93,12 +93,24 @@ describe('Config 工具测试', () => {
   });
 
   it('应该正确获取通义千问配置', () => {
-    // 由于环境变量已设置，直接测试返回的配置结构
-    const config = Config.getTongyiConfig();
+    // 设置测试环境变量
+    const originalApiKey = process.env.TONGYI_API_KEY;
+    process.env.TONGYI_API_KEY = 'sk-test-key-123456';
+    
+    try {
+      const config = Config.getTongyiConfig();
 
-    expect(config.apiKey).toBeDefined();
-    expect(config.apiKey).toMatch(/^sk-/); // 通义千问 API key 格式
-    expect(config.baseUrl).toBeDefined();
-    expect(config.baseUrl).toContain('dashscope');
+      expect(config.apiKey).toBeDefined();
+      expect(config.apiKey).toMatch(/^sk-/); // 通义千问 API key 格式
+      expect(config.baseUrl).toBeDefined();
+      expect(config.baseUrl).toContain('dashscope');
+    } finally {
+      // 恢复原始环境变量
+      if (originalApiKey) {
+        process.env.TONGYI_API_KEY = originalApiKey;
+      } else {
+        delete process.env.TONGYI_API_KEY;
+      }
+    }
   });
 });
