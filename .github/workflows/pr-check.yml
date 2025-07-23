@@ -41,6 +41,9 @@ jobs:
   coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     
     steps:
     - name: Checkout code
@@ -68,25 +71,33 @@ jobs:
         file: ./tech-validation/coverage/lcov.info
         flags: unittests
         name: codecov-umbrella
+        fail_ci_if_error: false
+        token: ${{ secrets.CODECOV_TOKEN }}
         
     - name: Comment PR with coverage
       uses: actions/github-script@v7
-      if: always()
+      if: always() && github.event_name == 'pull_request'
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
-          const coverage = '85%'; // This should be parsed from actual coverage report
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: `📊 Code Coverage: ${coverage}`
-          })
+          try {
+            const coverage = '85%'; // This should be parsed from actual coverage report
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `📊 Code Coverage: ${coverage}`
+            })
+          } catch (error) {
+            console.log('Unable to comment on PR:', error.message);
+          }
           
   # 依赖检查
   dependency-review:
     name: Dependency Review
     runs-on: ubuntu-latest
+    # 只在公共仓库或启用了 Advanced Security 的私有仓库运行
+    if: github.event.repository.visibility == 'public' || github.event.repository.private == false
     
     steps:
     - name: Checkout code
@@ -130,8 +141,12 @@ jobs:
   pr-comment:
     name: PR Auto Comment
     runs-on: ubuntu-latest
-    needs: [pr-labeler, coverage, dependency-review]
-    if: always()
+    needs: [pr-labeler, coverage]
+    if: always() && github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
     
     steps:
     - name: Comment PR with checklist
