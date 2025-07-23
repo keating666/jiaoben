@@ -4,11 +4,5 @@
     "api/index.js": {
       "maxDuration": 10
     }
-  },
-  "github": {
-    "enabled": true,
-    "autoAlias": true
-  },
-  "installCommand": "npm run install:all",
-  "buildCommand": "npm run build"
+  }
 }
