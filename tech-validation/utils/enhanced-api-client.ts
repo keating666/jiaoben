@@ -133,7 +133,7 @@ export class EnhancedApiClient {
     const maxRetries = this.config.maxRetries || 3;
     const retryDelayBase = this.config.retryDelayBase || 1000;
     
-    let lastError: ApiError;
+    let lastError: ApiError = new Error('No retry attempts were made');
     let attempt = 0;
 
     while (attempt <= maxRetries) {
