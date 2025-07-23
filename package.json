@@ -14,9 +14,6 @@
     "typecheck": "cd tech-validation && npm run typecheck",
     "verify-build": "ls -la api/ && ls -la tech-validation/dist/"
   },
-  "workspaces": [
-    "tech-validation"
-  ],
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=8.0.0"

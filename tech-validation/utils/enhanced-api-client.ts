@@ -169,7 +169,7 @@ export class EnhancedApiClient {
    */
   private async handleRetryableError(error: AxiosError): Promise<any> {
     const config = error.config;
-    if (!config || !config.metadata) {
+    if (!config || !(config as any).metadata) {
       throw error;
     }
 
