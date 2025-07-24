@@ -106,8 +106,8 @@ function createVideoError(code: string, message: string, details?: any): VideoPr
 }
 
 // 导入安全验证器
-import { SecurityValidator } from '../../tech-validation/utils/security-validator';
-import { ConcurrencyController } from '../../tech-validation/utils/concurrency-controller';
+import { SecurityValidator } from '../tech-validation/utils/security-validator';
+import { ConcurrencyController } from '../tech-validation/utils/concurrency-controller';
 
 // 创建全局并发控制器（限制 3 个并发请求）
 const concurrencyController = new ConcurrencyController(3);
@@ -157,19 +157,19 @@ export default async function handler(
     // 如果提供了混合文本，先提取链接
     if (mixedText && !video_url) {
       // 首先尝试使用专门的抖音链接提取器
-      const { DouyinLinkExtractor } = await import('../../tech-validation/utils/douyin-link-extractor');
+      const { DouyinLinkExtractor } = await import('../tech-validation/utils/douyin-link-extractor');
       let extracted = DouyinLinkExtractor.extractDouyinLink(mixedText);
       
       // 如果不是抖音链接，使用通用链接提取器
       if (!extracted) {
-        const { LinkExtractor } = await import('../../tech-validation/utils/link-extractor');
+        const { LinkExtractor } = await import('../tech-validation/utils/link-extractor');
         extracted = LinkExtractor.extractVideoLink(mixedText);
       }
       
       // 如果正则提取失败，尝试使用 AI
       if (!extracted) {
         console.log('正则提取失败，尝试使用 AI 提取链接...');
-        const { AILinkExtractor } = await import('../../tech-validation/utils/ai-link-extractor');
+        const { AILinkExtractor } = await import('../tech-validation/utils/ai-link-extractor');
         const aiExtractor = new AILinkExtractor();
         
         try {
@@ -190,7 +190,7 @@ export default async function handler(
       if (extracted.platform === 'douyin') {
         video_url = DouyinLinkExtractor.normalizeUrl(extracted.url);
       } else {
-        const { LinkExtractor } = await import('../../tech-validation/utils/link-extractor');
+        const { LinkExtractor } = await import('../tech-validation/utils/link-extractor');
         video_url = LinkExtractor.cleanUrl(extracted.url);
       }
       console.log(`📎 从混合文本中提取链接: ${extracted.platform} - ${video_url}`);
@@ -225,7 +225,7 @@ export default async function handler(
     // 使用并发控制器执行处理
     const processingResult = await concurrencyController.execute(sessionId, async () => {
       // 导入视频处理器（使用动态导入避免路径问题）
-      const { VideoProcessor } = await import('../../tech-validation/utils/video-processor');
+      const { VideoProcessor } = await import('../tech-validation/utils/video-processor');
       
       try {
       // 第一阶段：处理视频（下载 + 提取音频）
@@ -237,7 +237,7 @@ export default async function handler(
       
       // 第二阶段：音频转文字
       tracker.startStage('audio_transcription');
-      const { AudioTranscriber } = await import('../../tech-validation/utils/audio-transcriber');
+      const { AudioTranscriber } = await import('../tech-validation/utils/audio-transcriber');
       
       const transcriber = new AudioTranscriber();
       const transcriptionResult = await transcriber.transcribeAudioFile(audioPath);
@@ -251,7 +251,7 @@ export default async function handler(
       
       // 第三阶段：生成分镜头脚本
       tracker.startStage('script_generation');
-      const { ScriptGenerator } = await import('../../tech-validation/utils/script-generator');
+      const { ScriptGenerator } = await import('../tech-validation/utils/script-generator');
       
       const scriptGenerator = new ScriptGenerator();
       const scriptResult = await scriptGenerator.generateScript(transcriptionResult.text, {
