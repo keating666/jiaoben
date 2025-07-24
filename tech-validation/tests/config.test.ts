@@ -95,6 +95,7 @@ describe('Config 工具测试', () => {
   it('应该正确获取通义千问配置', () => {
     // 设置测试环境变量
     const originalApiKey = process.env.TONGYI_API_KEY;
+
     process.env.TONGYI_API_KEY = 'sk-test-key-123456';
     
     try {

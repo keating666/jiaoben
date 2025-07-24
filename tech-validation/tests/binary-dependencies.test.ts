@@ -1,6 +1,7 @@
-import { describe, it, expect } from '@jest/globals';
 import { existsSync } from 'fs';
 import { join } from 'path';
+
+import { describe, it, expect } from '@jest/globals';
 
 describe('Binary Dependencies', () => {
   const binDir = join(__dirname, '..', '..', 'bin');
@@ -25,7 +26,9 @@ describe('Binary Dependencies', () => {
 
   it('should have ffmpeg available through npm package', () => {
     try {
+      // @ts-expect-error Dynamic require for optional dependency
       const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
+
       expect(typeof ffmpegPath).toBe('string');
       expect(ffmpegPath.length).toBeGreaterThan(0);
     } catch (error) {
@@ -47,13 +50,13 @@ describe('Binary Dependencies', () => {
     const successStatus: BinaryStatus = {
       available: true,
       path: '/path/to/binary',
-      version: '1.0.0'
+      version: '1.0.0',
     };
 
     // 模拟失败状态
     const failureStatus: BinaryStatus = {
       available: false,
-      error: 'Binary not found'
+      error: 'Binary not found',
     };
 
     expect(successStatus.available).toBe(true);
@@ -68,6 +71,7 @@ describe('Binary Dependencies', () => {
     const platform = process.platform;
     
     let expectedYtDlpName: string;
+
     if (platform === 'win32') {
       expectedYtDlpName = 'yt-dlp.exe';
     } else {
@@ -78,6 +82,7 @@ describe('Binary Dependencies', () => {
     
     // 验证路径构建逻辑
     const ytDlpPath = join(binDir, expectedYtDlpName);
+
     expect(ytDlpPath).toContain(expectedYtDlpName);
   });
 

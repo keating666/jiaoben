@@ -24,7 +24,7 @@ export class ConcurrencyController {
    */
   async execute<T>(
     sessionId: string,
-    operation: () => Promise<T>
+    operation: () => Promise<T>,
   ): Promise<T> {
     // 如果已达到并发限制，加入队列等待
     if (this.activeRequests.size >= this.maxConcurrent) {
@@ -39,7 +39,7 @@ export class ConcurrencyController {
   
   private async executeOperation<T>(
     sessionId: string,
-    operation: () => Promise<T>
+    operation: () => Promise<T>,
   ): Promise<T> {
     const promise = operation().finally(() => {
       // 操作完成后，从活跃列表中移除
@@ -50,6 +50,7 @@ export class ConcurrencyController {
     });
     
     this.activeRequests.set(sessionId, promise);
+
     return promise;
   }
   
@@ -59,10 +60,12 @@ export class ConcurrencyController {
     }
     
     const next = this.queue.shift();
-    if (!next) return;
+
+    if (!next) {return;}
     
     try {
       const result = await this.executeOperation(next.sessionId, next.operation);
+
       next.resolve(result);
     } catch (error) {
       next.reject(error);
@@ -94,12 +97,16 @@ export class ConcurrencyController {
    * 取消队列中的请求（不会取消正在执行的请求）
    */
   cancelQueued(sessionId: string): boolean {
-    const index = this.queue.findIndex(item => item.sessionId === sessionId);
+    const index = this.queue.findIndex((item) => item.sessionId === sessionId);
+
     if (index !== -1) {
       const [cancelled] = this.queue.splice(index, 1);
+
       cancelled.reject(new Error('Request cancelled'));
+
       return true;
     }
+
     return false;
   }
   
@@ -118,7 +125,7 @@ export class ConcurrencyController {
       activeCount: this.activeRequests.size,
       queueLength: this.queue.length,
       activeSessions: Array.from(this.activeRequests.keys()),
-      queuedSessions: this.queue.map(item => item.sessionId)
+      queuedSessions: this.queue.map((item) => item.sessionId),
     };
   }
 }

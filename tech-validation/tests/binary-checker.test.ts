@@ -1,4 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
+
 import { BinaryChecker } from '../utils/binary-checker';
 
 describe('BinaryChecker', () => {
@@ -55,7 +56,7 @@ describe('BinaryChecker', () => {
     
     // 不管二进制文件是否存在，都应该返回有效的状态对象
     expect(status).toMatchObject({
-      available: expect.any(Boolean)
+      available: expect.any(Boolean),
     });
     
     if (!status.available) {
@@ -70,12 +71,12 @@ describe('BinaryChecker', () => {
     const validSuccessStatus = {
       available: true,
       path: '/path/to/binary',
-      version: '1.0.0'
+      version: '1.0.0',
     };
 
     const validErrorStatus = {
       available: false,
-      error: 'Binary not found'
+      error: 'Binary not found',
     };
 
     // 验证成功状态

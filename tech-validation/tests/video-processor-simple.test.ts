@@ -13,7 +13,7 @@ describe('VideoProcessor - Basic Structure', () => {
       duration: 30,
       title: 'Test Video',
       format: 'mp4',
-      url: 'https://example.com/video.mp4'
+      url: 'https://example.com/video.mp4',
     };
 
     expect(metadata.duration).toBe(30);
@@ -30,14 +30,16 @@ describe('VideoProcessor - Basic Structure', () => {
 
     function createError(code: string, message: string, details?: any): VideoProcessingError {
       const error = new Error(message) as VideoProcessingError;
+
       error.code = code;
       error.details = details;
+
       return error;
     }
 
     const error = createError('VIDEO_TOO_LONG', '视频时长超过60秒限制', {
       duration: 65,
-      limit: 60
+      limit: 60,
     });
 
     expect(error.code).toBe('VIDEO_TOO_LONG');
@@ -80,10 +82,10 @@ describe('VideoProcessor - Basic Structure', () => {
       'AUDIO_EXTRACTION_FAILED',
       'AUDIO_EXTRACTION_TIMEOUT',
       'NO_AUDIO_STREAM',
-      'BINARY_NOT_AVAILABLE'
+      'BINARY_NOT_AVAILABLE',
     ];
 
-    errorCodes.forEach(code => {
+    errorCodes.forEach((code) => {
       expect(typeof code).toBe('string');
       expect(code.length).toBeGreaterThan(0);
       expect(code).toMatch(/^[A-Z_]+$/); // 验证错误码格式
@@ -98,18 +100,23 @@ describe('VideoProcessor - Basic Structure', () => {
 
     // yt-dlp 元数据命令
     const metadataCommand = `"${ytdlpPath}" --print-json --no-download "${videoUrl}"`;
+
     expect(metadataCommand).toContain('--print-json');
     expect(metadataCommand).toContain('--no-download');
     expect(metadataCommand).toContain(videoUrl);
 
     // yt-dlp 下载命令
-    const downloadCommand = `"${ytdlpPath}" --format "best[ext=mp4]/best" --output "/tmp/${sessionId}.%(ext)s" "${videoUrl}"`;
+    const downloadCommand = 
+      `"${ytdlpPath}" --format "best[ext=mp4]/best" --output "/tmp/${sessionId}.%(ext)s" "${videoUrl}"`;
+
     expect(downloadCommand).toContain('--format');
     expect(downloadCommand).toContain('best[ext=mp4]/best');
     expect(downloadCommand).toContain('/tmp/');
 
     // ffmpeg 音频提取命令
-    const audioCommand = `"${ffmpegPath}" -i "/tmp/${sessionId}.mp4" -vn -acodec mp3 -ab 128k -ar 44100 -y "/tmp/${sessionId}.mp3"`;
+    const audioCommand = 
+      `"${ffmpegPath}" -i "/tmp/${sessionId}.mp4" -vn -acodec mp3 -ab 128k -ar 44100 -y "/tmp/${sessionId}.mp3"`;
+
     expect(audioCommand).toContain('-vn'); // 无视频
     expect(audioCommand).toContain('-acodec mp3'); // MP3 编码
     expect(audioCommand).toContain('-ab 128k'); // 比特率
@@ -124,10 +131,10 @@ describe('VideoProcessor - Basic Structure', () => {
     const patterns = [
       `${tempDir}/${sessionId}.*`,
       `${tempDir}/${sessionId}.mp4`,
-      `${tempDir}/${sessionId}.mp3`
+      `${tempDir}/${sessionId}.mp3`,
     ];
 
-    patterns.forEach(pattern => {
+    patterns.forEach((pattern) => {
       expect(pattern).toContain(sessionId);
       expect(pattern).toContain(tempDir);
     });
@@ -137,10 +144,11 @@ describe('VideoProcessor - Basic Structure', () => {
       'test-session-123.mp4',
       'test-session-123.mp3',
       'test-session-123.webm',
-      'other-file.txt'
+      'other-file.txt',
     ];
 
-    const matchingFiles = files.filter(file => file.startsWith(sessionId));
+    const matchingFiles = files.filter((file) => file.startsWith(sessionId));
+
     expect(matchingFiles).toHaveLength(3);
     expect(matchingFiles).toContain('test-session-123.mp4');
     expect(matchingFiles).toContain('test-session-123.mp3');

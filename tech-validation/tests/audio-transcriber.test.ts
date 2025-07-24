@@ -25,9 +25,9 @@ describe('AudioTranscriber - Basic Structure', () => {
           start: 0,
           end: 1500,
           text: '这是转写的文字内容',
-          confidence: 0.95
-        }
-      ]
+          confidence: 0.95,
+        },
+      ],
     };
 
     expect(result.text).toBe('这是转写的文字内容');
@@ -47,14 +47,16 @@ describe('AudioTranscriber - Basic Structure', () => {
 
     function createError(code: string, message: string, details?: any): AudioTranscriberError {
       const error = new Error(message) as AudioTranscriberError;
+
       error.code = code;
       error.details = details;
+
       return error;
     }
 
     const error = createError('FILE_TOO_LARGE', '音频文件过大', {
       fileSize: 15 * 1024 * 1024,
-      maxSize: 10 * 1024 * 1024
+      maxSize: 10 * 1024 * 1024,
     });
 
     expect(error.code).toBe('FILE_TOO_LARGE');
@@ -96,6 +98,7 @@ describe('AudioTranscriber - Basic Structure', () => {
   it('should validate supported formats', () => {
     function isSupportedFormat(format: string): boolean {
       const supportedFormats = ['mp3', 'wav', 'flac', 'm4a', 'ogg'];
+
       return supportedFormats.includes(format.toLowerCase());
     }
 
@@ -132,10 +135,10 @@ describe('AudioTranscriber - Basic Structure', () => {
       'UNSUPPORTED_FORMAT',
       'INVALID_API_KEY',
       'API_QUOTA_EXCEEDED',
-      'TRANSCRIPTION_FAILED'
+      'TRANSCRIPTION_FAILED',
     ];
 
-    errorCodes.forEach(code => {
+    errorCodes.forEach((code) => {
       expect(typeof code).toBe('string');
       expect(code.length).toBeGreaterThan(0);
       expect(code).toMatch(/^[A-Z_]+$/); // 验证错误码格式
@@ -157,7 +160,7 @@ describe('AudioTranscriber - Basic Structure', () => {
       language: 'zh-CN',
       format: 'mp3',
       enablePunctuation: true,
-      enableWordTimeOffset: false
+      enableWordTimeOffset: false,
     };
 
     expect(request.audioFile).toBeInstanceOf(Buffer);
@@ -179,7 +182,7 @@ describe('AudioTranscriber - Basic Structure', () => {
       initialized: true,
       clientName: 'MiniMax-V2',
       supportedFormats: ['mp3', 'wav', 'flac', 'm4a', 'ogg'],
-      maxFileSize: '10MB'
+      maxFileSize: '10MB',
     };
 
     expect(status.initialized).toBe(true);
@@ -208,19 +211,19 @@ describe('AudioTranscriber - Basic Structure', () => {
         {
           audioPath: '/tmp/audio1.mp3',
           success: true,
-          result: { text: '第一个音频的转写结果' }
+          result: { text: '第一个音频的转写结果' },
         },
         {
           audioPath: '/tmp/audio2.mp3',
           success: true,
-          result: { text: '第二个音频的转写结果' }
+          result: { text: '第二个音频的转写结果' },
         },
         {
           audioPath: '/tmp/audio3.mp3',
           success: false,
-          error: '文件读取失败'
-        }
-      ]
+          error: '文件读取失败',
+        },
+      ],
     };
 
     expect(batchResult.successful).toBe(2);

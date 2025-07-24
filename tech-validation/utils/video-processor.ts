@@ -1,6 +1,7 @@
 import { execSync } from 'child_process';
 import { promises as fs } from 'fs';
 import { join } from 'path';
+
 import { BinaryChecker } from './binary-checker';
 
 export interface VideoMetadata {
@@ -21,8 +22,10 @@ export class VideoProcessor {
 
   private static createError(code: string, message: string, details?: any): VideoProcessingError {
     const error = new Error(message) as VideoProcessingError;
+
     error.code = code;
     error.details = details;
+
     return error;
   }
 
@@ -33,6 +36,7 @@ export class VideoProcessor {
     await BinaryChecker.ensureAvailable();
     
     const status = await BinaryChecker.checkYtDlp();
+
     if (!status.available) {
       throw this.createError('BINARY_NOT_AVAILABLE', 'yt-dlp 不可用', status.error);
     }
@@ -46,7 +50,7 @@ export class VideoProcessor {
       const output = execSync(command, {
         encoding: 'utf8',
         timeout: 10000, // 10 秒超时
-        maxBuffer: 1024 * 1024 // 1MB 缓冲区
+        maxBuffer: 1024 * 1024, // 1MB 缓冲区
       });
 
       const metadata = JSON.parse(output.trim());
@@ -63,7 +67,7 @@ export class VideoProcessor {
         throw this.createError('VIDEO_TOO_LONG', '视频时长超过60秒限制', {
           duration,
           limit: this.MAX_DURATION,
-          video_url: videoUrl
+          video_url: videoUrl,
         });
       }
 
@@ -71,7 +75,7 @@ export class VideoProcessor {
         duration,
         title,
         format,
-        url: videoUrl
+        url: videoUrl,
       };
 
     } catch (error) {
@@ -98,7 +102,7 @@ export class VideoProcessor {
 
       throw this.createError('METADATA_FETCH_FAILED', '获取视频元数据失败', { 
         video_url: videoUrl,
-        error: errorMessage 
+        error: errorMessage, 
       });
     }
   }
@@ -110,6 +114,7 @@ export class VideoProcessor {
     await BinaryChecker.ensureAvailable();
     
     const status = await BinaryChecker.checkYtDlp();
+
     if (!status.available) {
       throw this.createError('BINARY_NOT_AVAILABLE', 'yt-dlp 不可用', status.error);
     }
@@ -126,12 +131,12 @@ export class VideoProcessor {
       execSync(command, {
         encoding: 'utf8',
         timeout: 30000, // 30 秒超时
-        maxBuffer: 10 * 1024 * 1024 // 10MB 缓冲区
+        maxBuffer: 10 * 1024 * 1024, // 10MB 缓冲区
       });
 
       // 检查下载的文件
       const files = await fs.readdir(this.TEMP_DIR);
-      const downloadedFile = files.find(file => file.startsWith(sessionId));
+      const downloadedFile = files.find((file) => file.startsWith(sessionId));
       
       if (!downloadedFile) {
         throw this.createError('DOWNLOAD_FAILED', '视频下载失败，未找到下载的文件');
@@ -146,6 +151,7 @@ export class VideoProcessor {
 
       // 验证文件大小
       const stats = await fs.stat(finalVideoPath);
+
       console.log(`✅ 视频下载成功: ${(stats.size / 1024 / 1024).toFixed(2)}MB`);
 
       return finalVideoPath;
@@ -165,7 +171,7 @@ export class VideoProcessor {
 
       throw this.createError('VIDEO_DOWNLOAD_FAILED', '视频下载失败', { 
         video_url: videoUrl,
-        error: errorMessage 
+        error: errorMessage, 
       });
     }
   }
@@ -177,6 +183,7 @@ export class VideoProcessor {
     await BinaryChecker.ensureAvailable();
     
     const status = await BinaryChecker.checkFfmpeg();
+
     if (!status.available) {
       throw this.createError('BINARY_NOT_AVAILABLE', 'ffmpeg 不可用', status.error);
     }
@@ -192,11 +199,12 @@ export class VideoProcessor {
       execSync(command, {
         encoding: 'utf8',
         timeout: 15000, // 15 秒超时
-        maxBuffer: 5 * 1024 * 1024 // 5MB 缓冲区
+        maxBuffer: 5 * 1024 * 1024, // 5MB 缓冲区
       });
 
       // 验证音频文件
       const stats = await fs.stat(audioPath);
+
       console.log(`✅ 音频提取成功: ${(stats.size / 1024).toFixed(2)}KB`);
 
       return audioPath;
@@ -216,7 +224,7 @@ export class VideoProcessor {
 
       throw this.createError('AUDIO_EXTRACTION_FAILED', '音频提取失败', { 
         video_path: videoPath,
-        error: errorMessage 
+        error: errorMessage, 
       });
     }
   }
@@ -228,7 +236,7 @@ export class VideoProcessor {
     const patterns = [
       join(this.TEMP_DIR, `${sessionId}.*`),
       join(this.TEMP_DIR, `${sessionId}.mp4`),
-      join(this.TEMP_DIR, `${sessionId}.mp3`)
+      join(this.TEMP_DIR, `${sessionId}.mp3`),
     ];
 
     for (const pattern of patterns) {
@@ -247,7 +255,7 @@ export class VideoProcessor {
     // 额外清理：查找所有匹配的文件
     try {
       const files = await fs.readdir(this.TEMP_DIR);
-      const sessionFiles = files.filter(file => file.startsWith(sessionId));
+      const sessionFiles = files.filter((file) => file.startsWith(sessionId));
       
       for (const file of sessionFiles) {
         try {

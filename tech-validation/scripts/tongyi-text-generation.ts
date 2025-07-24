@@ -270,6 +270,7 @@ ${originalScript}
     try {
       // 获取并发控制器状态
       const status = this.concurrencyController.getStatus();
+
       logger.info(this.name, 'dispose', '并发控制器状态', status);
       
       // 清理 API 客户端资源

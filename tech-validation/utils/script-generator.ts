@@ -1,5 +1,6 @@
 import { TongyiClient } from '../scripts/tongyi-text-generation';
 import { TextGenerationRequest, TextGenerationResponse } from '../interfaces/api-types';
+
 import { Config } from './config';
 
 export interface ScriptScene {
@@ -39,8 +40,10 @@ export class ScriptGenerator {
 
   private createError(code: string, message: string, details?: any): ScriptGeneratorError {
     const error = new Error(message) as ScriptGeneratorError;
+
     error.code = code;
     error.details = details;
+
     return error;
   }
 
@@ -48,10 +51,11 @@ export class ScriptGenerator {
    * 初始化脚本生成客户端
    */
   async initialize(): Promise<void> {
-    if (this.initialized) return;
+    if (this.initialized) {return;}
 
     try {
       const tongyiConfig = Config.getTongyiConfig();
+
       await this.tongyiClient.initialize(tongyiConfig);
       this.initialized = true;
       
@@ -67,7 +71,7 @@ export class ScriptGenerator {
       throw this.createError(
         'INITIALIZATION_FAILED',
         '脚本生成客户端初始化失败',
-        { originalError: error instanceof Error ? error.message : String(error) }
+        { originalError: error instanceof Error ? error.message : String(error) },
       );
     }
   }
@@ -82,7 +86,7 @@ export class ScriptGenerator {
       language?: string;
       duration?: number;
       title?: string;
-    } = {}
+    } = {},
   ): Promise<ScriptGenerationResult> {
     await this.initialize();
 
@@ -102,7 +106,7 @@ export class ScriptGenerator {
         model: 'qwen-plus', // 使用均衡模型
         max_tokens: Math.max(800, Math.floor(duration * 15)), // 根据时长动态调整
         temperature: style === 'professional' ? 0.3 : 0.7, // 专业风格更稳定
-        top_p: 0.9
+        top_p: 0.9,
       };
 
       const response: TextGenerationResponse = await this.tongyiClient.generateText(request);
@@ -110,6 +114,7 @@ export class ScriptGenerator {
 
       // 解析生成的脚本
       let parsedScript: VideoScript;
+
       try {
         parsedScript = this.parseGeneratedScript(response.text, duration, title);
       } catch (parseError) {
@@ -122,7 +127,7 @@ export class ScriptGenerator {
         style,
         language,
         processingTime,
-        rawResponse: response.text
+        rawResponse: response.text,
       };
 
       console.log(`✅ 脚本生成完成: ${processingTime}ms`);
@@ -133,6 +138,7 @@ export class ScriptGenerator {
 
     } catch (error) {
       const processingTime = Date.now() - startTime;
+
       console.error(`❌ 脚本生成失败 (${processingTime}ms):`, error);
 
       // 处理已知错误类型
@@ -162,8 +168,8 @@ export class ScriptGenerator {
         { 
           processingTime,
           originalError: errorMessage,
-          textLength: transcribedText.length
-        }
+          textLength: transcribedText.length,
+        },
       );
     }
   }
@@ -175,12 +181,12 @@ export class ScriptGenerator {
     transcribedText: string, 
     style: string, 
     duration: number,
-    title?: string
+    title?: string,
   ): string {
     const styleDescriptions = {
       'default': '自然流畅、清晰易懂',
       'humorous': '幽默风趣、生动活泼',
-      'professional': '专业严谨、逻辑清晰'
+      'professional': '专业严谨、逻辑清晰',
     };
 
     const styleDesc = styleDescriptions[style as keyof typeof styleDescriptions] || '自然流畅';
@@ -226,11 +232,12 @@ ${transcribedText}
   private parseGeneratedScript(
     generatedText: string, 
     duration: number, 
-    title?: string
+    title?: string,
   ): VideoScript {
     try {
       // 尝试提取JSON部分
       const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
+
       if (!jsonMatch) {
         throw new Error('未找到JSON格式的脚本内容');
       }
@@ -248,13 +255,13 @@ ${transcribedText}
         timestamp: scene.timestamp || `00:${String(index * 15).padStart(2, '0')}-00:${String((index + 1) * 15).padStart(2, '0')}`,
         description: scene.description || '场景描述',
         dialogue: scene.dialogue || '对话内容',
-        notes: scene.notes || '拍摄建议'
+        notes: scene.notes || '拍摄建议',
       }));
 
       return {
         title: parsedJson.title || title || '视频脚本',
         duration,
-        scenes
+        scenes,
       };
 
     } catch (parseError) {
@@ -270,16 +277,17 @@ ${transcribedText}
     originalText: string,
     generatedText: string,
     duration: number,
-    title?: string
+    title?: string,
   ): VideoScript {
     console.log('🔄 使用降级脚本生成方案');
 
     // 简单地将文本按长度分割为场景
-    const words = originalText.split(/[，。！？；,.\!?;]/).filter(part => part.trim());
+    const words = originalText.split(/[，。！？；,.\!?;]/).filter((part) => part.trim());
     const scenesCount = Math.max(1, Math.min(4, Math.floor(duration / 15)));
     const wordsPerScene = Math.ceil(words.length / scenesCount);
 
     const scenes: ScriptScene[] = [];
+
     for (let i = 0; i < scenesCount; i++) {
       const startWord = i * wordsPerScene;
       const endWord = Math.min((i + 1) * wordsPerScene, words.length);
@@ -293,14 +301,14 @@ ${transcribedText}
         timestamp: `00:${String(Math.floor(startTime / 60)).padStart(2, '0')}:${String(startTime % 60).padStart(2, '0')}-00:${String(Math.floor(endTime / 60)).padStart(2, '0')}:${String(endTime % 60).padStart(2, '0')}`,
         description: `第${i + 1}个场景：${sceneWords.slice(0, 3).join('')}...`,
         dialogue: sceneWords.join('，'),
-        notes: `基于原始转写内容的第${i + 1}段，建议配合适当的画面展示`
+        notes: `基于原始转写内容的第${i + 1}段，建议配合适当的画面展示`,
       });
     }
 
     return {
       title: title || '基于转写的视频脚本',
       duration,
-      scenes
+      scenes,
     };
   }
 
@@ -317,7 +325,7 @@ ${transcribedText}
       initialized: this.initialized,
       clientName: this.tongyiClient.name,
       supportedStyles: ['default', 'humorous', 'professional'],
-      maxDuration: 300 // 5分钟
+      maxDuration: 300, // 5分钟
     };
   }
 

@@ -1,4 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
+
 import { SecurityValidator } from '../utils/security-validator';
 
 describe('SecurityValidator', () => {
@@ -8,12 +9,13 @@ describe('SecurityValidator', () => {
         'https://www.youtube.com/watch?v=123',
         'https://example.com/video.mp4',
         'http://cdn.example.com/videos/sample.mp4',
-        'https://vimeo.com/123456789'
+        'https://vimeo.com/123456789',
       ];
       
-      validUrls.forEach(url => {
+      validUrls.forEach((url) => {
         it(`应该接受有效URL: ${url}`, () => {
           const result = SecurityValidator.validateVideoUrl(url);
+
           expect(result.valid).toBe(true);
         });
       });
@@ -56,12 +58,13 @@ describe('SecurityValidator', () => {
         // 危险端口
         { url: 'http://example.com:22/ssh', reason: '不允许访问端口 22' },
         { url: 'http://example.com:3306/mysql', reason: '不允许访问端口 3306' },
-        { url: 'http://example.com:6379/redis', reason: '不允许访问端口 6379' }
+        { url: 'http://example.com:6379/redis', reason: '不允许访问端口 6379' },
       ];
       
       maliciousUrls.forEach(({ url, reason }) => {
         it(`应该阻止恶意URL: ${url}`, () => {
           const result = SecurityValidator.validateVideoUrl(url);
+
           expect(result.valid).toBe(false);
           expect(result.reason).toBe(reason);
         });
@@ -75,18 +78,20 @@ describe('SecurityValidator', () => {
           'ftp://example.com/file.zip',
           'file:///etc/passwd',
           'javascript:alert(1)',
-          'data:text/html,<script>alert(1)</script>'
+          'data:text/html,<script>alert(1)</script>',
         ];
         
-        invalidUrls.forEach(url => {
+        invalidUrls.forEach((url) => {
           const result = SecurityValidator.validateVideoUrl(url);
+
           expect(result.valid).toBe(false);
         });
       });
       
       it('应该拒绝过长的URL', () => {
-        const longUrl = 'https://example.com/' + 'a'.repeat(2048);
+        const longUrl = `https://example.com/${  'a'.repeat(2048)}`;
         const result = SecurityValidator.validateVideoUrl(longUrl);
+
         expect(result.valid).toBe(false);
         expect(result.reason).toContain('长度超过');
       });
@@ -98,11 +103,12 @@ describe('SecurityValidator', () => {
       const validTokens = [
         'abcdefghijklmnopqrstuvwxyz123456',
         'A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6',
-        'valid-token-with-hyphens-and_underscores_32chars'
+        'valid-token-with-hyphens-and_underscores_32chars',
       ];
       
-      validTokens.forEach(token => {
+      validTokens.forEach((token) => {
         const result = SecurityValidator.validateApiToken(token);
+
         expect(result.valid).toBe(true);
       });
     });
@@ -116,11 +122,12 @@ describe('SecurityValidator', () => {
         { token: 'special@characters#not$allowed!!', reason: 'Token包含非法字符' },
         { token: 'test-tokenaaaaaaaaaaaaaaaaaaaaaa', reason: '不允许使用测试Token' },
         { token: '12345678901234567890123456789012', reason: '不允许使用测试Token' },
-        { token: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', reason: '不允许使用测试Token' }
+        { token: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', reason: '不允许使用测试Token' },
       ];
       
       invalidTokens.forEach(({ token, reason }) => {
         const result = SecurityValidator.validateApiToken(token);
+
         expect(result.valid).toBe(false);
         expect(result.reason).toBe(reason);
       });
@@ -130,8 +137,9 @@ describe('SecurityValidator', () => {
   describe('validateAuthorizationHeader', () => {
     it('应该正确解析有效的Bearer token', () => {
       const result = SecurityValidator.validateAuthorizationHeader(
-        'Bearer valid-token-1234567890123456789012345678'
+        'Bearer valid-token-1234567890123456789012345678',
       );
+
       expect(result.valid).toBe(true);
       expect(result.token).toBe('valid-token-1234567890123456789012345678');
     });
@@ -143,11 +151,12 @@ describe('SecurityValidator', () => {
         { header: 'Basic dXNlcjpwYXNz', reason: 'Authorization格式错误，应为 Bearer <token>' },
         { header: 'Bearer', reason: 'Authorization格式错误，应为 Bearer <token>' },
         { header: 'Bearer ', reason: 'Authorization格式错误，应为 Bearer <token>' },
-        { header: 'Bearer short', reason: 'Token长度至少为32字符' }
+        { header: 'Bearer short', reason: 'Token长度至少为32字符' },
       ];
       
       invalidHeaders.forEach(({ header, reason }) => {
         const result = SecurityValidator.validateAuthorizationHeader(header);
+
         expect(result.valid).toBe(false);
         expect(result.reason).toBe(reason);
       });
@@ -158,8 +167,9 @@ describe('SecurityValidator', () => {
     it('应该接受有效的style值', () => {
       const validStyles = ['default', 'humorous', 'professional', undefined];
       
-      validStyles.forEach(style => {
+      validStyles.forEach((style) => {
         const result = SecurityValidator.validateStyle(style);
+
         expect(result.valid).toBe(true);
       });
     });
@@ -169,11 +179,12 @@ describe('SecurityValidator', () => {
         { style: 'invalid', reason: '无效的style参数，必须是: default, humorous, professional' },
         { style: '<script>alert(1)</script>', reason: 'style参数包含非法字符' },
         { style: 'default<img src=x>', reason: 'style参数包含非法字符' },
-        { style: "'; DROP TABLE users; --", reason: 'style参数包含非法字符' }
+        { style: "'; DROP TABLE users; --", reason: 'style参数包含非法字符' },
       ];
       
       invalidStyles.forEach(({ style, reason }) => {
         const result = SecurityValidator.validateStyle(style);
+
         expect(result.valid).toBe(false);
         expect(result.reason).toBe(reason);
       });
@@ -184,8 +195,9 @@ describe('SecurityValidator', () => {
     it('应该接受有效的语言代码', () => {
       const validLanguages = ['zh', 'en', 'zh-CN', 'en-US', undefined];
       
-      validLanguages.forEach(language => {
+      validLanguages.forEach((language) => {
         const result = SecurityValidator.validateLanguage(language);
+
         expect(result.valid).toBe(true);
       });
     });
@@ -197,11 +209,12 @@ describe('SecurityValidator', () => {
         'zzz',
         'zh_CN',
         'en-us',
-        '123'
+        '123',
       ];
       
-      invalidLanguages.forEach(language => {
+      invalidLanguages.forEach((language) => {
         const result = SecurityValidator.validateLanguage(language);
+
         expect(result.valid).toBe(false);
         expect(result.reason).toBe('无效的语言代码格式');
       });
@@ -214,11 +227,12 @@ describe('SecurityValidator', () => {
         { input: 'normal text', expected: 'normal text' },
         { input: 'text\nwith\nnewlines', expected: 'text with newlines' },
         { input: 'text\x00with\x1Fcontrol\x7Fchars', expected: 'textwithcontrolchars' },
-        { input: 'a'.repeat(300), expected: 'a'.repeat(200) }
+        { input: 'a'.repeat(300), expected: 'a'.repeat(200) },
       ];
       
       inputs.forEach(({ input, expected }) => {
         const result = SecurityValidator.sanitizeForLogging(input);
+
         expect(result).toBe(expected);
       });
     });

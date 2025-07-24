@@ -517,7 +517,7 @@ export class MiniMaxClientV2 implements AIServiceClient {
       
       // EnhancedApiClient 会自动处理断路器和其他资源的清理
       logger.info(this.name, 'dispose', '资源清理完成', {
-        modelCacheCleared: true
+        modelCacheCleared: true,
       });
     } catch (error) {
       logger.error(this.name, 'dispose', '资源清理失败', error as Error);

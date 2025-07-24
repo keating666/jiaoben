@@ -1,6 +1,8 @@
 import { readFileSync } from 'fs';
+
 import { MiniMaxClientV2 } from '../scripts/minimax-client-v2';
 import { SpeechToTextRequest, SpeechToTextResponse } from '../interfaces/api-types';
+
 import { Config } from './config';
 
 export interface TranscriptionResult {
@@ -31,8 +33,10 @@ export class AudioTranscriber {
 
   private createError(code: string, message: string, details?: any): AudioTranscriberError {
     const error = new Error(message) as AudioTranscriberError;
+
     error.code = code;
     error.details = details;
+
     return error;
   }
 
@@ -40,7 +44,7 @@ export class AudioTranscriber {
    * 初始化音频转写客户端
    */
   async initialize(): Promise<void> {
-    if (this.initialized) return;
+    if (this.initialized) {return;}
 
     try {
       // 从环境变量获取 MiniMax 配置
@@ -53,14 +57,14 @@ export class AudioTranscriber {
         timeout: 60000, // 60 秒超时，适合音频处理
         retryAttempts: baseConfig.maxRetries || 3,
         retryDelay: baseConfig.retryDelayBase || 1000,
-        maxConcurrent: 2
+        maxConcurrent: 2,
       };
 
       // 验证必需的配置
       if (!miniMaxConfig.apiKey) {
         throw this.createError(
           'MISSING_API_KEY', 
-          'MiniMax API 密钥未配置，请设置 MINIMAX_API_KEY 环境变量'
+          'MiniMax API 密钥未配置，请设置 MINIMAX_API_KEY 环境变量',
         );
       }
 
@@ -79,7 +83,7 @@ export class AudioTranscriber {
       throw this.createError(
         'INITIALIZATION_FAILED',
         '音频转写客户端初始化失败',
-        { originalError: error instanceof Error ? error.message : String(error) }
+        { originalError: error instanceof Error ? error.message : String(error) },
       );
     }
   }
@@ -97,18 +101,20 @@ export class AudioTranscriber {
 
       // 读取音频文件
       let audioBuffer: Buffer;
+
       try {
         audioBuffer = readFileSync(audioPath);
       } catch (error) {
         throw this.createError(
           'FILE_READ_ERROR',
           '无法读取音频文件',
-          { audioPath, error: error instanceof Error ? error.message : String(error) }
+          { audioPath, error: error instanceof Error ? error.message : String(error) },
         );
       }
 
       // 验证文件大小（MiniMax 限制 10MB）
       const maxSize = 10 * 1024 * 1024; // 10MB
+
       if (audioBuffer.length > maxSize) {
         throw this.createError(
           'FILE_TOO_LARGE',
@@ -116,8 +122,8 @@ export class AudioTranscriber {
           { 
             fileSize: audioBuffer.length, 
             maxSize,
-            audioPath 
-          }
+            audioPath, 
+          },
         );
       }
 
@@ -128,7 +134,7 @@ export class AudioTranscriber {
       const request: SpeechToTextRequest = {
         audioFile: audioBuffer,
         language: 'zh-CN', // 默认中文
-        format: format as 'mp3' | 'wav' | 'flac' | 'm4a'
+        format: format as 'mp3' | 'wav' | 'flac' | 'm4a',
       };
 
       // 调用 MiniMax API
@@ -141,13 +147,13 @@ export class AudioTranscriber {
         text: response.text,
         confidence: response.confidence || 0,
         duration: response.duration || 0,
-        segments: response.segments?.map(seg => ({
+        segments: response.segments?.map((seg) => ({
           start: seg.start,
           end: seg.end,
           text: seg.text,
-          confidence: seg.confidence || 0
+          confidence: seg.confidence || 0,
         })),
-        processingTime
+        processingTime,
       };
 
       console.log(`✅ 音频转写完成: ${processingTime}ms`);
@@ -158,6 +164,7 @@ export class AudioTranscriber {
 
     } catch (error) {
       const processingTime = Date.now() - startTime;
+
       console.error(`❌ 音频转写失败 (${processingTime}ms):`, error);
 
       // 处理已知错误类型
@@ -191,8 +198,8 @@ export class AudioTranscriber {
         { 
           audioPath,
           processingTime,
-          originalError: errorMessage
-        }
+          originalError: errorMessage,
+        },
       );
     }
   }
@@ -225,6 +232,7 @@ export class AudioTranscriber {
    */
   private isSupportedFormat(format: string): boolean {
     const supportedFormats = ['mp3', 'wav', 'flac', 'm4a', 'ogg'];
+
     return supportedFormats.includes(format.toLowerCase());
   }
 
@@ -241,7 +249,7 @@ export class AudioTranscriber {
       initialized: this.initialized,
       clientName: this.miniMaxClient.name,
       supportedFormats: ['mp3', 'wav', 'flac', 'm4a', 'ogg'],
-      maxFileSize: '10MB'
+      maxFileSize: '10MB',
     };
   }
 
@@ -254,6 +262,7 @@ export class AudioTranscriber {
     for (const audioPath of audioPaths) {
       try {
         const result = await this.transcribeAudioFile(audioPath);
+
         results.push(result);
       } catch (error) {
         console.error(`音频文件 ${audioPath} 转写失败:`, error);

@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach } from '@jest/globals';
+
 import { ConcurrencyController } from '../utils/concurrency-controller';
 
 describe('ConcurrencyController', () => {
@@ -38,19 +39,21 @@ describe('ConcurrencyController', () => {
       for (let i = 0; i < 4; i++) {
         operations.push(
           controller.execute(`session-${i}`, async () => {
-            await new Promise(resolve => setTimeout(resolve, delays[i]));
+            await new Promise((resolve) => setTimeout(resolve, delays[i]));
+
             return i;
-          })
+          }),
         );
       }
       
       // 立即检查状态
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
       expect(controller.getActiveCount()).toBe(2);
       expect(controller.getQueueLength()).toBe(2);
       
       // 等待所有操作完成
       const results = await Promise.all(operations);
+
       expect(results).toEqual([0, 1, 2, 3]);
       expect(controller.getActiveCount()).toBe(0);
       expect(controller.getQueueLength()).toBe(0);
@@ -65,8 +68,8 @@ describe('ConcurrencyController', () => {
         operations.push(
           controller.execute(`session-${i}`, async () => {
             order.push(i);
-            await new Promise(resolve => setTimeout(resolve, 50));
-          })
+            await new Promise((resolve) => setTimeout(resolve, 50));
+          }),
         );
       }
       
@@ -86,7 +89,7 @@ describe('ConcurrencyController', () => {
       await expect(
         controller.execute('session-error', async () => {
           throw error;
-        })
+        }),
       ).rejects.toThrow('Operation failed');
       
       // 错误后应该继续处理队列
@@ -101,17 +104,18 @@ describe('ConcurrencyController', () => {
       for (let i = 0; i < 4; i++) {
         operations.push(
           controller.execute(`session-${i}`, async () => {
-            await new Promise(resolve => setTimeout(resolve, 50));
-            if (i === 1) throw new Error(`Error ${i}`);
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            if (i === 1) {throw new Error(`Error ${i}`);}
+
             return i;
           }).then(
-            result => {
+            (result) => {
               results.push(result);
             },
-            error => {
+            (error) => {
               results.push(error);
-            }
-          )
+            },
+          ),
         );
       }
       
@@ -119,21 +123,22 @@ describe('ConcurrencyController', () => {
       
       expect(results.length).toBe(4);
       // 前两个立即执行，所以结果顺序可能是0,1(error)或1(error),0
-      expect(results.filter(r => r instanceof Error).length).toBe(1);
-      expect(results.filter(r => typeof r === 'number').length).toBe(3);
-      expect(results.find(r => r instanceof Error)?.message).toContain('Error 1');
+      expect(results.filter((r) => r instanceof Error).length).toBe(1);
+      expect(results.filter((r) => typeof r === 'number').length).toBe(3);
+      expect(results.find((r) => r instanceof Error)?.message).toContain('Error 1');
     });
   });
 
   describe('状态查询', () => {
     it('应该正确报告会话状态', async () => {
       const operation = controller.execute('session-1', async () => {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
         return 'done';
       });
       
       // 操作开始后立即检查
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
       expect(controller.isActive('session-1')).toBe(true);
       expect(controller.isActive('session-2')).toBe(false);
       
@@ -148,20 +153,21 @@ describe('ConcurrencyController', () => {
       for (let i = 0; i < 3; i++) {
         operations.push(
           controller.execute(`session-${i}`, async () => {
-            await new Promise(resolve => setTimeout(resolve, 100));
-          })
+            await new Promise((resolve) => setTimeout(resolve, 100));
+          }),
         );
       }
       
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
       
       const status = controller.getStatus();
+
       expect(status).toEqual({
         maxConcurrent: 2,
         activeCount: 2,
         queueLength: 1,
         activeSessions: expect.arrayContaining(['session-0', 'session-1']),
-        queuedSessions: ['session-2']
+        queuedSessions: ['session-2'],
       });
       
       await Promise.all(operations);
@@ -171,15 +177,16 @@ describe('ConcurrencyController', () => {
   describe('队列取消', () => {
     it('应该能够取消排队的请求', async () => {
       const operations: Promise<any>[] = [];
-      const cancelResults: Array<string | Error> = [];
+      // const cancelResults: Array<string | Error> = [];
       
       // 填满活跃槽位
       for (let i = 0; i < 2; i++) {
         operations.push(
           controller.execute(`active-${i}`, async () => {
-            await new Promise(resolve => setTimeout(resolve, 200));
+            await new Promise((resolve) => setTimeout(resolve, 200));
+
             return `active-${i}`;
-          })
+          }),
         );
       }
       
@@ -187,29 +194,32 @@ describe('ConcurrencyController', () => {
       operations.push(
         controller.execute('to-cancel', async () => {
           return 'should-not-run';
-        }).catch(error => error)
+        }).catch((error) => error),
       );
       
       // 等待请求进入队列
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
       
       // 取消排队的请求
       const cancelled = controller.cancelQueued('to-cancel');
+
       expect(cancelled).toBe(true);
       expect(controller.getQueueLength()).toBe(0);
       
       // 验证被取消的请求收到错误
       const finalResults = await Promise.all(operations);
+
       expect(finalResults[2]).toBeInstanceOf(Error);
       expect((finalResults[2] as Error).message).toBe('Request cancelled');
     });
 
     it('不应该取消正在执行的请求', () => {
       controller.execute('active', async () => {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
       });
       
       const cancelled = controller.cancelQueued('active');
+
       expect(cancelled).toBe(false);
     });
   });
@@ -228,6 +238,7 @@ describe('ConcurrencyController', () => {
       expect(controller.isActive('session-1')).toBe(false);
       
       const status = controller.getStatus();
+
       expect(status.activeSessions).not.toContain('session-1');
     });
   });

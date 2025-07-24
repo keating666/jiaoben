@@ -6,10 +6,12 @@ describe('Video Transcribe API - Basic Functionality', () => {
     function validateVideoUrl(url: string): boolean {
       try {
         const parsedUrl = new URL(url);
+
         if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
           return false;
         }
         const hostname = parsedUrl.hostname.toLowerCase();
+
         if (
           hostname === 'localhost' ||
           hostname.startsWith('127.') ||
@@ -19,6 +21,7 @@ describe('Video Transcribe API - Basic Functionality', () => {
         ) {
           return false;
         }
+
         return true;
       } catch {
         return false;
@@ -48,8 +51,10 @@ describe('Video Transcribe API - Basic Functionality', () => {
 
     function createVideoError(code: string, message: string, details?: any): VideoProcessingError {
       const error = new Error(message) as VideoProcessingError;
+
       error.code = code;
       error.details = details;
+
       return error;
     }
 
@@ -82,7 +87,7 @@ describe('Video Transcribe API - Basic Functionality', () => {
     expect(validateRequest({ video_url: 'https://example.com/video.mp4' })).toEqual({ valid: true });
     expect(validateRequest({ 
       video_url: 'https://example.com/video.mp4', 
-      style: 'professional' 
+      style: 'professional', 
     })).toEqual({ valid: true });
 
     // 无效请求
@@ -90,7 +95,7 @@ describe('Video Transcribe API - Basic Functionality', () => {
     expect(validateRequest(null)).toEqual({ valid: false, error: '请求体为空' });
     expect(validateRequest({ 
       video_url: 'https://example.com/video.mp4', 
-      style: 'invalid' 
+      style: 'invalid', 
     })).toEqual({ valid: false, error: '无效的脚本风格' });
   });
 
@@ -134,12 +139,12 @@ describe('Video Transcribe API - Basic Functionality', () => {
               timestamp: '00:00-00:10',
               description: '开场画面',
               dialogue: '欢迎观看',
-              notes: '使用中景镜头'
-            }
-          ]
+              notes: '使用中景镜头',
+            },
+          ],
         },
-        processing_time: 1500
-      }
+        processing_time: 1500,
+      },
     };
 
     const errorResponse: TranscribeResponse = {
@@ -147,8 +152,8 @@ describe('Video Transcribe API - Basic Functionality', () => {
       error: {
         code: 'VIDEO_TOO_LONG',
         message: '视频时长超过60秒限制',
-        details: { duration: 65.5 }
-      }
+        details: { duration: 65.5 },
+      },
     };
 
     // 验证成功响应结构

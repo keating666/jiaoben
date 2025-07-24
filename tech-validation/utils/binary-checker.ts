@@ -18,44 +18,45 @@ export class BinaryChecker {
     if (!existsSync(ytDlpPath)) {
       return {
         available: false,
-        error: 'yt-dlp 二进制文件不存在'
+        error: 'yt-dlp 二进制文件不存在',
       };
     }
 
     try {
       const versionOutput = execSync(`"${ytDlpPath}" --version`, { 
         encoding: 'utf8',
-        timeout: 5000 
+        timeout: 5000, 
       });
       
       return {
         available: true,
         path: ytDlpPath,
-        version: versionOutput.trim()
+        version: versionOutput.trim(),
       };
     } catch (error) {
       return {
         available: false,
         path: ytDlpPath,
-        error: `yt-dlp 执行失败: ${error instanceof Error ? error.message : String(error)}`
+        error: `yt-dlp 执行失败: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
   }
 
   static async checkFfmpeg(): Promise<BinaryStatus> {
     try {
+      // @ts-expect-error Dynamic require for optional dependency
       const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
       
       if (!existsSync(ffmpegPath)) {
         return {
           available: false,
-          error: 'ffmpeg 二进制文件不存在'
+          error: 'ffmpeg 二进制文件不存在',
         };
       }
 
       const versionOutput = execSync(`"${ffmpegPath}" -version`, { 
         encoding: 'utf8',
-        timeout: 5000 
+        timeout: 5000, 
       });
       
       const versionMatch = versionOutput.match(/ffmpeg version ([^\s]+)/);
@@ -64,12 +65,12 @@ export class BinaryChecker {
       return {
         available: true,
         path: ffmpegPath,
-        version
+        version,
       };
     } catch (error) {
       return {
         available: false,
-        error: `ffmpeg 检查失败: ${error instanceof Error ? error.message : String(error)}`
+        error: `ffmpeg 检查失败: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
   }
@@ -77,7 +78,7 @@ export class BinaryChecker {
   static async checkAll(): Promise<{ ytDlp: BinaryStatus; ffmpeg: BinaryStatus }> {
     const [ytDlp, ffmpeg] = await Promise.all([
       this.checkYtDlp(),
-      this.checkFfmpeg()
+      this.checkFfmpeg(),
     ]);
 
     return { ytDlp, ffmpeg };

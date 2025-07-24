@@ -20,7 +20,7 @@ export class SecurityValidator {
     'metadata.google.internal',      // GCP metadata
     'metadata.azure.com',           // Azure metadata
     'kube-dns.kube-system.svc.cluster.local', // Kubernetes DNS
-    'kubernetes.default.svc.cluster.local'     // Kubernetes API
+    'kubernetes.default.svc.cluster.local',     // Kubernetes API
   ];
   
   // 内网地址正则表达式
@@ -39,7 +39,7 @@ export class SecurityValidator {
     /\.internal$/i,                 // Internal domains
     /\.intranet$/i,                 // Intranet domains
     /\.corp$/i,                     // Corporate domains
-    /\.home$/i                      // Home network domains
+    /\.home$/i,                      // Home network domains
   ];
   
   /**
@@ -53,6 +53,7 @@ export class SecurityValidator {
     
     // URL解析
     let parsedUrl: URL;
+
     try {
       parsedUrl = new URL(url);
     } catch (error) {
@@ -66,6 +67,7 @@ export class SecurityValidator {
     
     // 获取主机名并移除 IPv6 的方括号
     let hostname = parsedUrl.hostname.toLowerCase();
+
     if (hostname.startsWith('[') && hostname.endsWith(']')) {
       hostname = hostname.slice(1, -1);
     }
@@ -73,24 +75,24 @@ export class SecurityValidator {
     // 检查是否为IP地址
     const isIPv4 = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname);
     // IPv6 检查（包括简化形式如 ::1）
-    const isIPv6 = hostname.includes(':') || hostname === '::1';
+    // const isIPv6 = hostname.includes(':') || hostname === '::1';
     
     // 特殊IP地址检查
     if (isIPv4) {
       const parts = hostname.split('.').map(Number);
       
       // 检查每个部分是否在有效范围内
-      if (parts.some(part => part > 255)) {
+      if (parts.some((part) => part > 255)) {
         return { valid: false, reason: '无效的IPv4地址' };
       }
       
       // 0.0.0.0
-      if (parts.every(part => part === 0)) {
+      if (parts.every((part) => part === 0)) {
         return { valid: false, reason: '不允许访问 0.0.0.0' };
       }
       
       // 广播地址 255.255.255.255
-      if (parts.every(part => part === 255)) {
+      if (parts.every((part) => part === 255)) {
         return { valid: false, reason: '不允许访问广播地址' };
       }
     }
@@ -101,7 +103,7 @@ export class SecurityValidator {
     }
     
     // 再检查内网地址模式
-    if (this.PRIVATE_IP_PATTERNS.some(pattern => pattern.test(hostname))) {
+    if (this.PRIVATE_IP_PATTERNS.some((pattern) => pattern.test(hostname))) {
       return { valid: false, reason: '不允许访问内网地址' };
     }
     
@@ -115,6 +117,7 @@ export class SecurityValidator {
       const port = parseInt(parsedUrl.port);
       // 阻止常见的内部服务端口
       const blockedPorts = [22, 23, 25, 110, 143, 3306, 5432, 6379, 27017, 9200];
+
       if (blockedPorts.includes(port)) {
         return { valid: false, reason: `不允许访问端口 ${port}` };
       }
@@ -149,17 +152,17 @@ export class SecurityValidator {
     const testTokenPrefixes = [
       'test-token',
       'demo-token',
-      'example-token'
+      'example-token',
     ];
     
     const exactTestTokens = [
       '12345678901234567890123456789012',
       'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      '00000000000000000000000000000000'
+      '00000000000000000000000000000000',
     ];
     
     // 检查前缀
-    if (testTokenPrefixes.some(prefix => token.toLowerCase().startsWith(prefix))) {
+    if (testTokenPrefixes.some((prefix) => token.toLowerCase().startsWith(prefix))) {
       return { valid: false, reason: '不允许使用测试Token' };
     }
     
@@ -186,6 +189,7 @@ export class SecurityValidator {
     
     // 处理只有 "Bearer" 或 "Bearer " 的情况
     const bearerPrefix = 'Bearer ';
+
     if (!authHeader.startsWith(bearerPrefix) || authHeader.trim() === 'Bearer') {
       return { valid: false, reason: 'Authorization格式错误，应为 Bearer <token>' };
     }
@@ -215,6 +219,7 @@ export class SecurityValidator {
     
     // 然后检查有效值
     const validStyles = ['default', 'humorous', 'professional'];
+
     if (!validStyles.includes(style)) {
       return { valid: false, reason: `无效的style参数，必须是: ${validStyles.join(', ')}` };
     }
@@ -244,6 +249,7 @@ export class SecurityValidator {
   static sanitizeForLogging(input: string): string {
     return input
       .replace(/\r?\n/g, ' ')               // 先替换换行
+      // eslint-disable-next-line no-control-regex
       .replace(/[\x00-\x1F\x7F-\x9F]/g, '') // 再移除控制字符
       .substring(0, 200);                   // 限制长度
   }
