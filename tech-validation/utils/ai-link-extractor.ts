@@ -8,9 +8,9 @@ export class AILinkExtractor {
   private baseUrl: string;
 
   constructor() {
-    const config = Config.getInstance();
-    this.apiKey = config.get('TONGYI_API_KEY');
-    this.baseUrl = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+    const tongyiConfig = Config.getTongyiConfig();
+    this.apiKey = tongyiConfig.apiKey;
+    this.baseUrl = tongyiConfig.baseUrl || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
   }
 
   /**
