@@ -26,6 +26,7 @@ describe('Binary Dependencies', () => {
 
   it('should have ffmpeg available through npm package', () => {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 
       expect(typeof ffmpegPath).toBe('string');

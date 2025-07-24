@@ -282,7 +282,7 @@ ${transcribedText}
     console.log('🔄 使用降级脚本生成方案');
 
     // 简单地将文本按长度分割为场景
-    const words = originalText.split(/[，。！？；,.\!?;]/).filter((part) => part.trim());
+    const words = originalText.split(/[，。！？；,.!?;]/).filter((part) => part.trim());
     const scenesCount = Math.max(1, Math.min(4, Math.floor(duration / 15)));
     const wordsPerScene = Math.ceil(words.length / scenesCount);
 

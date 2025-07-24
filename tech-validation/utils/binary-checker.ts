@@ -44,6 +44,7 @@ export class BinaryChecker {
 
   static async checkFfmpeg(): Promise<BinaryStatus> {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
       
       if (!existsSync(ffmpegPath)) {
