@@ -109,8 +109,13 @@ export class VideoProcessor {
         preferFreeFormats: true,
         // 限制下载时长
         matchFilter: `duration <= ${this.MAX_DURATION}`,
-        // 使用系统的 ffmpeg（CI 环境已安装）
-        addHeader: ['referer:youtube.com', 'user-agent:Mozilla/5.0'],
+        // 添加必要的 headers 支持抖音等平台
+        addHeader: [
+          'referer:https://www.douyin.com/',
+          'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        ],
+        // 支持更多平台
+        cookies: 'cookies.txt', // 如果需要的话
       });
 
       // 验证音频文件是否存在

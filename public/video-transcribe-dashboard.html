@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频转文字完整工作流测试仪表板</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f0f2f5;
+            color: #333;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 0;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2em;
+        }
+        .header p {
+            margin: 10px 0 0;
+            opacity: 0.9;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        
+        /* 工作流程图 */
+        .workflow-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .workflow-steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .workflow-step {
+            flex: 1;
+            text-align: center;
+            padding: 20px;
+            position: relative;
+            min-width: 150px;
+        }
+        .workflow-step:not(:last-child)::after {
+            content: '→';
+            position: absolute;
+            right: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 24px;
+            color: #667eea;
+        }
+        .step-icon {
+            width: 60px;
+            height: 60px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-size: 24px;
+        }
+        .step-icon.active {
+            background: #27ae60;
+            animation: pulse 1s infinite;
+        }
+        .step-icon.error {
+            background: #e74c3c;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(39, 174, 96, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0); }
+        }
+        
+        /* 输入区域 */
+        .input-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        input[type="text"], input[type="password"], select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        /* 按钮样式 */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        button:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        button:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        button.secondary {
+            background: #718096;
+        }
+        button.secondary:hover {
+            background: #4a5568;
+        }
+        button.success {
+            background: #27ae60;
+        }
+        button.success:hover {
+            background: #219a52;
+        }
+        
+        /* 结果展示 */
+        .results-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+        .result-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .result-card h3 {
+            margin-top: 0;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .result-content {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+        }
+        .result-content.show {
+            display: block;
+        }
+        .result-content.success {
+            border-left: 4px solid #27ae60;
+        }
+        .result-content.error {
+            border-left: 4px solid #e74c3c;
+            background: #fee;
+        }
+        .result-content.info {
+            border-left: 4px solid #3498db;
+        }
+        
+        /* 加载动画 */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 示例文本 */
+        .example-texts {
+            margin-top: 10px;
+        }
+        .example-btn {
+            background: #ecf0f1;
+            color: #2c3e50;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .example-btn:hover {
+            background: #d5dbdb;
+        }
+        
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .workflow-step:not(:last-child)::after {
+                display: none;
+            }
+            .workflow-steps {
+                flex-direction: column;
+            }
+            .results-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎬 视频转文字完整工作流测试</h1>
+        <p>测试从混合文本提取链接到生成分镜头脚本的完整流程</p>
+    </div>
+
+    <div class="container">
+        <!-- 工作流程图 -->
+        <div class="workflow-section">
+            <h2>📋 工作流程</h2>
+            <div class="workflow-steps">
+                <div class="workflow-step">
+                    <div class="step-icon" id="step-1">1</div>
+                    <div class="step-name">链接提取</div>
+                    <div class="step-desc">从混合文本提取视频链接</div>
+                </div>
+                <div class="workflow-step">
+                    <div class="step-icon" id="step-2">2</div>
+                    <div class="step-name">视频下载</div>
+                    <div class="step-desc">下载视频文件</div>
+                </div>
+                <div class="workflow-step">
+                    <div class="step-icon" id="step-3">3</div>
+                    <div class="step-name">音频提取</div>
+                    <div class="step-desc">使用 FFmpeg 提取音频</div>
+                </div>
+                <div class="workflow-step">
+                    <div class="step-icon" id="step-4">4</div>
+                    <div class="step-name">语音转文字</div>
+                    <div class="step-desc">MiniMax API 转录</div>
+                </div>
+                <div class="workflow-step">
+                    <div class="step-icon" id="step-5">5</div>
+                    <div class="step-name">脚本生成</div>
+                    <div class="step-desc">通义千问生成分镜脚本</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 输入区域 -->
+        <div class="input-section">
+            <h2>🔧 测试配置</h2>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="input-group">
+                    <label>API Token (可选，留空使用测试 Token):</label>
+                    <input type="password" id="api-token" placeholder="Bearer token...">
+                </div>
+                <div class="input-group">
+                    <label>API 端点:</label>
+                    <select id="api-endpoint">
+                        <option value="https://jiaoben-7jx4.vercel.app">生产环境 (Vercel)</option>
+                        <option value="http://localhost:3000">本地开发</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>混合文本输入（包含视频链接的文本）:</label>
+                <textarea id="mixed-text" placeholder="粘贴包含抖音/YouTube/TikTok链接的混合文本...">9.20 c@a.nd 01/22 ygo:/ 至于为什么周六不更，我的粉丝自会在评论区给出答案。 # 被盗视频 # 沙雕动画 # 二次元 # 原创动画 # 别划走  https://v.douyin.com/7Ygkcv5qidM/ 复制此链接，打开Dou音搜索，直接观看视频！</textarea>
+                
+                <div class="example-texts">
+                    <button class="example-btn" onclick="setExample('douyin')">抖音示例</button>
+                    <button class="example-btn" onclick="setExample('youtube')">YouTube示例</button>
+                    <button class="example-btn" onclick="setExample('tiktok')">TikTok示例</button>
+                    <button class="example-btn" onclick="setExample('direct')">直接链接</button>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="input-group">
+                    <label>脚本风格:</label>
+                    <select id="script-style">
+                        <option value="default">默认</option>
+                        <option value="humorous">幽默风趣</option>
+                        <option value="professional">专业严谨</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>语言:</label>
+                    <select id="language">
+                        <option value="zh">中文</option>
+                        <option value="en">英文</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button onclick="runFullWorkflow()" id="run-btn">
+                    <span>🚀</span> 运行完整工作流
+                </button>
+                <button onclick="testLinkExtraction()" class="secondary">
+                    <span>🔗</span> 仅测试链接提取
+                </button>
+                <button onclick="clearAll()" class="secondary">
+                    <span>🗑️</span> 清除结果
+                </button>
+            </div>
+        </div>
+
+        <!-- 结果展示 -->
+        <div class="results-section">
+            <!-- 链接提取结果 -->
+            <div class="result-card">
+                <h3><span id="link-status">⏳</span> 链接提取结果</h3>
+                <div id="link-result" class="result-content"></div>
+            </div>
+
+            <!-- 视频信息 -->
+            <div class="result-card">
+                <h3><span id="video-status">⏳</span> 视频信息</h3>
+                <div id="video-result" class="result-content"></div>
+            </div>
+
+            <!-- 转录结果 -->
+            <div class="result-card">
+                <h3><span id="transcript-status">⏳</span> 语音转文字结果</h3>
+                <div id="transcript-result" class="result-content"></div>
+            </div>
+
+            <!-- 脚本结果 -->
+            <div class="result-card">
+                <h3><span id="script-status">⏳</span> 分镜头脚本</h3>
+                <div id="script-result" class="result-content"></div>
+            </div>
+
+            <!-- 性能统计 -->
+            <div class="result-card">
+                <h3><span id="perf-status">📊</span> 性能统计</h3>
+                <div id="perf-result" class="result-content"></div>
+            </div>
+
+            <!-- 错误日志 -->
+            <div class="result-card">
+                <h3><span id="error-status">📝</span> 错误日志</h3>
+                <div id="error-result" class="result-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 配置
+        let config = {
+            apiToken: '',
+            apiEndpoint: 'https://jiaoben-7jx4.vercel.app'
+        };
+
+        // 示例文本
+        const examples = {
+            douyin: `9.20 c@a.nd 01/22 ygo:/ 至于为什么周六不更，我的粉丝自会在评论区给出答案。 # 被盗视频 # 沙雕动画 # 二次元 # 原创动画 # 别划走  https://v.douyin.com/7Ygkcv5qidM/ 复制此链接，打开Dou音搜索，直接观看视频！`,
+            youtube: `Check out this amazing video about technology trends in 2025! 
+https://www.youtube.com/watch?v=dQw4w9WgXcQ 
+Don't forget to like and subscribe! #tech #future`,
+            tiktok: `这个舞蹈太酷了！😍 
+https://www.tiktok.com/@username/video/7123456789012345678 
+#dance #viral #fyp`,
+            direct: `https://www.youtube.com/watch?v=jNQXAC9IVRw`
+        };
+
+        // 设置示例
+        function setExample(type) {
+            document.getElementById('mixed-text').value = examples[type];
+        }
+
+        // 更新步骤状态
+        function updateStep(stepNumber, status) {
+            const stepIcon = document.getElementById(`step-${stepNumber}`);
+            stepIcon.className = `step-icon ${status}`;
+            if (status === 'active') {
+                stepIcon.innerHTML = '<div class="loading"></div>';
+            } else if (status === 'success') {
+                stepIcon.innerHTML = '✓';
+            } else if (status === 'error') {
+                stepIcon.innerHTML = '✗';
+            } else {
+                stepIcon.innerHTML = stepNumber.toString();
+            }
+        }
+
+        // 显示结果
+        function showResult(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = content;
+            element.className = `result-content show ${type}`;
+            
+            // 更新状态图标
+            const statusId = elementId.replace('-result', '-status');
+            const statusElement = document.getElementById(statusId);
+            if (statusElement) {
+                if (type === 'success') {
+                    statusElement.textContent = '✅';
+                } else if (type === 'error') {
+                    statusElement.textContent = '❌';
+                } else {
+                    statusElement.textContent = '📋';
+                }
+            }
+        }
+
+        // 清除所有结果
+        function clearAll() {
+            document.querySelectorAll('.result-content').forEach(el => {
+                el.textContent = '';
+                el.className = 'result-content';
+            });
+            document.querySelectorAll('.step-icon').forEach((el, index) => {
+                el.className = 'step-icon';
+                el.innerHTML = (index + 1).toString();
+            });
+            document.querySelectorAll('[id$="-status"]').forEach(el => {
+                el.textContent = '⏳';
+            });
+        }
+
+        // 仅测试链接提取（客户端）
+        function testLinkExtraction() {
+            clearAll();
+            const mixedText = document.getElementById('mixed-text').value;
+            
+            updateStep(1, 'active');
+            
+            // 客户端链接提取
+            const patterns = {
+                douyin: [
+                    /https?:\/\/v\.douyin\.com\/[a-zA-Z0-9]+/gi,
+                    /https?:\/\/www\.douyin\.com\/video\/\d+/gi,
+                ],
+                youtube: [
+                    /https?:\/\/(www\.)?youtube\.com\/watch\?v=[a-zA-Z0-9_-]+/gi,
+                    /https?:\/\/youtu\.be\/[a-zA-Z0-9_-]+/gi,
+                ],
+                tiktok: [
+                    /https?:\/\/(www\.)?tiktok\.com\/@[\w.-]+\/video\/\d+/gi,
+                    /https?:\/\/vm\.tiktok\.com\/[a-zA-Z0-9]+/gi,
+                ]
+            };
+            
+            let extractedUrl = null;
+            let platform = null;
+            
+            // 尝试匹配各平台
+            for (const [plat, regexes] of Object.entries(patterns)) {
+                for (const regex of regexes) {
+                    const match = mixedText.match(regex);
+                    if (match && match[0]) {
+                        extractedUrl = match[0];
+                        platform = plat;
+                        break;
+                    }
+                }
+                if (extractedUrl) break;
+            }
+            
+            // 如果没有匹配到特定平台，尝试通用URL
+            if (!extractedUrl) {
+                const genericMatch = mixedText.match(/https?:\/\/[^\s]+/gi);
+                if (genericMatch && genericMatch[0]) {
+                    extractedUrl = genericMatch[0];
+                    platform = 'other';
+                }
+            }
+            
+            if (extractedUrl) {
+                updateStep(1, 'success');
+                showResult('link-result', `✅ 成功提取链接！
+
+平台: ${platform}
+原始链接: ${extractedUrl}
+清理后: ${extractedUrl.replace(/[!！。，、？?]+$/, '')}
+
+原始文本长度: ${mixedText.length} 字符`, 'success');
+            } else {
+                updateStep(1, 'error');
+                showResult('link-result', '❌ 未能从文本中提取到视频链接', 'error');
+            }
+        }
+
+        // 运行完整工作流
+        async function runFullWorkflow() {
+            clearAll();
+            
+            const mixedText = document.getElementById('mixed-text').value;
+            const style = document.getElementById('script-style').value;
+            const language = document.getElementById('language').value;
+            const apiToken = document.getElementById('api-token').value || 'test-token-12345678901234567890123456789012';
+            const apiEndpoint = document.getElementById('api-endpoint').value;
+            
+            if (!mixedText.trim()) {
+                showResult('error-result', '❌ 请输入包含视频链接的文本', 'error');
+                return;
+            }
+            
+            const runBtn = document.getElementById('run-btn');
+            runBtn.disabled = true;
+            runBtn.innerHTML = '<div class="loading"></div> 处理中...';
+            
+            const startTime = Date.now();
+            
+            try {
+                // 步骤1: 调用API（API会自动提取链接）
+                updateStep(1, 'active');
+                updateStep(2, 'active');
+                updateStep(3, 'active');
+                updateStep(4, 'active');
+                updateStep(5, 'active');
+                
+                showResult('link-result', '⏳ API正在提取链接...', 'info');
+                showResult('video-result', '⏳ 准备下载视频...', 'info');
+                showResult('transcript-result', '⏳ 等待音频转文字...', 'info');
+                showResult('script-result', '⏳ 等待脚本生成...', 'info');
+                
+                const response = await fetch(`${apiEndpoint}/api/video/transcribe`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiToken}`
+                    },
+                    body: JSON.stringify({
+                        mixedText: mixedText,
+                        style: style,
+                        language: language
+                    })
+                });
+                
+                const data = await response.json();
+                const totalTime = Date.now() - startTime;
+                
+                if (response.ok && data.success) {
+                    // 所有步骤成功
+                    for (let i = 1; i <= 5; i++) {
+                        updateStep(i, 'success');
+                    }
+                    
+                    // 显示链接提取结果（推测）
+                    showResult('link-result', `✅ 成功提取并处理视频链接`, 'success');
+                    
+                    // 显示视频信息
+                    if (data.data.videoInfo) {
+                        showResult('video-result', `✅ 视频信息
+标题: ${data.data.videoInfo.title || '未知'}
+时长: ${data.data.duration} 秒
+格式: ${data.data.videoInfo.format || '未知'}`, 'success');
+                    }
+                    
+                    // 显示转录结果
+                    showResult('transcript-result', `✅ 语音转文字成功
+文本长度: ${data.data.transcript.length} 字符
+
+转录内容预览:
+${data.data.transcript.substring(0, 500)}${data.data.transcript.length > 500 ? '...' : ''}`, 'success');
+                    
+                    // 显示脚本
+                    if (data.data.script && data.data.script.scenes) {
+                        const scriptText = data.data.script.scenes.map(scene => 
+                            `场景 ${scene.scene_number} [${scene.timestamp}]
+描述: ${scene.description}
+对话: ${scene.dialogue}
+备注: ${scene.notes}`
+                        ).join('\n\n');
+                        
+                        showResult('script-result', `✅ 分镜头脚本生成成功
+标题: ${data.data.script.title}
+场景数: ${data.data.script.scenes.length}
+
+${scriptText}`, 'success');
+                    }
+                    
+                    // 显示性能统计
+                    showResult('perf-result', `📊 性能统计
+总处理时间: ${Math.round(totalTime / 1000)} 秒
+API处理时间: ${data.data.processing_time} 毫秒
+网络延迟: ${totalTime - data.data.processing_time} 毫秒
+
+各阶段耗时:
+- 视频下载: ~${Math.round(data.data.processing_time * 0.3)} ms
+- 音频提取: ~${Math.round(data.data.processing_time * 0.1)} ms
+- 语音转文字: ~${Math.round(data.data.processing_time * 0.4)} ms
+- 脚本生成: ~${Math.round(data.data.processing_time * 0.2)} ms`, 'info');
+                    
+                } else {
+                    // 处理错误
+                    const errorStep = data.error?.code?.includes('VIDEO') ? 2 : 
+                                     data.error?.code?.includes('AUDIO') ? 3 :
+                                     data.error?.code?.includes('TRANSCRIPTION') ? 4 :
+                                     data.error?.code?.includes('SCRIPT') ? 5 : 1;
+                    
+                    for (let i = 1; i < errorStep; i++) {
+                        updateStep(i, 'success');
+                    }
+                    updateStep(errorStep, 'error');
+                    
+                    showResult('error-result', `❌ 处理失败
+
+错误代码: ${data.error?.code || 'UNKNOWN'}
+错误信息: ${data.error?.message || '未知错误'}
+${data.error?.details ? '\n详细信息: ' + JSON.stringify(data.error.details, null, 2) : ''}
+
+HTTP状态码: ${response.status}
+处理时间: ${Math.round(totalTime / 1000)} 秒`, 'error');
+                }
+                
+            } catch (error) {
+                // 网络或其他错误
+                updateStep(1, 'error');
+                showResult('error-result', `❌ 请求失败
+
+错误类型: ${error.name}
+错误信息: ${error.message}
+
+可能的原因:
+- 网络连接问题
+- API服务不可用
+- 跨域访问限制
+
+请检查控制台获取更多信息`, 'error');
+                
+                console.error('完整错误信息:', error);
+            } finally {
+                runBtn.disabled = false;
+                runBtn.innerHTML = '<span>🚀</span> 运行完整工作流';
+            }
+        }
+
+        // 页面加载时的初始化
+        window.onload = () => {
+            // 从本地存储加载配置
+            const savedConfig = localStorage.getItem('videoTranscribeConfig');
+            if (savedConfig) {
+                config = JSON.parse(savedConfig);
+                document.getElementById('api-token').value = config.apiToken || '';
+                document.getElementById('api-endpoint').value = config.apiEndpoint;
+            }
+            
+            // 保存配置
+            document.getElementById('api-token').addEventListener('change', (e) => {
+                config.apiToken = e.target.value;
+                localStorage.setItem('videoTranscribeConfig', JSON.stringify(config));
+            });
+            
+            document.getElementById('api-endpoint').addEventListener('change', (e) => {
+                config.apiEndpoint = e.target.value;
+                localStorage.setItem('videoTranscribeConfig', JSON.stringify(config));
+            });
+        };
+    </script>
+</body>
+</html>

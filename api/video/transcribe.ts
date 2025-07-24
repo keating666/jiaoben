@@ -5,7 +5,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 // 类型定义
 interface TranscribeRequest {
-  video_url: string;
+  video_url?: string;  // 现在是可选的
+  mixedText?: string;  // 新增：支持混合文本输入
   style?: 'default' | 'humorous' | 'professional';
   language?: string;
 }
@@ -151,10 +152,25 @@ export default async function handler(
   
   try {
     // 请求体验证
-    const { video_url, style = 'default', language = 'zh' }: TranscribeRequest = req.body;
+    let { video_url, mixedText, style = 'default', language = 'zh' }: TranscribeRequest = req.body;
+    
+    // 如果提供了混合文本，先提取链接
+    if (mixedText && !video_url) {
+      const { LinkExtractor } = await import('../../tech-validation/utils/link-extractor');
+      const extracted = LinkExtractor.extractVideoLink(mixedText);
+      
+      if (!extracted) {
+        throw createVideoError('NO_VIDEO_LINK', '无法从文本中提取视频链接', {
+          providedText: SecurityValidator.sanitizeForLogging(mixedText.substring(0, 100))
+        });
+      }
+      
+      video_url = LinkExtractor.cleanUrl(extracted.url);
+      console.log(`📎 从混合文本中提取链接: ${extracted.platform} - ${video_url}`);
+    }
     
     if (!video_url) {
-      throw createVideoError('INVALID_REQUEST', '缺少必需的 video_url 参数');
+      throw createVideoError('INVALID_REQUEST', '缺少必需的 video_url 参数或 mixedText 参数');
     }
 
     // URL 安全性验证（使用安全验证器）
@@ -289,6 +305,7 @@ export default async function handler(
         'UNAUTHORIZED': { status: 401, userFriendly: true },
         'INVALID_REQUEST': { status: 400, userFriendly: true },
         'INVALID_VIDEO_URL': { status: 400, userFriendly: true },
+        'NO_VIDEO_LINK': { status: 400, userFriendly: true },
         'VIDEO_TOO_LONG': { status: 400, userFriendly: true },
         'VIDEO_DOWNLOAD_FAILED': { status: 422, userFriendly: true },
         'AUDIO_EXTRACTION_FAILED': { status: 422, userFriendly: true },
