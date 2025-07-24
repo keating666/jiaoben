@@ -1,4 +1,6 @@
 {
+  "buildCommand": "echo 'No build needed'",
+  "outputDirectory": ".",
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -11,7 +13,11 @@
   ],
   "functions": {
     "api/video/transcribe.ts": {
-      "maxDuration": 60
+      "maxDuration": 60,
+      "includeFiles": "tech-validation/**"
+    },
+    "api/**/*.ts": {
+      "includeFiles": "tech-validation/**"
     }
   }
 }
