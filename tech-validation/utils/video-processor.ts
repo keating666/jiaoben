@@ -34,7 +34,7 @@ export class VideoProcessor {
       console.log(`📊 获取视频元数据: ${videoUrl}`);
       
       // 使用 youtube-dl-exec 获取视频信息
-      const info = await youtubedl(videoUrl, {
+      const result = await youtubedl(videoUrl, {
         dumpSingleJson: true,
         noCheckCertificates: true,
         noWarnings: true,
@@ -42,6 +42,12 @@ export class VideoProcessor {
         addHeader: ['referer:youtube.com', 'user-agent:Mozilla/5.0']
       });
 
+      // 当使用 dumpSingleJson 时，返回的是视频信息对象
+      if (typeof result === 'string') {
+        throw this.createError('METADATA_FETCH_FAILED', '获取视频信息失败：返回格式错误');
+      }
+
+      const info = result as any; // 类型断言，youtube-dl-exec 的类型定义不完整
       const duration = info.duration || 0;
       console.log(`⏱️  视频时长: ${duration} 秒`);
 
@@ -55,8 +61,8 @@ export class VideoProcessor {
 
       return {
         duration,
-        title: info.title,
-        format: info.ext,
+        title: info.title || 'Unknown Title',
+        format: info.ext || 'unknown',
         url: videoUrl
       };
     } catch (error: any) {
