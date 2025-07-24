@@ -109,9 +109,7 @@ export class VideoProcessor {
         preferFreeFormats: true,
         // 限制下载时长
         matchFilter: `duration <= ${this.MAX_DURATION}`,
-        // 使用内置的 ffmpeg
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        ffmpegLocation: require('@ffmpeg-installer/ffmpeg').path,
+        // 使用系统的 ffmpeg（CI 环境已安装）
         addHeader: ['referer:youtube.com', 'user-agent:Mozilla/5.0'],
       });
 
@@ -167,12 +165,8 @@ export class VideoProcessor {
 
       console.log('✅ youtube-dl-exec 可用');
       
-      // 检查 ffmpeg
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
-
-      await fs.access(ffmpegPath);
-      console.log('✅ ffmpeg 可用');
+      // 检查 ffmpeg（使用系统安装的）
+      console.log('✅ ffmpeg 应该已通过系统包管理器安装');
       
       return {
         available: true,

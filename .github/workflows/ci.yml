@@ -36,7 +36,10 @@ jobs:
     - name: Install dependencies
       run: |
         cd tech-validation
-        npm ci --prefer-offline --no-audit
+        # Skip youtube-dl-exec postinstall to avoid GitHub API rate limit
+        npm ci --prefer-offline --no-audit --ignore-scripts
+        # Install ffmpeg for youtube-dl-exec
+        sudo apt-get update && sudo apt-get install -y ffmpeg
         
     - name: Run TypeScript check
       run: |
@@ -71,7 +74,10 @@ jobs:
     - name: Install dependencies
       run: |
         cd tech-validation
-        npm ci --prefer-offline --no-audit
+        # Skip youtube-dl-exec postinstall to avoid GitHub API rate limit
+        npm ci --prefer-offline --no-audit --ignore-scripts
+        # Install ffmpeg for youtube-dl-exec
+        sudo apt-get update && sudo apt-get install -y ffmpeg
         
     - name: Run unit tests
       run: |
@@ -107,7 +113,10 @@ jobs:
     - name: Install dependencies
       run: |
         cd tech-validation
-        npm ci --prefer-offline --no-audit
+        # Skip youtube-dl-exec postinstall to avoid GitHub API rate limit
+        npm ci --prefer-offline --no-audit --ignore-scripts
+        # Install ffmpeg for youtube-dl-exec
+        sudo apt-get update && sudo apt-get install -y ffmpeg
         
     - name: Run integration tests
       run: |
@@ -144,7 +153,10 @@ jobs:
     - name: Install dependencies
       run: |
         cd tech-validation
-        npm ci --prefer-offline --no-audit
+        # Skip youtube-dl-exec postinstall to avoid GitHub API rate limit
+        npm ci --prefer-offline --no-audit --ignore-scripts
+        # Install ffmpeg for youtube-dl-exec
+        sudo apt-get update && sudo apt-get install -y ffmpeg
         
     - name: Build project
       run: |
@@ -226,7 +238,10 @@ jobs:
     - name: Install dependencies
       run: |
         cd tech-validation
-        npm ci --prefer-offline --no-audit
+        # Skip youtube-dl-exec postinstall to avoid GitHub API rate limit
+        npm ci --prefer-offline --no-audit --ignore-scripts
+        # Install ffmpeg for youtube-dl-exec
+        sudo apt-get update && sudo apt-get install -y ffmpeg
         npm install -D typedoc
         
     - name: Generate TypeDoc
