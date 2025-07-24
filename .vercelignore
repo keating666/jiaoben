@@ -29,9 +29,9 @@ docs/
 
 # Source files (only need compiled files)
 src/
-# 不要忽略 API 目录的 TypeScript 文件！
-!api/**/*.ts
-*.ts
+# 不要忽略 tech-validation 的 TypeScript 文件
+tech-validation/**/*.ts
+# 但不要忽略类型定义
 !*.d.ts
 
 # Build tools

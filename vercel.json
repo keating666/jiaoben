@@ -1,10 +1,1 @@
-{
-  "functions": {
-    "api/index.js": {
-      "maxDuration": 10
-    },
-    "api/video/transcribe.ts": {
-      "maxDuration": 60
-    }
-  }
-}
+{}
