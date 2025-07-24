@@ -1,6 +1,7 @@
-import youtubedl from 'youtube-dl-exec';
 import { promises as fs } from 'fs';
 import { join } from 'path';
+
+import youtubedl from 'youtube-dl-exec';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface VideoMetadata {
@@ -21,8 +22,10 @@ export class VideoProcessor {
 
   private static createError(code: string, message: string, details?: any): VideoProcessingError {
     const error = new Error(message) as VideoProcessingError;
+
     error.code = code;
     error.details = details;
+
     return error;
   }
 
@@ -39,7 +42,7 @@ export class VideoProcessor {
         noCheckCertificates: true,
         noWarnings: true,
         preferFreeFormats: true,
-        addHeader: ['referer:youtube.com', 'user-agent:Mozilla/5.0']
+        addHeader: ['referer:youtube.com', 'user-agent:Mozilla/5.0'],
       });
 
       // 当使用 dumpSingleJson 时，返回的是视频信息对象
@@ -49,13 +52,14 @@ export class VideoProcessor {
 
       const info = result as any; // 类型断言，youtube-dl-exec 的类型定义不完整
       const duration = info.duration || 0;
+
       console.log(`⏱️  视频时长: ${duration} 秒`);
 
       // 验证视频时长
       if (duration > this.MAX_DURATION) {
         throw this.createError(
           'DURATION_EXCEEDED',
-          `视频时长 ${duration} 秒超过限制 (${this.MAX_DURATION} 秒)`
+          `视频时长 ${duration} 秒超过限制 (${this.MAX_DURATION} 秒)`,
         );
       }
 
@@ -63,7 +67,7 @@ export class VideoProcessor {
         duration,
         title: info.title || 'Unknown Title',
         format: info.ext || 'unknown',
-        url: videoUrl
+        url: videoUrl,
       };
     } catch (error: any) {
       console.error('❌ 获取视频元数据失败:', error);
@@ -75,7 +79,7 @@ export class VideoProcessor {
       throw this.createError(
         'METADATA_FETCH_FAILED',
         '无法获取视频元数据',
-        error.message
+        error.message,
       );
     }
   }
@@ -92,7 +96,7 @@ export class VideoProcessor {
     const audioPath = join(this.TEMP_DIR, `audio_${sessionId}.mp3`);
 
     try {
-      console.log(`⬇️  开始下载视频并提取音频...`);
+      console.log('⬇️  开始下载视频并提取音频...');
       
       // 使用 youtube-dl-exec 下载并转换为音频
       await youtubedl(videoUrl, {
@@ -106,17 +110,19 @@ export class VideoProcessor {
         // 限制下载时长
         matchFilter: `duration <= ${this.MAX_DURATION}`,
         // 使用内置的 ffmpeg
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
         ffmpegLocation: require('@ffmpeg-installer/ffmpeg').path,
-        addHeader: ['referer:youtube.com', 'user-agent:Mozilla/5.0']
+        addHeader: ['referer:youtube.com', 'user-agent:Mozilla/5.0'],
       });
 
       // 验证音频文件是否存在
       const stats = await fs.stat(audioPath);
+
       console.log(`✅ 音频提取成功，文件大小: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
 
       return {
         audioPath,
-        metadata
+        metadata,
       };
     } catch (error: any) {
       console.error('❌ 下载或提取音频失败:', error);
@@ -131,7 +137,7 @@ export class VideoProcessor {
       throw this.createError(
         'DOWNLOAD_FAILED',
         '视频下载或音频提取失败',
-        error.message
+        error.message,
       );
     }
   }
@@ -157,23 +163,27 @@ export class VideoProcessor {
   }> {
     try {
       // 检查 youtube-dl-exec 是否可用
-      const testInfo = await youtubedl('--version');
+      await youtubedl('--version');
+
       console.log('✅ youtube-dl-exec 可用');
       
       // 检查 ffmpeg
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
+
       await fs.access(ffmpegPath);
       console.log('✅ ffmpeg 可用');
       
       return {
         available: true,
-        missing: []
+        missing: [],
       };
     } catch (error) {
       console.error('❌ 依赖检查失败:', error);
+
       return {
         available: false,
-        missing: ['youtube-dl-exec 或 ffmpeg']
+        missing: ['youtube-dl-exec 或 ffmpeg'],
       };
     }
   }
