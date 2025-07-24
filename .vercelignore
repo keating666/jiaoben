@@ -29,6 +29,8 @@ docs/
 
 # Source files (only need compiled files)
 src/
+# 不要忽略 API 目录的 TypeScript 文件！
+!api/**/*.ts
 *.ts
 !*.d.ts
 
