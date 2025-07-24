@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频转文字 API 测试仪表板</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f0f2f5;
+            color: #333;
+        }
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .config-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        .test-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-card h3 {
+            margin-top: 0;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        input[type="text"], input[type="password"], select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+        }
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .result.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .status-success { background: #27ae60; }
+        .status-error { background: #e74c3c; }
+        .status-pending { background: #f39c12; }
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎯 视频转文字 API 测试仪表板</h1>
+        <p>完整的 API 功能测试和性能监控</p>
+    </div>
+
+    <div class="container">
+        <!-- 配置部分 -->
+        <div class="config-section">
+            <h2>⚙️ API 配置</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+                <div>
+                    <label>API Token (留空使用测试 Token):</label>
+                    <input type="password" id="api-token" placeholder="留空使用默认测试 Token">
+                </div>
+                <div>
+                    <label>API 端点:</label>
+                    <select id="api-endpoint">
+                        <option value="https://jiaoben-7jx4.vercel.app">生产环境 (Vercel)</option>
+                        <option value="http://localhost:3000">本地开发</option>
+                    </select>
+                </div>
+                <div>
+                    <label>测试视频 URL:</label>
+                    <input type="text" id="test-video-url" value="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+                </div>
+            </div>
+            <div style="margin-top: 15px;">
+                <button onclick="saveConfig()">💾 保存配置</button>
+                <button onclick="loadConfig()">📥 加载配置</button>
+            </div>
+        </div>
+
+        <!-- 统计信息 -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="total-tests">0</div>
+                <div class="stat-label">总测试数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="success-tests">0</div>
+                <div class="stat-label">成功测试</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="failed-tests">0</div>
+                <div class="stat-label">失败测试</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avg-response-time">0ms</div>
+                <div class="stat-label">平均响应时间</div>
+            </div>
+        </div>
+
+        <!-- 测试卡片 -->
+        <div class="test-grid">
+            <!-- 健康检查 -->
+            <div class="test-card">
+                <h3><span class="status-indicator status-pending"></span>健康检查</h3>
+                <p>检查 API 服务是否正常运行</p>
+                <button onclick="runTest('health')">🏥 运行测试</button>
+                <div id="health-result" class="result"></div>
+            </div>
+
+            <!-- 完整流程测试 -->
+            <div class="test-card">
+                <h3><span class="status-indicator status-pending"></span>完整转录测试</h3>
+                <p>测试视频下载、音频提取、语音转文字、脚本生成全流程</p>
+                <div class="test-controls">
+                    <button onclick="runTest('transcribe')">🎬 运行测试</button>
+                    <button onclick="runTest('transcribe', true)">⚡ 快速测试 (短视频)</button>
+                </div>
+                <div id="transcribe-result" class="result"></div>
+            </div>
+
+            <!-- 认证测试 -->
+            <div class="test-card">
+                <h3><span class="status-indicator status-pending"></span>认证测试</h3>
+                <p>测试 API Token 验证机制</p>
+                <button onclick="runTest('auth')">🔐 运行测试</button>
+                <div id="auth-result" class="result"></div>
+            </div>
+
+            <!-- 参数验证测试 -->
+            <div class="test-card">
+                <h3><span class="status-indicator status-pending"></span>参数验证</h3>
+                <p>测试必需参数和参数格式验证</p>
+                <button onclick="runTest('validation')">📝 运行测试</button>
+                <div id="validation-result" class="result"></div>
+            </div>
+
+            <!-- SSRF 防护测试 -->
+            <div class="test-card">
+                <h3><span class="status-indicator status-pending"></span>SSRF 防护</h3>
+                <p>测试内网地址访问限制</p>
+                <button onclick="runTest('ssrf')">🛡️ 运行测试</button>
+                <div id="ssrf-result" class="result"></div>
+            </div>
+
+            <!-- 并发控制测试 -->
+            <div class="test-card">
+                <h3><span class="status-indicator status-pending"></span>并发控制</h3>
+                <p>测试并发请求限制（最多3个）</p>
+                <button onclick="runTest('concurrency')">🔄 运行测试</button>
+                <div id="concurrency-result" class="result"></div>
+            </div>
+
+            <!-- 错误处理测试 -->
+            <div class="test-card">
+                <h3><span class="status-indicator status-pending"></span>错误处理</h3>
+                <p>测试各种错误场景的处理</p>
+                <button onclick="runTest('error')">⚠️ 运行测试</button>
+                <div id="error-result" class="result"></div>
+            </div>
+
+            <!-- 性能测试 -->
+            <div class="test-card">
+                <h3><span class="status-indicator status-pending"></span>性能测试</h3>
+                <p>测试响应时间和超时处理</p>
+                <button onclick="runTest('performance')">📊 运行测试</button>
+                <div id="performance-result" class="result"></div>
+            </div>
+        </div>
+
+        <!-- 批量测试 -->
+        <div class="config-section" style="margin-top: 20px;">
+            <h2>🚀 批量测试</h2>
+            <button onclick="runAllTests()">运行所有测试</button>
+            <button onclick="runCriticalTests()">仅运行关键测试</button>
+            <button onclick="clearResults()">清除所有结果</button>
+        </div>
+    </div>
+
+    <script>
+        // 配置
+        let config = {
+            apiToken: '',
+            apiEndpoint: 'https://jiaoben-7jx4.vercel.app',
+            testVideoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+        };
+
+        // 统计数据
+        let stats = {
+            total: 0,
+            success: 0,
+            failed: 0,
+            responseTimes: []
+        };
+
+        // 加载配置
+        function loadConfig() {
+            const saved = localStorage.getItem('apiTestConfig');
+            if (saved) {
+                config = JSON.parse(saved);
+                document.getElementById('api-token').value = config.apiToken || '';
+                document.getElementById('api-endpoint').value = config.apiEndpoint;
+                document.getElementById('test-video-url').value = config.testVideoUrl;
+            }
+        }
+
+        // 保存配置
+        function saveConfig() {
+            config.apiToken = document.getElementById('api-token').value;
+            config.apiEndpoint = document.getElementById('api-endpoint').value;
+            config.testVideoUrl = document.getElementById('test-video-url').value;
+            localStorage.setItem('apiTestConfig', JSON.stringify(config));
+            alert('配置已保存！');
+        }
+
+        // 获取 API Token
+        function getApiToken() {
+            return config.apiToken || 'test-token-12345678901234567890123456789012';
+        }
+
+        // 显示结果
+        function showResult(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = content;
+            element.className = `result ${type}`;
+            element.style.display = 'block';
+            
+            // 更新状态指示器
+            const card = element.closest('.test-card');
+            const indicator = card.querySelector('.status-indicator');
+            indicator.className = 'status-indicator status-' + (type === 'success' ? 'success' : type === 'error' ? 'error' : 'pending');
+        }
+
+        // 更新统计
+        function updateStats() {
+            document.getElementById('total-tests').textContent = stats.total;
+            document.getElementById('success-tests').textContent = stats.success;
+            document.getElementById('failed-tests').textContent = stats.failed;
+            
+            if (stats.responseTimes.length > 0) {
+                const avg = stats.responseTimes.reduce((a, b) => a + b, 0) / stats.responseTimes.length;
+                document.getElementById('avg-response-time').textContent = Math.round(avg) + 'ms';
+            }
+        }
+
+        // 运行测试
+        async function runTest(testType, quick = false) {
+            const startTime = Date.now();
+            stats.total++;
+            updateStats();
+
+            try {
+                let result;
+                switch(testType) {
+                    case 'health':
+                        result = await testHealth();
+                        break;
+                    case 'transcribe':
+                        result = await testTranscribe(quick);
+                        break;
+                    case 'auth':
+                        result = await testAuth();
+                        break;
+                    case 'validation':
+                        result = await testValidation();
+                        break;
+                    case 'ssrf':
+                        result = await testSSRF();
+                        break;
+                    case 'concurrency':
+                        result = await testConcurrency();
+                        break;
+                    case 'error':
+                        result = await testErrorHandling();
+                        break;
+                    case 'performance':
+                        result = await testPerformance();
+                        break;
+                }
+                
+                const responseTime = Date.now() - startTime;
+                stats.responseTimes.push(responseTime);
+                
+                if (result.success) {
+                    stats.success++;
+                } else {
+                    stats.failed++;
+                }
+                
+                updateStats();
+            } catch (error) {
+                stats.failed++;
+                updateStats();
+                showResult(`${testType}-result`, `测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 各项测试实现
+        async function testHealth() {
+            showResult('health-result', '⏳ 检查 API 健康状态...', 'info');
+            
+            const response = await fetch(`${config.apiEndpoint}/api`);
+            const data = await response.json();
+            
+            if (response.ok) {
+                showResult('health-result', `✅ API 健康检查通过！\n\n${JSON.stringify(data, null, 2)}`, 'success');
+                return { success: true };
+            } else {
+                showResult('health-result', `❌ API 健康检查失败\n\n${JSON.stringify(data, null, 2)}`, 'error');
+                return { success: false };
+            }
+        }
+
+        async function testTranscribe(quick = false) {
+            const videoUrl = quick ? 'https://www.youtube.com/watch?v=jNQXAC9IVRw' : config.testVideoUrl;
+            showResult('transcribe-result', '⏳ 开始视频转录测试，请耐心等待 30-60 秒...', 'info');
+            
+            const response = await fetch(`${config.apiEndpoint}/api/video/transcribe`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getApiToken()}`
+                },
+                body: JSON.stringify({
+                    videoUrl: videoUrl,
+                    style: 'default',
+                    language: 'zh'
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                const result = `✅ 视频转录成功！
+
+视频信息:
+- 标题: ${data.data.videoInfo?.title || '未知'}
+- 时长: ${data.data.duration} 秒
+- 格式: ${data.data.videoInfo?.format || '未知'}
+
+转录结果:
+- 文本长度: ${data.data.transcript.length} 字符
+- 脚本场景数: ${data.data.script?.scenes?.length || 0} 个
+
+转录文本预览:
+${data.data.transcript.substring(0, 300)}...
+
+第一个场景:
+${JSON.stringify(data.data.script?.scenes?.[0] || {}, null, 2)}`;
+                
+                showResult('transcribe-result', result, 'success');
+                return { success: true };
+            } else {
+                showResult('transcribe-result', `❌ 视频转录失败\n\n${JSON.stringify(data, null, 2)}`, 'error');
+                return { success: false };
+            }
+        }
+
+        async function testAuth() {
+            showResult('auth-result', '⏳ 测试认证机制...', 'info');
+            
+            // 测试无 Token
+            const response1 = await fetch(`${config.apiEndpoint}/api/video/transcribe`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    videoUrl: config.testVideoUrl
+                })
+            });
+            
+            // 测试错误 Token
+            const response2 = await fetch(`${config.apiEndpoint}/api/video/transcribe`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer invalid-token'
+                },
+                body: JSON.stringify({
+                    videoUrl: config.testVideoUrl
+                })
+            });
+            
+            const data1 = await response1.json();
+            const data2 = await response2.json();
+            
+            if (response1.status === 401 && response2.status === 401) {
+                showResult('auth-result', `✅ 认证测试通过！
+
+无 Token 响应: ${response1.status}
+${JSON.stringify(data1, null, 2)}
+
+无效 Token 响应: ${response2.status}
+${JSON.stringify(data2, null, 2)}`, 'success');
+                return { success: true };
+            } else {
+                showResult('auth-result', `❌ 认证测试失败
+
+测试1状态: ${response1.status}
+测试2状态: ${response2.status}`, 'error');
+                return { success: false };
+            }
+        }
+
+        async function testValidation() {
+            showResult('validation-result', '⏳ 测试参数验证...', 'info');
+            
+            const tests = [
+                {
+                    name: '缺少 videoUrl',
+                    body: { style: 'default' }
+                },
+                {
+                    name: '无效 URL 格式',
+                    body: { videoUrl: 'not-a-url' }
+                },
+                {
+                    name: '空字符串 URL',
+                    body: { videoUrl: '' }
+                }
+            ];
+            
+            let results = [];
+            for (const test of tests) {
+                const response = await fetch(`${config.apiEndpoint}/api/video/transcribe`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getApiToken()}`
+                    },
+                    body: JSON.stringify(test.body)
+                });
+                
+                const data = await response.json();
+                results.push({
+                    test: test.name,
+                    status: response.status,
+                    passed: response.status === 400
+                });
+            }
+            
+            const allPassed = results.every(r => r.passed);
+            const resultText = results.map(r => 
+                `${r.passed ? '✅' : '❌'} ${r.test}: ${r.status}`
+            ).join('\n');
+            
+            if (allPassed) {
+                showResult('validation-result', `✅ 参数验证测试全部通过！\n\n${resultText}`, 'success');
+                return { success: true };
+            } else {
+                showResult('validation-result', `❌ 部分参数验证测试失败\n\n${resultText}`, 'error');
+                return { success: false };
+            }
+        }
+
+        async function testSSRF() {
+            showResult('ssrf-result', '⏳ 测试 SSRF 防护...', 'info');
+            
+            const dangerousUrls = [
+                'http://localhost:8080/video.mp4',
+                'http://127.0.0.1/video.mp4',
+                'http://192.168.1.1/video.mp4',
+                'http://10.0.0.1/video.mp4',
+                'http://[::1]/video.mp4'
+            ];
+            
+            let results = [];
+            for (const url of dangerousUrls) {
+                const response = await fetch(`${config.apiEndpoint}/api/video/transcribe`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getApiToken()}`
+                    },
+                    body: JSON.stringify({ videoUrl: url })
+                });
+                
+                const data = await response.json();
+                results.push({
+                    url: url,
+                    blocked: response.status === 400 && data.error?.message?.includes('不允许访问')
+                });
+            }
+            
+            const allBlocked = results.every(r => r.blocked);
+            const resultText = results.map(r => 
+                `${r.blocked ? '✅' : '❌'} ${r.url}: ${r.blocked ? '已拦截' : '未拦截'}`
+            ).join('\n');
+            
+            if (allBlocked) {
+                showResult('ssrf-result', `✅ SSRF 防护测试通过！所有内网地址都被正确拦截\n\n${resultText}`, 'success');
+                return { success: true };
+            } else {
+                showResult('ssrf-result', `❌ SSRF 防护测试失败！部分内网地址未被拦截\n\n${resultText}`, 'error');
+                return { success: false };
+            }
+        }
+
+        async function testConcurrency() {
+            showResult('concurrency-result', '⏳ 测试并发控制...', 'info');
+            
+            // 同时发送 5 个请求
+            const promises = [];
+            for (let i = 0; i < 5; i++) {
+                promises.push(
+                    fetch(`${config.apiEndpoint}/api/video/transcribe`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${getApiToken()}`
+                        },
+                        body: JSON.stringify({
+                            videoUrl: config.testVideoUrl,
+                            sessionId: `concurrent-test-${i}`
+                        })
+                    })
+                );
+            }
+            
+            const responses = await Promise.all(promises);
+            const results = await Promise.all(responses.map(async (r, i) => ({
+                request: i + 1,
+                status: r.status,
+                data: await r.json()
+            })));
+            
+            const accepted = results.filter(r => r.status !== 429).length;
+            const rejected = results.filter(r => r.status === 429).length;
+            
+            const resultText = `发送请求: 5
+接受请求: ${accepted}
+拒绝请求: ${rejected} (429 Too Many Requests)
+
+详细结果:
+${results.map(r => `请求 ${r.request}: ${r.status} ${r.status === 429 ? '(被限流)' : '(处理中)'}`).join('\n')}`;
+            
+            if (accepted <= 3 && rejected >= 2) {
+                showResult('concurrency-result', `✅ 并发控制测试通过！\n\n${resultText}`, 'success');
+                return { success: true };
+            } else {
+                showResult('concurrency-result', `❌ 并发控制测试失败！\n\n${resultText}`, 'error');
+                return { success: false };
+            }
+        }
+
+        async function testErrorHandling() {
+            showResult('error-result', '⏳ 测试错误处理...', 'info');
+            
+            const errorScenarios = [
+                {
+                    name: '不存在的视频',
+                    videoUrl: 'https://www.youtube.com/watch?v=invalid12345'
+                },
+                {
+                    name: '私有视频',
+                    videoUrl: 'https://www.youtube.com/watch?v=private_video'
+                },
+                {
+                    name: '不支持的网站',
+                    videoUrl: 'https://example.com/video.mp4'
+                }
+            ];
+            
+            let results = [];
+            for (const scenario of errorScenarios) {
+                try {
+                    const response = await fetch(`${config.apiEndpoint}/api/video/transcribe`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${getApiToken()}`
+                        },
+                        body: JSON.stringify({ videoUrl: scenario.videoUrl })
+                    });
+                    
+                    const data = await response.json();
+                    results.push({
+                        scenario: scenario.name,
+                        handled: !response.ok && data.error,
+                        errorMessage: data.error?.message || '无错误信息'
+                    });
+                } catch (error) {
+                    results.push({
+                        scenario: scenario.name,
+                        handled: false,
+                        errorMessage: error.message
+                    });
+                }
+            }
+            
+            const allHandled = results.every(r => r.handled);
+            const resultText = results.map(r => 
+                `${r.handled ? '✅' : '❌'} ${r.scenario}: ${r.errorMessage}`
+            ).join('\n\n');
+            
+            if (allHandled) {
+                showResult('error-result', `✅ 错误处理测试通过！\n\n${resultText}`, 'success');
+                return { success: true };
+            } else {
+                showResult('error-result', `⚠️ 错误处理测试部分通过\n\n${resultText}`, 'info');
+                return { success: false };
+            }
+        }
+
+        async function testPerformance() {
+            showResult('performance-result', '⏳ 测试性能...', 'info');
+            
+            const iterations = 3;
+            const responseTimes = [];
+            
+            for (let i = 0; i < iterations; i++) {
+                const startTime = Date.now();
+                
+                try {
+                    const response = await fetch(`${config.apiEndpoint}/api`);
+                    await response.json();
+                    
+                    const responseTime = Date.now() - startTime;
+                    responseTimes.push(responseTime);
+                } catch (error) {
+                    responseTimes.push(-1);
+                }
+            }
+            
+            const validTimes = responseTimes.filter(t => t > 0);
+            const avgTime = validTimes.reduce((a, b) => a + b, 0) / validTimes.length;
+            const maxTime = Math.max(...validTimes);
+            const minTime = Math.min(...validTimes);
+            
+            const resultText = `测试次数: ${iterations}
+成功次数: ${validTimes.length}
+
+响应时间:
+- 平均: ${Math.round(avgTime)}ms
+- 最快: ${minTime}ms
+- 最慢: ${maxTime}ms
+
+详细数据:
+${responseTimes.map((t, i) => `测试 ${i + 1}: ${t > 0 ? t + 'ms' : '失败'}`).join('\n')}`;
+            
+            if (validTimes.length === iterations && avgTime < 1000) {
+                showResult('performance-result', `✅ 性能测试通过！\n\n${resultText}`, 'success');
+                return { success: true };
+            } else {
+                showResult('performance-result', `⚠️ 性能测试结果\n\n${resultText}`, 'info');
+                return { success: false };
+            }
+        }
+
+        // 批量测试
+        async function runAllTests() {
+            const tests = ['health', 'transcribe', 'auth', 'validation', 'ssrf', 'concurrency', 'error', 'performance'];
+            for (const test of tests) {
+                await runTest(test);
+                await new Promise(resolve => setTimeout(resolve, 1000)); // 延迟1秒
+            }
+        }
+
+        async function runCriticalTests() {
+            const tests = ['health', 'auth', 'ssrf', 'validation'];
+            for (const test of tests) {
+                await runTest(test);
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+
+        function clearResults() {
+            document.querySelectorAll('.result').forEach(el => {
+                el.style.display = 'none';
+                el.textContent = '';
+            });
+            document.querySelectorAll('.status-indicator').forEach(el => {
+                el.className = 'status-indicator status-pending';
+            });
+            stats = { total: 0, success: 0, failed: 0, responseTimes: [] };
+            updateStats();
+        }
+
+        // 页面加载时初始化
+        window.onload = () => {
+            loadConfig();
+            // 自动运行健康检查
+            runTest('health');
+        };
+    </script>
+</body>
+</html>
