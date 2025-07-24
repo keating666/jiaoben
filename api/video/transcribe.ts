@@ -156,8 +156,15 @@ export default async function handler(
     
     // 如果提供了混合文本，先提取链接
     if (mixedText && !video_url) {
-      const { LinkExtractor } = await import('../../tech-validation/utils/link-extractor');
-      let extracted = LinkExtractor.extractVideoLink(mixedText);
+      // 首先尝试使用专门的抖音链接提取器
+      const { DouyinLinkExtractor } = await import('../../tech-validation/utils/douyin-link-extractor');
+      let extracted = DouyinLinkExtractor.extractDouyinLink(mixedText);
+      
+      // 如果不是抖音链接，使用通用链接提取器
+      if (!extracted) {
+        const { LinkExtractor } = await import('../../tech-validation/utils/link-extractor');
+        extracted = LinkExtractor.extractVideoLink(mixedText);
+      }
       
       // 如果正则提取失败，尝试使用 AI
       if (!extracted) {
@@ -179,7 +186,13 @@ export default async function handler(
         });
       }
       
-      video_url = LinkExtractor.cleanUrl(extracted.url);
+      // 使用相应的清理方法
+      if (extracted.platform === 'douyin') {
+        video_url = DouyinLinkExtractor.normalizeUrl(extracted.url);
+      } else {
+        const { LinkExtractor } = await import('../../tech-validation/utils/link-extractor');
+        video_url = LinkExtractor.cleanUrl(extracted.url);
+      }
       console.log(`📎 从混合文本中提取链接: ${extracted.platform} - ${video_url}`);
     }
     
