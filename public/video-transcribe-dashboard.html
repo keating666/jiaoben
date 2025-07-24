@@ -597,7 +597,18 @@ https://www.tiktok.com/@username/video/7123456789012345678
                     })
                 });
                 
-                const data = await response.json();
+                // 检查响应类型
+                const contentType = response.headers.get('content-type');
+                let data;
+                
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    // 如果不是 JSON，读取文本内容
+                    const text = await response.text();
+                    console.error('非 JSON 响应:', text);
+                    throw new Error(`服务器返回非 JSON 响应: ${text.substring(0, 100)}...`);
+                }
                 const totalTime = Date.now() - startTime;
                 
                 if (response.ok && data.success) {

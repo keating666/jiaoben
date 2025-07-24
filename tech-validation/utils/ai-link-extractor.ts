@@ -1,12 +1,12 @@
 import { logger } from './logger';
-import { TongyiTextGenerator } from '../interfaces/tongyi-text-generator';
+import { TongyiClient } from './tongyi-client';
 import { ExtractedLink } from './link-extractor';
 
 export class AILinkExtractor {
-  private tongyiClient: TongyiTextGenerator;
+  private tongyiClient: TongyiClient;
 
   constructor() {
-    this.tongyiClient = new TongyiTextGenerator();
+    this.tongyiClient = new TongyiClient();
   }
 
   /**
@@ -29,7 +29,10 @@ ${mixedText}
 5. 如果没有找到链接，返回：{"url": null, "platform": null}
 6. 只返回JSON，不要有其他文字说明`;
 
-      const result = await this.tongyiClient.generateContent(prompt);
+      const result = await this.tongyiClient.generateText(prompt, {
+        maxTokens: 100,
+        temperature: 0.1, // 低温度，更精确
+      });
       
       // 尝试解析 AI 返回的 JSON
       try {
@@ -58,7 +61,7 @@ ${mixedText}
           originalText: mixedText,
         };
       } catch (parseError) {
-        logger.error('AILinkExtractor', 'extractVideoLink', '解析 AI 返回的 JSON 失败', parseError);
+        logger.error('AILinkExtractor', 'extractVideoLink', '解析 AI 返回的 JSON 失败', parseError instanceof Error ? parseError : new Error(String(parseError)));
         
         // 尝试用正则提取 URL
         const urlMatch = result.match(/https?:\/\/[^\s"']+/);
@@ -73,7 +76,7 @@ ${mixedText}
         return null;
       }
     } catch (error) {
-      logger.error('AILinkExtractor', 'extractVideoLink', 'AI 链接提取失败', error);
+      logger.error('AILinkExtractor', 'extractVideoLink', 'AI 链接提取失败', error instanceof Error ? error : new Error(String(error)));
       return null;
     }
   }
