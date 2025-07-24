@@ -201,7 +201,12 @@ export class Logger {
     }
 
     // 异步输出到控制台，避免阻塞
-    setImmediate(() => this.printToConsole(logEntry));
+    // 在测试环境中同步输出，避免 "Cannot log after tests are done" 错误
+    if (process.env.NODE_ENV === 'test') {
+      this.printToConsole(logEntry);
+    } else {
+      setImmediate(() => this.printToConsole(logEntry));
+    }
   }
 
   /**
