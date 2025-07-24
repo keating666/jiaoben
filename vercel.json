@@ -3,6 +3,19 @@
   "functions": {
     "api/index.js": {
       "maxDuration": 10
+    },
+    "api/video/transcribe.ts": {
+      "maxDuration": 60
     }
-  }
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/public/$1"
+    }
+  ]
 }

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>API 测试页面（部署版）</h1>
+    <button onclick="test()">测试 API</button>
+    <pre id="result"></pre>
+    
+    <script>
+    async function test() {
+        const result = document.getElementById('result');
+        result.textContent = '测试中...';
+        
+        try {
+            // 测试健康检查
+            const health = await fetch('/api');
+            const healthData = await health.json();
+            result.textContent = 'API 健康检查: ' + JSON.stringify(healthData, null, 2) + '\n\n';
+            
+            // 测试视频转录
+            result.textContent += '正在测试视频转录（需要30-60秒）...\n';
+            const response = await fetch('/api/video/transcribe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer test-token-1234567890123456789012345678'
+                },
+                body: JSON.stringify({
+                    video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                    style: 'default'
+                })
+            });
+            
+            const data = await response.json();
+            result.textContent += '\n视频转录结果: ' + JSON.stringify(data, null, 2);
+        } catch (error) {
+            result.textContent = '错误: ' + error.message;
+        }
+    }
+    </script>
+</body>
+</html>

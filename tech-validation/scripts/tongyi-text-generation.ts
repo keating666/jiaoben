@@ -8,17 +8,24 @@ import {
   TextGenerationRequest,
   TextGenerationResponse,
 } from '../interfaces/api-types';
-import { ApiClient } from '../utils/api-client';
+import { EnhancedApiClient } from '../utils/enhanced-api-client';
 import { logger } from '../utils/logger';
 import { Config } from '../utils/config';
+import { ConcurrencyController } from '../utils/concurrency-controller';
 
 /**
  * 通义千问 API 客户端实现
  */
 export class TongyiClient implements AIServiceClient {
   name = 'Tongyi-Qwen';
-  private apiClient!: ApiClient;
+  private apiClient!: EnhancedApiClient;
   private config!: ServiceConfig; // 存储配置信息，用于调试和扩展
+  private concurrencyController: ConcurrencyController;
+
+  constructor() {
+    // 初始化并发控制器，限制同时处理 5 个请求
+    this.concurrencyController = new ConcurrencyController(5);
+  }
 
   /**
    * 初始化客户端
@@ -26,8 +33,8 @@ export class TongyiClient implements AIServiceClient {
   async initialize(config: ServiceConfig): Promise<void> {
     this.config = { ...config };
     
-    // 创建定制的 API 客户端
-    this.apiClient = new ApiClient({
+    // 创建增强的 API 客户端（带断路器）
+    this.apiClient = new EnhancedApiClient({
       ...config,
       // 使用 OpenAI 兼容模式的端点
       baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
@@ -36,6 +43,8 @@ export class TongyiClient implements AIServiceClient {
     logger.info(this.name, 'initialize', '客户端初始化完成', {
       baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
       timeout: this.config.timeout,
+      circuitBreaker: '已启用',
+      concurrencyLimit: 5,
     });
   }
 
@@ -72,15 +81,20 @@ export class TongyiClient implements AIServiceClient {
    * 文本生成 (通义千问的主要功能)
    */
   async generateText(request: TextGenerationRequest): Promise<TextGenerationResponse> {
+    const sessionId = `tongyi-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
     logger.info(this.name, 'generateText', '开始文本生成', {
+      sessionId,
       promptLength: request.prompt.length,
       model: request.model || 'qwen-plus',
       maxTokens: request.max_tokens,
     });
 
-    const startTime = Date.now();
+    // 使用并发控制器执行请求
+    return this.concurrencyController.execute(sessionId, async () => {
+      const startTime = Date.now();
 
-    try {
+      try {
       // 构造 OpenAI 兼容格式的请求
       const requestData = {
         model: request.model || 'qwen-plus', // 推荐使用 qwen-plus (效果、速度、成本均衡)
@@ -115,17 +129,19 @@ export class TongyiClient implements AIServiceClient {
         finishReason: result.finish_reason,
       });
 
-      return result;
+        return result;
 
-    } catch (error: any) {
-      const duration = Date.now() - startTime;
+      } catch (error: any) {
+        const duration = Date.now() - startTime;
 
-      logger.error(this.name, 'generateText', '文本生成失败', error, { 
-        duration,
-        promptLength: request.prompt.length, 
-      });
-      throw error;
-    }
+        logger.error(this.name, 'generateText', '文本生成失败', error, { 
+          sessionId,
+          duration,
+          promptLength: request.prompt.length, 
+        });
+        throw error;
+      }
+    });
   }
 
   /**
@@ -243,6 +259,29 @@ ${originalScript}
     });
 
     return results;
+  }
+
+  /**
+   * 清理资源
+   */
+  async dispose(): Promise<void> {
+    logger.info(this.name, 'dispose', '开始清理资源');
+    
+    try {
+      // 获取并发控制器状态
+      const status = this.concurrencyController.getStatus();
+      logger.info(this.name, 'dispose', '并发控制器状态', status);
+      
+      // 清理 API 客户端资源
+      if (this.apiClient) {
+        // EnhancedApiClient 内部会处理断路器清理
+        logger.info(this.name, 'dispose', '已清理 API 客户端资源');
+      }
+      
+      logger.info(this.name, 'dispose', '资源清理完成');
+    } catch (error) {
+      logger.error(this.name, 'dispose', '资源清理失败', error as Error);
+    }
   }
 }
 
