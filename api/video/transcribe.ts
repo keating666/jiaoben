@@ -157,7 +157,21 @@ export default async function handler(
     // 如果提供了混合文本，先提取链接
     if (mixedText && !video_url) {
       const { LinkExtractor } = await import('../../tech-validation/utils/link-extractor');
-      const extracted = LinkExtractor.extractVideoLink(mixedText);
+      let extracted = LinkExtractor.extractVideoLink(mixedText);
+      
+      // 如果正则提取失败，尝试使用 AI
+      if (!extracted) {
+        console.log('正则提取失败，尝试使用 AI 提取链接...');
+        const { AILinkExtractor } = await import('../../tech-validation/utils/ai-link-extractor');
+        const aiExtractor = new AILinkExtractor();
+        
+        try {
+          extracted = await aiExtractor.extractVideoLink(mixedText);
+          await aiExtractor.dispose();
+        } catch (aiError) {
+          console.error('AI 提取链接失败:', aiError);
+        }
+      }
       
       if (!extracted) {
         throw createVideoError('NO_VIDEO_LINK', '无法从文本中提取视频链接', {
