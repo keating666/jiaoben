@@ -10,7 +10,7 @@
     "dev": "vercel dev",
     "install:all": "npm install && cd tech-validation && npm install",
     "test": "cd tech-validation && npm run test:all",
-    "lint": "cd tech-validation && npm run lint",
+    "lint": "cd tech-validation && npm run lint -- --max-warnings 600",
     "typecheck": "cd tech-validation && npm run typecheck",
     "verify-build": "ls -la api/ && ls -la tech-validation/dist/",
     "postinstall": "node scripts/install-binaries.js"
