@@ -26,7 +26,6 @@ describe('Binary Dependencies', () => {
 
   it('should have ffmpeg available through npm package', () => {
     try {
-      // @ts-expect-error Dynamic require for optional dependency
       const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 
       expect(typeof ffmpegPath).toBe('string');

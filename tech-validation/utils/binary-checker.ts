@@ -44,7 +44,6 @@ export class BinaryChecker {
 
   static async checkFfmpeg(): Promise<BinaryStatus> {
     try {
-      // @ts-expect-error Dynamic require for optional dependency
       const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
       
       if (!existsSync(ffmpegPath)) {
