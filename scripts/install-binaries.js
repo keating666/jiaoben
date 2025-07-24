@@ -154,7 +154,13 @@ async function installFfmpeg() {
 
 // 创建依赖检查函数
 function createDependencyChecker() {
-  const checkerPath = path.join(__dirname, '..', 'utils', 'binary-checker.ts');
+  const checkerPath = path.join(__dirname, '..', 'tech-validation', 'utils', 'binary-checker.ts');
+  
+  // 确保目录存在
+  const utilsDir = path.join(__dirname, '..', 'tech-validation', 'utils');
+  if (!fs.existsSync(utilsDir)) {
+    fs.mkdirSync(utilsDir, { recursive: true });
+  }
   
   console.log('📝 创建依赖检查模块...');
   
@@ -269,18 +275,9 @@ async function main() {
   try {
     await installYtDlp();
     await installFfmpeg();
-    createDependencyChecker();
+    // 不需要创建 binary-checker.ts，文件已存在
     
     console.log('🎉 所有二进制依赖安装完成！');
-    
-    // 运行验证
-    console.log('🔍 运行依赖验证...');
-    try {
-      const { BinaryChecker } = require('../utils/binary-checker.ts');
-      await BinaryChecker.ensureAvailable();
-    } catch (verifyError) {
-      console.warn('⚠️  依赖验证时出现警告:', verifyError.message);
-    }
     
   } catch (error) {
     console.error('💥 安装过程中出现错误:', error.message);
