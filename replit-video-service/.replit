@@ -1,0 +1,12 @@
+run = "python main.py"
+language = "python3"
+
+[nix]
+channel = "stable-24_05"
+
+[deployment]
+run = ["python", "main.py"]
+
+[[ports]]
+localPort = 5000
+externalPort = 80
