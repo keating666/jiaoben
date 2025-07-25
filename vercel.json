@@ -27,6 +27,14 @@
     "api/test-deployment.ts": {
       "maxDuration": 5
     },
+    "api/test-with-progress.ts": {
+      "maxDuration": 30,
+      "includeFiles": "tech-validation/**"
+    },
+    "api/video/transcribe-async.ts": {
+      "maxDuration": 10,
+      "includeFiles": "tech-validation/**"
+    },
     "api/test-full-mock.ts": {
       "maxDuration": 10
     },
