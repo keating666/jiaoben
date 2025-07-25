@@ -42,7 +42,7 @@ export class ReplitVideoService {
       });
       
       const data = await response.json();
-      return data.status === 'healthy' && data.ffmpeg_available;
+      return (data.status === 'healthy' || data.status === 'ok') && (data.ffmpeg_available || data.ffmpeg);
     } catch (error) {
       console.error('Replit 服务健康检查失败:', error);
       return false;
