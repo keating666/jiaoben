@@ -20,6 +20,13 @@
       "maxDuration": 30,
       "includeFiles": "tech-validation/**"
     },
+    "api/test-minimax-simple.ts": {
+      "maxDuration": 30,
+      "includeFiles": "tech-validation/**"
+    },
+    "api/test-deployment.ts": {
+      "maxDuration": 5
+    },
     "api/test-full-mock.ts": {
       "maxDuration": 10
     },
