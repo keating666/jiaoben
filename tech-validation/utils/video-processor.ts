@@ -50,9 +50,19 @@ export class VideoProcessor {
         }
         
         // 获取视频信息
-        const info = await replitService.getVideoInfo(videoUrl);
-        
-        console.log(`⏱️  视频时长: ${info.duration} 秒`);
+        let info;
+        try {
+          info = await replitService.getVideoInfo(videoUrl);
+          console.log(`⏱️  视频时长: ${info.duration} 秒`);
+        } catch (infoError: any) {
+          console.error('Replit 获取视频信息失败:', infoError.message);
+          // 如果 Replit 服务有问题，抛出特定错误以触发备用方案
+          throw this.createError(
+            'REPLIT_SERVICE_UNAVAILABLE',
+            'Replit 视频服务暂时不可用',
+            { videoUrl, error: infoError.message }
+          );
+        }
         
         // 验证视频时长
         if (info.duration > this.MAX_DURATION) {

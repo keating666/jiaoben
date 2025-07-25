@@ -63,11 +63,26 @@ export class ReplitVideoService {
     });
     
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || '获取视频信息失败');
+      let errorMessage = '获取视频信息失败';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || errorMessage;
+      } catch (e) {
+        // 如果响应不是 JSON，尝试读取文本
+        const text = await response.text();
+        console.error('Replit 服务返回非 JSON 响应:', text.substring(0, 200));
+      }
+      throw new Error(errorMessage);
     }
     
-    return await response.json();
+    // 尝试解析 JSON
+    try {
+      return await response.json();
+    } catch (e) {
+      const text = await response.text();
+      console.error('Replit 返回无效 JSON:', text.substring(0, 200));
+      throw new Error('Replit 服务返回格式错误');
+    }
   }
   
   /**
