@@ -230,7 +230,7 @@ export default async function handler(
       try {
       // 第一阶段：处理视频（下载 + 提取音频）
       tracker.startStage('video_processing');
-      const { videoPath, audioPath, metadata } = await VideoProcessor.processVideo(video_url, sessionId);
+      const { audioPath, metadata } = await VideoProcessor.downloadAndExtractAudio(video_url);
       const videoProcessingTime = tracker.endStage('video_processing');
       
       console.log(`✅ 视频处理完成: ${videoProcessingTime}ms`);
