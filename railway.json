@@ -2,13 +2,18 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "cd railway-video-service && pip install -r requirements.txt"
+    "nixpacksConfigPath": "railway-video-service/nixpacks.toml"
   },
   "deploy": {
-    "startCommand": "cd railway-video-service && gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120",
+    "startCommand": "cd railway-video-service && python -m gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 10,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3
+  },
+  "environments": {
+    "production": {
+      "buildCommand": "cd railway-video-service && pip install -r requirements.txt"
+    }
   }
 }

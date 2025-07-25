@@ -8,11 +8,26 @@
 
 ### 2. 创建 Railway 项目
 
+由于 Railway 检测到了 Node.js 项目，我们需要使用以下方法之一：
+
+#### 方法 A：使用环境变量（推荐）
 1. 登录 Railway 后，点击 **"New Project"**
 2. 选择 **"Deploy from GitHub repo"**
-3. 授权 Railway 访问你的 GitHub
-4. 选择 `jiaoben` 仓库
-5. 选择部署目录：`railway-video-service`
+3. 选择 `jiaoben` 仓库
+4. 部署后会失败，这是正常的
+5. 进入项目设置，添加以下环境变量：
+   ```
+   NIXPACKS_BUILD_CMD=cd railway-video-service && pip install -r requirements.txt
+   NIXPACKS_START_CMD=cd railway-video-service && gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+   NIXPACKS_PYTHON_VERSION=3.11
+   ```
+6. 重新部署
+
+#### 方法 B：创建独立仓库
+1. 复制 `railway-video-service` 文件夹到新位置
+2. 创建新的 GitHub 仓库
+3. 推送视频服务代码
+4. 在 Railway 部署新仓库
 
 ### 3. 自动部署
 
