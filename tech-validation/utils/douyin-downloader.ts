@@ -1,7 +1,9 @@
-import { logger } from './logger';
-import youtubeDl from 'youtube-dl-exec';
 import path from 'path';
 import fs from 'fs/promises';
+
+import youtubeDl from 'youtube-dl-exec';
+
+import { logger } from './logger';
 import { DouyinLinkExtractor, DouyinVideoInfo } from './douyin-link-extractor';
 
 export interface DouyinDownloadOptions {
@@ -43,8 +45,10 @@ export class DouyinDownloader {
       
       // 如果是短链接，先解析
       let finalUrl = normalizedUrl;
+
       if (normalizedUrl.includes('v.douyin.com')) {
         const resolvedUrl = await DouyinLinkExtractor.resolveShortLink(normalizedUrl);
+
         if (resolvedUrl) {
           finalUrl = resolvedUrl;
         }
@@ -57,7 +61,7 @@ export class DouyinDownloader {
         noWarnings: true,
         preferFreeFormats: true,
         addHeader: [
-          'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         ],
       }) as any; // 类型断言以处理类型问题
 
@@ -73,6 +77,7 @@ export class DouyinDownloader {
       };
     } catch (error) {
       logger.error('DouyinDownloader', 'getVideoInfo', '获取视频信息失败', error as Error);
+
       return null;
     }
   }
@@ -86,10 +91,12 @@ export class DouyinDownloader {
       
       // 确保输出目录存在
       const outputDir = this.options.outputDir || './downloads';
+
       await fs.mkdir(outputDir, { recursive: true });
 
       // 获取视频信息
       const videoInfo = await this.getVideoInfo(url);
+
       if (!videoInfo) {
         return {
           success: false,
@@ -112,7 +119,7 @@ export class DouyinDownloader {
         noCheckCertificates: true,
         noWarnings: true,
         addHeader: [
-          'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         ],
       };
 
@@ -133,7 +140,7 @@ export class DouyinDownloader {
 
       logger.info('DouyinDownloader', 'downloadVideo', '视频下载成功', { 
         outputPath,
-        videoInfo 
+        videoInfo, 
       });
 
       return {
@@ -143,6 +150,7 @@ export class DouyinDownloader {
       };
     } catch (error) {
       logger.error('DouyinDownloader', 'downloadVideo', '视频下载失败', error as Error);
+
       return {
         success: false,
         error: error instanceof Error ? error.message : '未知错误',
@@ -155,24 +163,26 @@ export class DouyinDownloader {
    */
   async downloadBatch(urls: string[]): Promise<DouyinDownloadResult[]> {
     logger.info('DouyinDownloader', 'downloadBatch', '开始批量下载', { 
-      count: urls.length 
+      count: urls.length, 
     });
 
     const results: DouyinDownloadResult[] = [];
     
     for (const url of urls) {
       const result = await this.downloadVideo(url);
+
       results.push(result);
       
       // 避免请求过快
       await this.delay(2000);
     }
 
-    const successCount = results.filter(r => r.success).length;
+    const successCount = results.filter((r) => r.success).length;
+
     logger.info('DouyinDownloader', 'downloadBatch', '批量下载完成', { 
       total: urls.length,
       success: successCount,
-      failed: urls.length - successCount
+      failed: urls.length - successCount,
     });
 
     return results;
@@ -184,6 +194,7 @@ export class DouyinDownloader {
   async extractAudio(videoUrl: string): Promise<DouyinDownloadResult> {
     const audioOptions = { ...this.options, extractAudio: true };
     const downloader = new DouyinDownloader(audioOptions);
+
     return downloader.downloadVideo(videoUrl);
   }
 
@@ -191,7 +202,7 @@ export class DouyinDownloader {
    * 延迟函数
    */
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -204,11 +215,12 @@ export class DouyinDownloader {
       
       for (const file of files) {
         const filePath = path.join(outputDir, file);
+
         await fs.unlink(filePath);
       }
       
       logger.info('DouyinDownloader', 'cleanDownloadDir', '清理下载目录完成', { 
-        filesDeleted: files.length 
+        filesDeleted: files.length, 
       });
     } catch (error) {
       logger.error('DouyinDownloader', 'cleanDownloadDir', '清理下载目录失败', error as Error);

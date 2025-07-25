@@ -1,6 +1,7 @@
+import { config } from 'dotenv';
+
 import { DouyinLinkExtractor } from '../utils/douyin-link-extractor';
 import { DouyinDownloader } from '../utils/douyin-downloader';
-import { config } from 'dotenv';
 
 // 加载环境变量
 config();
@@ -25,24 +26,28 @@ async function main() {
     
     // 单个链接提取
     const result = DouyinLinkExtractor.extractDouyinLink(text);
+
     if (result) {
-      console.log(`✅ 提取成功:`);
+      console.log('✅ 提取成功:');
       console.log(`   URL: ${result.url}`);
       console.log(`   平台: ${result.platform}`);
       
       // 验证URL
       const isValid = DouyinLinkExtractor.isValidDouyinUrl(result.url);
+
       console.log(`   有效性: ${isValid ? '✅' : '❌'}`);
       
       // 提取视频ID
       const videoId = DouyinLinkExtractor.extractVideoId(result.url);
+
       console.log(`   视频ID: ${videoId || '未提取到'}`);
     } else {
-      console.log(`❌ 未找到抖音链接`);
+      console.log('❌ 未找到抖音链接');
     }
     
     // 批量提取
     const allLinks = DouyinLinkExtractor.extractAllDouyinLinks(text);
+
     if (allLinks.length > 1) {
       console.log(`   批量提取: 找到 ${allLinks.length} 个链接`);
     }
@@ -61,6 +66,7 @@ async function main() {
   
   for (const url of urlsToNormalize) {
     const normalized = DouyinLinkExtractor.normalizeUrl(url);
+
     console.log(`原始: "${url}"`);
     console.log(`规范: "${normalized}"\n`);
   }
@@ -100,6 +106,7 @@ async function main() {
   
   try {
     const shortUrl = 'https://v.douyin.com/iRyLb8kf';
+
     console.log(`解析短链接: ${shortUrl}`);
     const resolvedUrl = await DouyinLinkExtractor.resolveShortLink(shortUrl);
     

@@ -9,7 +9,8 @@ export default async function handler(
   try {
     // 步骤1：检查请求方法
     if (req.method !== 'POST') {
-      return res.status(405).json({ error: 'Method not allowed' });
+      res.status(405).json({ error: 'Method not allowed' });
+      return;
     }
 
     // 步骤2：解析请求体

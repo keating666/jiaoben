@@ -1,6 +1,7 @@
+import axios from 'axios';
+
 import { logger } from './logger';
 import { ExtractedLink } from './link-extractor';
-import axios from 'axios';
 import { Config } from './config';
 
 export class AILinkExtractor {
@@ -9,6 +10,7 @@ export class AILinkExtractor {
 
   constructor() {
     const tongyiConfig = Config.getTongyiConfig();
+
     this.apiKey = tongyiConfig.apiKey;
     this.baseUrl = tongyiConfig.baseUrl || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
   }
@@ -39,7 +41,7 @@ ${mixedText}
         {
           model: 'qwen-turbo',
           messages: [
-            { role: 'user', content: prompt }
+            { role: 'user', content: prompt },
           ],
           temperature: 0.1,
           max_tokens: 100,
@@ -50,7 +52,7 @@ ${mixedText}
             'Content-Type': 'application/json',
           },
           timeout: 10000,
-        }
+        },
       );
       
       const responseText = response.data.choices[0].message.content;
@@ -59,8 +61,10 @@ ${mixedText}
       try {
         // 提取 JSON 部分（AI 可能会返回额外的文字）
         const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+
         if (!jsonMatch) {
           logger.warn('AILinkExtractor', 'extractVideoLink', 'AI 返回结果中未找到 JSON');
+
           return null;
         }
 
@@ -68,12 +72,13 @@ ${mixedText}
         
         if (!parsed.url || parsed.url === null) {
           logger.info('AILinkExtractor', 'extractVideoLink', 'AI 未找到视频链接');
+
           return null;
         }
 
         logger.info('AILinkExtractor', 'extractVideoLink', 'AI 成功提取链接', { 
           url: parsed.url, 
-          platform: parsed.platform 
+          platform: parsed.platform, 
         });
 
         return {
@@ -86,6 +91,7 @@ ${mixedText}
         
         // 尝试用正则提取 URL
         const urlMatch = responseText.match(/https?:\/\/[^\s"']+/);
+
         if (urlMatch) {
           return {
             url: urlMatch[0],
@@ -98,6 +104,7 @@ ${mixedText}
       }
     } catch (error) {
       logger.error('AILinkExtractor', 'extractVideoLink', 'AI 链接提取失败', error instanceof Error ? error : new Error(String(error)));
+
       return null;
     }
   }

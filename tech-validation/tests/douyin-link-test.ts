@@ -1,7 +1,7 @@
 import { LinkExtractor } from '../utils/link-extractor';
 
 // 测试您提供的抖音链接
-const testText = `9.20 c@a.nd 01/22 ygo:/ 至于为什么周六不更，我的粉丝自会在评论区给出答案。 # 被盗视频 # 沙雕动画 # 二次元 # 原创动画 # 别划走  https://v.douyin.com/7Ygkcv5qidM/ 复制此链接，打开Dou音搜索，直接观看视频！`;
+const testText = '9.20 c@a.nd 01/22 ygo:/ 至于为什么周六不更，我的粉丝自会在评论区给出答案。 # 被盗视频 # 沙雕动画 # 二次元 # 原创动画 # 别划走  https://v.douyin.com/7Ygkcv5qidM/ 复制此链接，打开Dou音搜索，直接观看视频！';
 
 console.log('测试文本:', testText);
 console.log('---');
@@ -18,6 +18,7 @@ if (result) {
   
   // 尝试用简单的正则查看是否能找到链接
   const simpleMatch = testText.match(/https?:\/\/[^\s]+/);
+
   if (simpleMatch) {
     console.log('简单正则找到的链接:', simpleMatch[0]);
   }

@@ -1,4 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
+
 import { LinkExtractor } from '../utils/link-extractor';
 
 describe('LinkExtractor', () => {
@@ -28,7 +29,7 @@ describe('LinkExtractor', () => {
     });
 
     it('should extract YouTube shorts link', () => {
-      const text = `新视频上线啦！https://www.youtube.com/shorts/abcd1234`;
+      const text = '新视频上线啦！https://www.youtube.com/shorts/abcd1234';
       
       const result = LinkExtractor.extractVideoLink(text);
       
@@ -72,18 +73,21 @@ describe('LinkExtractor', () => {
     it('should remove trailing punctuation', () => {
       const url = 'https://v.douyin.com/abc123/！';
       const cleaned = LinkExtractor.cleanUrl(url);
+
       expect(cleaned).toBe('https://v.douyin.com/abc123/');
     });
 
     it('should remove tracking parameters', () => {
       const url = 'https://www.youtube.com/watch?v=abc123&utm_source=share&utm_medium=web';
       const cleaned = LinkExtractor.cleanUrl(url);
+
       expect(cleaned).toBe('https://www.youtube.com/watch?v=abc123');
     });
 
     it('should add https protocol if missing', () => {
       const url = 'v.douyin.com/abc123/';
       const cleaned = LinkExtractor.cleanUrl(url);
+
       expect(cleaned).toBe('https://v.douyin.com/abc123/');
     });
   });

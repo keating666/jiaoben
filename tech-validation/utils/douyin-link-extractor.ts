@@ -1,6 +1,7 @@
+import axios from 'axios';
+
 import { logger } from './logger';
 import { ExtractedLink } from './link-extractor';
-import axios from 'axios';
 
 export interface DouyinVideoInfo {
   videoId: string;
@@ -29,15 +30,18 @@ export class DouyinLinkExtractor {
   static extractDouyinLink(text: string): ExtractedLink | null {
     logger.info('DouyinLinkExtractor', 'extractDouyinLink', '开始提取抖音链接', { 
       textLength: text.length,
-      textPreview: text.substring(0, 100) 
+      textPreview: text.substring(0, 100), 
     });
 
     for (const pattern of this.DOUYIN_PATTERNS) {
       pattern.lastIndex = 0; // 重置正则表达式状态
       const match = text.match(pattern);
+
       if (match && match[0]) {
         const url = this.normalizeUrl(match[0]);
+
         logger.info('DouyinLinkExtractor', 'extractDouyinLink', '找到抖音链接', { url });
+
         return {
           url,
           platform: 'douyin',
@@ -47,6 +51,7 @@ export class DouyinLinkExtractor {
     }
 
     logger.warn('DouyinLinkExtractor', 'extractDouyinLink', '未找到抖音链接');
+
     return null;
   }
 
@@ -64,13 +69,14 @@ export class DouyinLinkExtractor {
     
     // 确保有协议
     if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
-      normalizedUrl = 'https://' + normalizedUrl;
+      normalizedUrl = `https://${  normalizedUrl}`;
     }
 
     // 处理特殊的抖音短链接情况
     if (normalizedUrl.includes('v.douyin.com')) {
       // 确保短链接格式正确
       const shortLinkMatch = normalizedUrl.match(/v\.douyin\.com\/([\w\d]+)/);
+
       if (shortLinkMatch) {
         normalizedUrl = `https://v.douyin.com/${shortLinkMatch[1]}`;
       }
@@ -96,13 +102,16 @@ export class DouyinLinkExtractor {
       });
 
       const location = response.headers.location;
+
       if (location) {
         logger.info('DouyinLinkExtractor', 'resolveShortLink', '获取到重定向地址', { location });
+
         return location;
       }
     } catch (error) {
       logger.error('DouyinLinkExtractor', 'resolveShortLink', '解析短链接失败', error as Error);
     }
+
     return null;
   }
 
@@ -112,12 +121,14 @@ export class DouyinLinkExtractor {
   static extractVideoId(url: string): string | null {
     // 从完整链接中提取视频ID
     const videoIdMatch = url.match(/\/video\/(\d+)/);
+
     if (videoIdMatch) {
       return videoIdMatch[1];
     }
 
     // 从短链接格式中提取ID
     const shortLinkMatch = url.match(/v\.douyin\.com\/([\w\d]+)/);
+
     if (shortLinkMatch) {
       return shortLinkMatch[1];
     }
@@ -133,8 +144,10 @@ export class DouyinLinkExtractor {
       logger.info('DouyinLinkExtractor', 'getVideoInfo', '获取视频信息', { url });
       
       const videoId = this.extractVideoId(url);
+
       if (!videoId) {
         logger.error('DouyinLinkExtractor', 'getVideoInfo', '无法提取视频ID');
+
         return null;
       }
 
@@ -148,6 +161,7 @@ export class DouyinLinkExtractor {
       };
     } catch (error) {
       logger.error('DouyinLinkExtractor', 'getVideoInfo', '获取视频信息失败', error as Error);
+
       return null;
     }
   }
@@ -156,13 +170,14 @@ export class DouyinLinkExtractor {
    * 验证是否为有效的抖音链接
    */
   static isValidDouyinUrl(url: string): boolean {
-    if (!url) return false;
+    if (!url) {return false;}
     
     const normalizedUrl = this.normalizeUrl(url);
     
     // 检查是否匹配任何抖音URL模式
-    return this.DOUYIN_PATTERNS.some(pattern => {
+    return this.DOUYIN_PATTERNS.some((pattern) => {
       pattern.lastIndex = 0;
+
       return pattern.test(normalizedUrl);
     });
   }
@@ -194,7 +209,7 @@ export class DouyinLinkExtractor {
     }
 
     logger.info('DouyinLinkExtractor', 'extractAllDouyinLinks', '提取到的链接数量', { 
-      count: links.length 
+      count: links.length, 
     });
     
     return links;

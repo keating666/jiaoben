@@ -1,6 +1,6 @@
-import { TongyiClient } from './tongyi-text-generation';
 import { TextGenerationRequest, TextGenerationResponse } from '../interfaces/api-types';
 
+import { TongyiClient } from './tongyi-text-generation';
 import { Config } from './config';
 
 export interface ScriptScene {

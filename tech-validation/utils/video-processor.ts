@@ -112,7 +112,7 @@ export class VideoProcessor {
         // 添加必要的 headers 支持抖音等平台
         addHeader: [
           'referer:https://www.douyin.com/',
-          'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         ],
         // 支持更多平台
         cookies: 'cookies.txt', // 如果需要的话

@@ -38,8 +38,10 @@ export class LinkExtractor {
     // 尝试提取抖音链接
     for (const pattern of this.DOUYIN_PATTERNS) {
       const match = text.match(pattern);
+
       if (match && match[0]) {
         logger.info('LinkExtractor', 'extractVideoLink', '找到抖音链接', { url: match[0] });
+
         return {
           url: match[0],
           platform: 'douyin',
@@ -51,8 +53,10 @@ export class LinkExtractor {
     // 尝试提取 YouTube 链接
     for (const pattern of this.YOUTUBE_PATTERNS) {
       const match = text.match(pattern);
+
       if (match && match[0]) {
         logger.info('LinkExtractor', 'extractVideoLink', '找到 YouTube 链接', { url: match[0] });
+
         return {
           url: match[0],
           platform: 'youtube',
@@ -64,8 +68,10 @@ export class LinkExtractor {
     // 尝试提取 TikTok 链接
     for (const pattern of this.TIKTOK_PATTERNS) {
       const match = text.match(pattern);
+
       if (match && match[0]) {
         logger.info('LinkExtractor', 'extractVideoLink', '找到 TikTok 链接', { url: match[0] });
+
         return {
           url: match[0],
           platform: 'tiktok',
@@ -77,8 +83,10 @@ export class LinkExtractor {
     // 尝试提取任何 URL
     const genericUrlPattern = /https?:\/\/[^\s]+/gi;
     const genericMatch = text.match(genericUrlPattern);
+
     if (genericMatch && genericMatch[0]) {
       logger.info('LinkExtractor', 'extractVideoLink', '找到通用链接', { url: genericMatch[0] });
+
       return {
         url: genericMatch[0],
         platform: 'other',
@@ -87,6 +95,7 @@ export class LinkExtractor {
     }
 
     logger.warn('LinkExtractor', 'extractVideoLink', '未找到有效的视频链接');
+
     return null;
   }
 
@@ -102,7 +111,7 @@ export class LinkExtractor {
     
     // 确保 URL 以正确的协议开头
     if (!cleanedUrl.startsWith('http://') && !cleanedUrl.startsWith('https://')) {
-      cleanedUrl = 'https://' + cleanedUrl;
+      cleanedUrl = `https://${  cleanedUrl}`;
     }
 
     return cleanedUrl;
@@ -114,6 +123,7 @@ export class LinkExtractor {
   static isValidUrl(url: string): boolean {
     try {
       const urlObj = new URL(url);
+
       return ['http:', 'https:'].includes(urlObj.protocol);
     } catch {
       return false;

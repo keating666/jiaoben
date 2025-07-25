@@ -1,4 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
+
 import { DouyinLinkExtractor } from '../utils/douyin-link-extractor';
 
 describe('DouyinLinkExtractor', () => {
@@ -132,7 +133,8 @@ describe('DouyinLinkExtractor', () => {
       
       expect(links).toHaveLength(3);
       // 验证包含所有链接，不关心顺序
-      const urls = links.map(l => l.url);
+      const urls = links.map((l) => l.url);
+
       expect(urls).toContain('https://v.douyin.com/iRyLb8kf');
       expect(urls).toContain('https://www.douyin.com/video/7123456789012345678');
       expect(urls).toContain('https://v.douyin.com/abcdefg');

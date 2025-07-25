@@ -8,6 +8,7 @@ import {
   TextGenerationRequest,
   TextGenerationResponse,
 } from '../interfaces/api-types';
+
 import { EnhancedApiClient } from './enhanced-api-client';
 import { logger } from './logger';
 import { Config } from './config';
