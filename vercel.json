@@ -35,6 +35,9 @@
       "maxDuration": 10,
       "includeFiles": "tech-validation/**"
     },
+    "api/video/transcribe-test.ts": {
+      "maxDuration": 10
+    },
     "api/test-full-mock.ts": {
       "maxDuration": 10
     },

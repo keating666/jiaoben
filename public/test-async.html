@@ -30,7 +30,8 @@
             <input type="text" id="apiToken" value="test-token-123456789012345678901234567890" />
         </div>
         
-        <button onclick="testAsync()">测试异步 API</button>
+        <button onclick="testAsync()">测试异步 API（需要真实 Token）</button>
+        <button onclick="testDemo()" style="background: #28a745;">测试演示版本（跳过验证）</button>
         
         <div id="result" class="result" style="display:none;"></div>
     </div>
@@ -58,6 +59,42 @@
                 if (response.ok) {
                     resultDiv.innerHTML = `
                         <div class="success">✅ 异步任务创建成功！</div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">❌ 错误：${response.status}</div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ 请求失败: ${error.message}</div>`;
+            }
+        }
+        
+        async function testDemo() {
+            const url = document.getElementById('url').value;
+            const apiToken = document.getElementById('apiToken').value;
+            const resultDiv = document.getElementById('result');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '正在调用演示版本 API...';
+            
+            try {
+                const response = await fetch('/api/video/transcribe-test', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url, apiToken })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">✅ 演示版本测试成功！</div>
+                        <p>这是完整流程的模拟结果：</p>
                         <pre>${JSON.stringify(data, null, 2)}</pre>
                     `;
                 } else {
