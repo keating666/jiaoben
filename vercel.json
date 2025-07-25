@@ -8,6 +8,17 @@
       "maxDuration": 30,
       "includeFiles": "tech-validation/**"
     },
+    "api/test-minimax.ts": {
+      "maxDuration": 30,
+      "includeFiles": "tech-validation/**"
+    },
+    "api/test-tongyi.ts": {
+      "maxDuration": 30,
+      "includeFiles": "tech-validation/**"
+    },
+    "api/test-full-mock.ts": {
+      "maxDuration": 10
+    },
     "api/**/*.ts": {
       "maxDuration": 10,
       "includeFiles": "tech-validation/**"
