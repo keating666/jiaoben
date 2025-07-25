@@ -1,7 +1,4 @@
 {
-  "git": {
-    "deploymentEnabled": false
-  },
   "functions": {
     "api/video/transcribe.ts": {
       "maxDuration": 60,

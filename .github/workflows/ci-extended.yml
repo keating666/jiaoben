@@ -1,0 +1,87 @@
+name: Extended CI Tasks
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '18.x'
+
+jobs:
+  # 单元测试
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        cd tech-validation
+        npm ci --prefer-offline --no-audit --ignore-scripts
+        sudo apt-get update && sudo apt-get install -y ffmpeg
+        
+    - name: Run unit tests
+      run: |
+        cd tech-validation
+        npm run test:unit
+      env:
+        CI: true
+
+  # 安全扫描
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run npm audit
+      run: |
+        cd tech-validation
+        npm audit --production || true
+        
+  # 集成测试（可选）
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        cd tech-validation
+        npm ci --prefer-offline --no-audit --ignore-scripts
+        sudo apt-get update && sudo apt-get install -y ffmpeg
+        
+    - name: Run integration tests
+      run: |
+        cd tech-validation
+        npm run test:comprehensive || true
+      env:
+        CI: true
+        NODE_ENV: test
