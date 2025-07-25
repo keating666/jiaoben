@@ -16,6 +16,10 @@
       "maxDuration": 30,
       "includeFiles": "tech-validation/**"
     },
+    "api/test-tongyi-optimized.ts": {
+      "maxDuration": 30,
+      "includeFiles": "tech-validation/**"
+    },
     "api/test-full-mock.ts": {
       "maxDuration": 10
     },
