@@ -391,6 +391,8 @@ export default async function handler(
         'NETWORK_ERROR': { status: 502, userFriendly: true },
         'API_QUOTA_EXCEEDED': { status: 429, userFriendly: true },
         'INVALID_API_KEY': { status: 502, userFriendly: false }, // 不暴露内部配置错误
+        'METADATA_FETCH_FAILED': { status: 422, userFriendly: true },
+        'REPLIT_SERVICE_UNAVAILABLE': { status: 503, userFriendly: true },
       };
       
       const errorConfig = errorMappings[videoError.code as keyof typeof errorMappings];
