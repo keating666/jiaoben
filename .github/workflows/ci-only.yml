@@ -1,0 +1,99 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '18.x'
+
+jobs:
+  # 代码质量检查
+  quality-check:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        cd tech-validation
+        npm ci --prefer-offline --no-audit --ignore-scripts
+        sudo apt-get update && sudo apt-get install -y ffmpeg
+        
+    - name: Run TypeScript check
+      run: |
+        cd tech-validation
+        npm run typecheck
+        
+    - name: Run ESLint
+      run: |
+        cd tech-validation
+        npm run lint
+
+  # 构建检查
+  build:
+    name: Build Check
+    runs-on: ubuntu-latest
+    needs: quality-check
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        cd tech-validation
+        npm ci --prefer-offline --no-audit --ignore-scripts
+        sudo apt-get update && sudo apt-get install -y ffmpeg
+        
+    - name: Build project
+      run: |
+        cd tech-validation
+        npm run build
+        
+    - name: Verify build artifacts
+      run: |
+        cd tech-validation
+        if [ ! -d "dist" ]; then
+          echo "❌ Error: dist directory not found!"
+          exit 1
+        fi
+        if [ ! -f "dist/index.js" ]; then
+          echo "❌ Error: dist/index.js not found!"
+          exit 1
+        fi
+        echo "✅ Build artifacts verified successfully"
+
+  # 部署状态通知（不实际部署，只是通知）
+  deployment-status:
+    name: Deployment Status
+    runs-on: ubuntu-latest
+    needs: [quality-check, build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Report deployment readiness
+      run: |
+        echo "✅ CI checks passed!"
+        echo "📦 Code is ready for deployment"
+        echo "🚀 Vercel will automatically deploy from main branch"
+        echo ""
+        echo "Check deployment status at:"
+        echo "https://vercel.com/keating666s-projects/jiaoben/deployments"
