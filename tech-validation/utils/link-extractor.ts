@@ -133,7 +133,7 @@ export class LinkExtractor {
   /**
    * 使用 AI 提取链接（备用方案）
    */
-  static async extractWithAI(text: string, aiApiKey: string): Promise<ExtractedLink | null> {
+  static async extractWithAI(_text: string, _aiApiKey: string): Promise<ExtractedLink | null> {
     // 这里可以调用通义千问或其他 AI API 来智能提取链接
     // 当正则表达式无法识别时使用
     logger.info('LinkExtractor', 'extractWithAI', '使用 AI 提取链接（功能待实现）');
