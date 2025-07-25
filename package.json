@@ -13,7 +13,10 @@
     "lint": "cd tech-validation && npm run lint -- --max-warnings 600",
     "typecheck": "cd tech-validation && npm run typecheck",
     "verify-build": "ls -la api/ && ls -la tech-validation/dist/",
-    "postinstall": "node scripts/install-binaries.js"
+    "postinstall": "node scripts/install-binaries.js",
+    "deploy:manual": "./scripts/manual-deploy.sh",
+    "deploy:verify": "node scripts/verify-deployment.js",
+    "check:all": "npm run typecheck && npm run lint && npm run deploy:verify"
   },
   "engines": {
     "node": ">=18.0.0",
