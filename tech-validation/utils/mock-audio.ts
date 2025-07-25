@@ -1,0 +1,34 @@
+import { promises as fs } from 'fs';
+
+/**
+ * 创建模拟的 MP3 音频文件
+ * 用于在 Vercel 环境中测试
+ */
+export async function createMockAudioFile(outputPath: string): Promise<void> {
+  // MP3 文件头（最小的有效 MP3）
+  const mp3Header = Buffer.from([
+    0xFF, 0xFB, 0x90, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x4C, 0x41, 0x4D, 0x45, 0x33, 0x2E, 0x39, 0x39,
+    0x2E, 0x35, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+  ]);
+  
+  // 创建一个约 1KB 的模拟音频文件
+  const silence = Buffer.alloc(1024, 0);
+  const mockAudio = Buffer.concat([mp3Header, silence]);
+  
+  await fs.writeFile(outputPath, mockAudio);
+  console.log(`✅ 创建模拟音频文件: ${outputPath} (${mockAudio.length} bytes)`);
+}
+
+/**
+ * 模拟的转写文本
+ */
+export const MOCK_TRANSCRIPT = `
+大家好，欢迎来到我的抖音视频。
+今天我要跟大家分享一个非常有趣的内容。
+这是一个测试视频，用于演示视频转文字的功能。
+希望大家喜欢这个视频，记得点赞关注哦！
+`.trim();
