@@ -64,8 +64,15 @@ async function installYtDlp() {
   const ytDlpPath = path.join(binDir, 'yt-dlp');
   
   if (fs.existsSync(ytDlpPath)) {
-    console.log('✅ yt-dlp 已存在，跳过下载');
-    return;
+    // 检查是否能执行，如果不能则删除重新下载
+    try {
+      execSync(`"${ytDlpPath}" --version`, { encoding: 'utf8' });
+      console.log('✅ yt-dlp 已存在且可执行，跳过下载');
+      return;
+    } catch (e) {
+      console.log('⚠️  yt-dlp 存在但无法执行，删除并重新下载');
+      fs.unlinkSync(ytDlpPath);
+    }
   }
   
   console.log('⬇️  下载 yt-dlp...');
@@ -74,8 +81,8 @@ async function installYtDlp() {
     let ytDlpUrl;
     
     if (platform === 'linux' || isVercel) {
-      // Vercel 使用 Linux 环境
-      ytDlpUrl = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp';
+      // Vercel 使用 Linux 环境 - 需要使用 Linux 版本
+      ytDlpUrl = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux';
     } else if (platform === 'darwin') {
       // macOS
       ytDlpUrl = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos';
@@ -103,7 +110,9 @@ async function installYtDlp() {
       console.log('🔄 尝试备用方案...');
       const curlCommand = platform === 'win32' 
         ? `curl -L "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" -o "${ytDlpPath}"`
-        : `curl -L "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp" -o "${ytDlpPath}"`;
+        : platform === 'linux' || isVercel
+        ? `curl -L "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux" -o "${ytDlpPath}"`
+        : `curl -L "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos" -o "${ytDlpPath}"`;
       
       execSync(curlCommand);
       

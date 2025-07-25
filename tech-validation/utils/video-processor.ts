@@ -1,7 +1,6 @@
-import { promises as fs } from 'fs';
+import { promises as fs, existsSync } from 'fs';
 import { join } from 'path';
 import { execSync } from 'child_process';
-import { existsSync } from 'fs';
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -57,7 +56,7 @@ export class VideoProcessor {
       }
     }
 
-    throw this.createError('METADATA_FETCH_FAILED', 'yt-dlp 未找到，尝试的路径: ' + possiblePaths.join(', '));
+    throw this.createError('METADATA_FETCH_FAILED', `yt-dlp 未找到，尝试的路径: ${possiblePaths.join(', ')}`);
   }
 
   private static createError(code: string, message: string, details?: any): VideoProcessingError {
@@ -86,7 +85,10 @@ export class VideoProcessor {
       }
       
       // 构建命令
-      const command = `"${ytDlpPath}" --dump-json --no-check-certificates --no-warnings --prefer-free-formats --add-header "referer:https://www.douyin.com/" --add-header "user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" "${videoUrl}"`;
+      const command = `"${ytDlpPath}" --dump-json --no-check-certificates --no-warnings ` +
+        `--prefer-free-formats --add-header "referer:https://www.douyin.com/" ` +
+        `--add-header "user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ` +
+        `(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" "${videoUrl}"`;
       
       console.log('执行命令:', command);
       
@@ -153,7 +155,12 @@ export class VideoProcessor {
       const ytDlpPath = this.getYtDlpPath();
       
       // 构建下载命令
-      const command = `"${ytDlpPath}" -x --audio-format mp3 --audio-quality 0 -o "${audioPath}" --no-check-certificates --no-warnings --prefer-free-formats --match-filter "duration <= ${this.MAX_DURATION}" --add-header "referer:https://www.douyin.com/" --add-header "user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" "${videoUrl}"`;
+      const command = `"${ytDlpPath}" -x --audio-format mp3 --audio-quality 0 -o "${audioPath}" ` +
+        `--no-check-certificates --no-warnings --prefer-free-formats ` +
+        `--match-filter "duration <= ${this.MAX_DURATION}" ` +
+        `--add-header "referer:https://www.douyin.com/" ` +
+        `--add-header "user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ` +
+        `(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" "${videoUrl}"`;
       
       console.log('执行下载命令:', command);
       
