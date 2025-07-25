@@ -1,7 +1,6 @@
-import { promises as fs, existsSync } from 'fs';
+import { promises as fs } from 'fs';
 import { join } from 'path';
-import { execSync } from 'child_process';
-
+import youtubedl from 'youtube-dl-exec';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface VideoMetadata {
@@ -20,51 +19,10 @@ export class VideoProcessor {
   private static readonly TEMP_DIR = '/tmp';
   private static readonly MAX_DURATION = 60; // 60 秒限制
 
-  /**
-   * 获取 yt-dlp 可执行文件路径
-   */
-  private static getYtDlpPath(): string {
-    // 打印环境信息帮助调试
-    console.log('🔍 环境调试信息:');
-    console.log('  - process.cwd():', process.cwd());
-    console.log('  - __dirname:', __dirname);
-    console.log('  - process.platform:', process.platform);
-    
-    // 尝试多个可能的路径
-    const possiblePaths = [
-      // Vercel 环境中的路径 - 注意 Vercel 编译 TypeScript 后的路径
-      '/var/task/.vercel/output/functions/api/video/bin/yt-dlp',
-      '/var/task/bin/yt-dlp',  
-      join(process.cwd(), 'bin', 'yt-dlp'),
-      join(__dirname, '..', '..', '..', 'bin', 'yt-dlp'),
-      join(__dirname, '..', '..', 'bin', 'yt-dlp'),
-      join(__dirname, '..', 'bin', 'yt-dlp'),
-      // 本地开发环境
-      join(process.cwd(), 'bin', 'yt-dlp.exe'),
-      join(__dirname, '..', '..', '..', 'bin', 'yt-dlp.exe'),
-      // 系统路径
-      'yt-dlp',
-      'yt-dlp.exe',
-    ];
-
-    console.log('🔍 尝试查找 yt-dlp 在以下路径:');
-    for (const path of possiblePaths) {
-      console.log(`  - ${path}: ${existsSync(path) ? '✅ 存在' : '❌ 不存在'}`);
-      if (existsSync(path)) {
-        console.log(`✅ 找到 yt-dlp: ${path}`);
-        return path;
-      }
-    }
-
-    throw this.createError('METADATA_FETCH_FAILED', `yt-dlp 未找到，尝试的路径: ${possiblePaths.join(', ')}`);
-  }
-
   private static createError(code: string, message: string, details?: any): VideoProcessingError {
     const error = new Error(message) as VideoProcessingError;
-
     error.code = code;
     error.details = details;
-
     return error;
   }
 
@@ -75,36 +33,21 @@ export class VideoProcessor {
     try {
       console.log(`📊 获取视频元数据: ${videoUrl}`);
       
-      let ytDlpPath: string;
-      try {
-        // 使用真正的 yt-dlp 二进制文件
-        ytDlpPath = this.getYtDlpPath();
-      } catch (pathError) {
-        console.error('❌ yt-dlp 路径查找失败:', pathError);
-        throw pathError;
-      }
+      // 使用 youtube-dl-exec 获取视频信息
+      const info = await youtubedl(videoUrl, {
+        dumpSingleJson: true,
+        noCheckCertificates: true,
+        noWarnings: true,
+        preferFreeFormats: true,
+        // 强制使用 yt-dlp
+        youtubeDl: 'yt-dlp',
+        addHeader: [
+          'referer:https://www.douyin.com/',
+          'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        ],
+      });
       
-      // 构建命令
-      const command = `"${ytDlpPath}" --dump-json --no-check-certificates --no-warnings ` +
-        `--prefer-free-formats --add-header "referer:https://www.douyin.com/" ` +
-        `--add-header "user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ` +
-        `(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" "${videoUrl}"`;
-      
-      console.log('执行命令:', command);
-      
-      let output: string;
-      try {
-        // 执行命令并获取结果
-        output = execSync(command, { encoding: 'utf8' });
-      } catch (execError: any) {
-        console.error('❌ yt-dlp 执行失败:', execError.message);
-        console.error('错误输出:', execError.stderr || execError.stdout);
-        throw this.createError('METADATA_FETCH_FAILED', `yt-dlp 执行失败: ${execError.message}`);
-      }
-      
-      // 解析 JSON 输出
-      const info = JSON.parse(output);
-      const duration = info.duration || 0;
+      const duration = (info as any).duration || 0;
 
       console.log(`⏱️  视频时长: ${duration} 秒`);
 
@@ -118,8 +61,8 @@ export class VideoProcessor {
 
       return {
         duration,
-        title: info.title || 'Unknown Title',
-        format: info.ext || 'unknown',
+        title: (info as any).title || 'Unknown Title',
+        format: (info as any).ext || 'unknown',
         url: videoUrl,
       };
     } catch (error: any) {
@@ -151,21 +94,23 @@ export class VideoProcessor {
     try {
       console.log('⬇️  开始下载视频并提取音频...');
       
-      // 使用真正的 yt-dlp 二进制文件
-      const ytDlpPath = this.getYtDlpPath();
-      
-      // 构建下载命令
-      const command = `"${ytDlpPath}" -x --audio-format mp3 --audio-quality 0 -o "${audioPath}" ` +
-        `--no-check-certificates --no-warnings --prefer-free-formats ` +
-        `--match-filter "duration <= ${this.MAX_DURATION}" ` +
-        `--add-header "referer:https://www.douyin.com/" ` +
-        `--add-header "user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ` +
-        `(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" "${videoUrl}"`;
-      
-      console.log('执行下载命令:', command);
-      
-      // 执行下载命令
-      execSync(command, { encoding: 'utf8', stdio: 'inherit' });
+      // 使用 youtube-dl-exec 下载并转换
+      await youtubedl(videoUrl, {
+        extractAudio: true,
+        audioFormat: 'mp3',
+        audioQuality: 0,
+        output: audioPath,
+        noCheckCertificates: true,
+        noWarnings: true,
+        preferFreeFormats: true,
+        // 强制使用 yt-dlp
+        youtubeDl: 'yt-dlp',
+        matchFilter: `duration <= ${this.MAX_DURATION}`,
+        addHeader: [
+          'referer:https://www.douyin.com/',
+          'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        ],
+      });
 
       // 验证音频文件是否存在
       const stats = await fs.stat(audioPath);
@@ -214,14 +159,13 @@ export class VideoProcessor {
     missing: string[];
   }> {
     try {
-      // 检查 yt-dlp 是否可用
-      const ytDlpPath = this.getYtDlpPath();
-      execSync(`"${ytDlpPath}" --version`, { encoding: 'utf8' });
+      // youtube-dl-exec 会自动管理依赖
+      const version = await youtubedl('--version', {
+        youtubeDl: 'yt-dlp',
+      });
 
-      console.log('✅ yt-dlp 可用');
-      
-      // 检查 ffmpeg（使用系统安装的）
-      console.log('✅ ffmpeg 应该已通过系统包管理器安装');
+      console.log('✅ yt-dlp 可用，版本:', version);
+      console.log('✅ youtube-dl-exec 会自动管理 ffmpeg');
       
       return {
         available: true,
