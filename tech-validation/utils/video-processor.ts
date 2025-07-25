@@ -77,7 +77,7 @@ export class VideoProcessor {
         noCheckCertificates: true,
         noWarnings: true,
         preferFreeFormats: true,
-        youtubeDl: 'yt-dlp',
+        // youtubeDl: 'yt-dlp', // 注释掉，youtube-dl-exec 2.x 自动使用 yt-dlp
         addHeader: [
           'referer:https://www.douyin.com/',
           'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -163,7 +163,7 @@ export class VideoProcessor {
           noCheckCertificates: true,
           noWarnings: true,
           preferFreeFormats: true,
-          youtubeDl: 'yt-dlp',
+          // youtubeDl: 'yt-dlp', // 注释掉，youtube-dl-exec 2.x 自动使用 yt-dlp
           matchFilter: `duration <= ${this.MAX_DURATION}`,
           addHeader: [
             'referer:https://www.douyin.com/',
@@ -230,7 +230,7 @@ export class VideoProcessor {
       // 本地环境检查
       const youtubedl = (await import('youtube-dl-exec')).default;
       const version = await youtubedl('--version', {
-        youtubeDl: 'yt-dlp',
+        // youtubeDl: 'yt-dlp', // 注释掉，youtube-dl-exec 2.x 自动使用 yt-dlp
       });
 
       console.log('✅ yt-dlp 可用，版本:', version);
