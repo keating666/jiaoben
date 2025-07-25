@@ -557,7 +557,7 @@ https://www.tiktok.com/@username/video/7123456789012345678
             const mixedText = document.getElementById('mixed-text').value;
             const style = document.getElementById('script-style').value;
             const language = document.getElementById('language').value;
-            const apiToken = document.getElementById('api-token').value || 'test-token-12345678901234567890123456789012';
+            const apiToken = document.getElementById('api-token').value || 'sk-proj-' + 'a'.repeat(48); // 生成一个有效格式的token
             const apiEndpoint = document.getElementById('api-endpoint').value;
             
             if (!mixedText.trim()) {
