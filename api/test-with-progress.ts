@@ -34,7 +34,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     // 4. Tongyi 脚本生成（优化版）
     log('📝 初始化 Tongyi...');
-    const { TongyiClient } = await import('../tech-validation/utils/tongyi-client');
+    const { TongyiClient } = await import('../tech-validation/utils/tongyi-text-generation');
     const tongyiClient = new TongyiClient();
     
     await tongyiClient.initialize({

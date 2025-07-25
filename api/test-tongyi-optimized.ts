@@ -8,7 +8,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     // 1. 初始化
     const initStart = Date.now();
-    const { TongyiClient } = await import('../tech-validation/utils/tongyi-client');
+    const { TongyiClient } = await import('../tech-validation/utils/tongyi-text-generation');
     const client = new TongyiClient();
     await client.initialize({
       name: 'Tongyi',
