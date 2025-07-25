@@ -245,9 +245,9 @@ export default async function handler(
         audioPath = result.audioPath;
         metadata = result.metadata;
       } catch (videoError: any) {
-        // 检查是否是 Vercel Python 缺失错误
-        if (videoError.code === 'VERCEL_PYTHON_MISSING' && process.env.VERCEL) {
-          console.log('⚠️  Vercel 环境缺少 Python，使用模拟音频进行 API 测试');
+        // 检查是否是 Vercel Python 缺失错误或 Replit 服务不可用
+        if ((videoError.code === 'VERCEL_PYTHON_MISSING' || videoError.code === 'REPLIT_SERVICE_UNAVAILABLE') && process.env.VERCEL) {
+          console.log('⚠️  视频下载服务不可用，使用模拟音频测试 AI 功能');
           
           // 使用模拟数据
           const { createMockAudioFile, MOCK_TRANSCRIPT } = await import('../../tech-validation/utils/mock-audio');
