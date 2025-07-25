@@ -32,35 +32,19 @@ export class VideoProcessor {
     try {
       console.log(`📊 获取视频元数据: ${videoUrl}`);
       
-      // 在 Vercel 环境中，由于缺少 Python，我们使用备用方案
-      if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
-        console.log('⚠️  检测到 Vercel 环境，使用备用方案');
+      // 在 Vercel 环境中，我们需要处理 Python 依赖问题
+      if (process.env.VERCEL) {
+        console.log('⚠️  检测到 Vercel 环境');
         
-        // 检查是否是抖音链接
-        if (videoUrl.includes('douyin.com')) {
-          const { DouyinAPI } = await import('./douyin-api');
-          const info = await DouyinAPI.getVideoInfo(videoUrl);
-          
-          if (!info) {
-            throw new Error('无法获取抖音视频信息');
+        // 尝试创建一个明确的错误，指示需要使用备用方案
+        throw this.createError(
+          'VERCEL_PYTHON_MISSING',
+          'Vercel 环境缺少 Python 运行时，无法使用 yt-dlp',
+          {
+            suggestion: '请使用支持容器的部署平台，或实现外部视频处理服务',
+            videoUrl,
           }
-          
-          return {
-            duration: info.duration,
-            title: info.title,
-            format: 'mp4',
-            url: videoUrl,
-          };
-        }
-        
-        // 其他平台暂时返回默认值
-        console.log('⚠️  非抖音链接，返回默认值');
-        return {
-          duration: 30,
-          title: '视频',
-          format: 'mp4',
-          url: videoUrl,
-        };
+        );
       }
       
       // 本地开发环境可以使用 youtube-dl-exec
@@ -124,17 +108,17 @@ export class VideoProcessor {
     try {
       console.log('⬇️  开始下载视频并提取音频...');
       
-      // 在 Vercel 环境中使用备用方案
-      if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
-        console.log('⚠️  Vercel 环境，使用模拟音频');
-        
-        if (videoUrl.includes('douyin.com')) {
-          const { DouyinAPI } = await import('./douyin-api');
-          await DouyinAPI.downloadAudio(videoUrl, audioPath);
-        } else {
-          // 创建模拟音频文件
-          await fs.writeFile(audioPath, Buffer.from('模拟音频数据'));
-        }
+      // 在 Vercel 环境中，抛出明确的错误
+      if (process.env.VERCEL) {
+        throw this.createError(
+          'VERCEL_PYTHON_MISSING',
+          'Vercel 环境无法下载视频',
+          {
+            reason: '缺少 Python 运行时',
+            audioPath,
+            metadata,
+          }
+        );
       } else {
         // 本地开发环境使用 youtube-dl-exec
         const youtubedl = (await import('youtube-dl-exec')).default;
@@ -202,11 +186,11 @@ export class VideoProcessor {
     missing: string[];
   }> {
     try {
-      if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
-        console.log('✅ Vercel 环境，使用备用方案，无需检查依赖');
+      if (process.env.VERCEL) {
+        console.log('⚠️  Vercel 环境检测：缺少 Python 运行时');
         return {
-          available: true,
-          missing: [],
+          available: false,
+          missing: ['Python 运行时（Vercel 限制）'],
         };
       }
       

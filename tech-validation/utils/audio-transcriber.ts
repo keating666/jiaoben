@@ -94,70 +94,7 @@ export class AudioTranscriber {
   async transcribeAudioFile(audioPath: string): Promise<TranscriptionResult> {
     const startTime = Date.now();
 
-    // 在 Vercel 环境中使用模拟数据
-    if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
-      console.log('⚠️  检测到 Vercel 环境，使用模拟转写数据');
-      
-      try {
-        // 读取音频文件以验证存在
-        const audioBuffer = readFileSync(audioPath);
-        console.log(`📁 音频文件大小: ${(audioBuffer.length / 1024).toFixed(2)} KB`);
-      } catch (error) {
-        throw this.createError(
-          'FILE_READ_ERROR',
-          '无法读取音频文件',
-          { audioPath, error: error instanceof Error ? error.message : String(error) },
-        );
-      }
-
-      // 导入模拟转写文本
-      const { MOCK_TRANSCRIPT } = await import('./mock-audio');
-      
-      const processingTime = Date.now() - startTime;
-      
-      // 返回模拟结果
-      const result: TranscriptionResult = {
-        text: MOCK_TRANSCRIPT,
-        confidence: 0.95,
-        duration: 30,
-        segments: [
-          {
-            start: 0,
-            end: 8,
-            text: '大家好，欢迎来到我的抖音视频。',
-            confidence: 0.96,
-          },
-          {
-            start: 8,
-            end: 16,
-            text: '今天我要跟大家分享一个非常有趣的内容。',
-            confidence: 0.94,
-          },
-          {
-            start: 16,
-            end: 24,
-            text: '这是一个测试视频，用于演示视频转文字的功能。',
-            confidence: 0.95,
-          },
-          {
-            start: 24,
-            end: 30,
-            text: '希望大家喜欢这个视频，记得点赞关注哦！',
-            confidence: 0.93,
-          },
-        ],
-        processingTime,
-      };
-
-      console.log(`✅ 模拟音频转写完成: ${processingTime}ms`);
-      console.log(`📝 转写文字长度: ${result.text.length} 字符`);
-      console.log(`🎯 置信度: ${(result.confidence * 100).toFixed(1)}%`);
-      console.log('⚠️  注意：这是模拟数据，仅用于在 Vercel 环境测试');
-
-      return result;
-    }
-
-    // 本地开发环境使用真实 API
+    // 始终使用真实 API - Vercel 已配置了环境变量
     await this.initialize();
 
     try {

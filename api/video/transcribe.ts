@@ -31,6 +31,11 @@ interface TranscribeResponse {
     original_text: string;
     script: VideoScript;
     processing_time: number;
+    _metadata?: {
+      usingMockAudio: boolean;
+      reason: string;
+      note: string;
+    };
   };
   error?: {
     code: string;
@@ -230,10 +235,45 @@ export default async function handler(
       try {
       // 第一阶段：处理视频（下载 + 提取音频）
       tracker.startStage('video_processing');
-      const { audioPath, metadata } = await VideoProcessor.downloadAndExtractAudio(video_url);
+      
+      let audioPath: string;
+      let metadata: any;
+      let isUsingMockData = false;
+      
+      try {
+        const result = await VideoProcessor.downloadAndExtractAudio(video_url);
+        audioPath = result.audioPath;
+        metadata = result.metadata;
+      } catch (videoError: any) {
+        // 检查是否是 Vercel Python 缺失错误
+        if (videoError.code === 'VERCEL_PYTHON_MISSING' && process.env.VERCEL) {
+          console.log('⚠️  Vercel 环境缺少 Python，使用模拟音频进行 API 测试');
+          
+          // 使用模拟数据
+          const { createMockAudioFile, MOCK_TRANSCRIPT } = await import('../../tech-validation/utils/mock-audio');
+          const { v4: uuidv4 } = await import('uuid');
+          
+          audioPath = `/tmp/mock_audio_${uuidv4()}.mp3`;
+          await createMockAudioFile(audioPath);
+          
+          metadata = {
+            duration: 30,
+            title: '测试视频（Vercel 模拟）',
+            format: 'mp4',
+            url: video_url,
+          };
+          
+          isUsingMockData = true;
+          console.log('✅ 创建模拟音频文件成功，将使用真实 API 进行转写');
+        } else {
+          // 其他错误正常抛出
+          throw videoError;
+        }
+      }
+      
       const videoProcessingTime = tracker.endStage('video_processing');
       
-      console.log(`✅ 视频处理完成: ${videoProcessingTime}ms`);
+      console.log(`✅ 视频处理完成: ${videoProcessingTime}ms${isUsingMockData ? ' (使用模拟音频)' : ''}`);
       
       // 第二阶段：音频转文字
       tracker.startStage('audio_transcription');
@@ -273,7 +313,15 @@ export default async function handler(
         data: {
           original_text: transcriptionResult.text,
           script: scriptResult.script,
-          processing_time: tracker.getTotalTime()
+          processing_time: tracker.getTotalTime(),
+          // 添加元数据标记
+          ...(isUsingMockData && {
+            _metadata: {
+              usingMockAudio: true,
+              reason: 'Vercel 环境缺少 Python 运行时',
+              note: 'API 调用使用真实服务，仅音频文件为模拟'
+            }
+          })
         }
       };
 
