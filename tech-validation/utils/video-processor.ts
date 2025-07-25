@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { execSync } from 'child_process';
+import { existsSync } from 'fs';
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -20,6 +21,33 @@ export class VideoProcessor {
   private static readonly TEMP_DIR = '/tmp';
   private static readonly MAX_DURATION = 60; // 60 秒限制
 
+  /**
+   * 获取 yt-dlp 可执行文件路径
+   */
+  private static getYtDlpPath(): string {
+    // 尝试多个可能的路径
+    const possiblePaths = [
+      // Vercel 环境中的路径
+      join(process.cwd(), 'bin', 'yt-dlp'),
+      join(__dirname, '..', '..', '..', 'bin', 'yt-dlp'),
+      // 本地开发环境
+      join(process.cwd(), 'bin', 'yt-dlp.exe'),
+      join(__dirname, '..', '..', '..', 'bin', 'yt-dlp.exe'),
+      // 系统路径
+      'yt-dlp',
+      'yt-dlp.exe',
+    ];
+
+    for (const path of possiblePaths) {
+      if (existsSync(path)) {
+        console.log(`✅ 找到 yt-dlp: ${path}`);
+        return path;
+      }
+    }
+
+    throw this.createError('METADATA_FETCH_FAILED', 'yt-dlp 未找到，尝试的路径: ' + possiblePaths.join(', '));
+  }
+
   private static createError(code: string, message: string, details?: any): VideoProcessingError {
     const error = new Error(message) as VideoProcessingError;
 
@@ -37,10 +65,10 @@ export class VideoProcessor {
       console.log(`📊 获取视频元数据: ${videoUrl}`);
       
       // 使用真正的 yt-dlp 二进制文件
-      const ytDlpPath = process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp';
+      const ytDlpPath = this.getYtDlpPath();
       
       // 构建命令
-      const command = `${ytDlpPath} --dump-json --no-check-certificates --no-warnings --prefer-free-formats --add-header "referer:https://www.douyin.com/" --add-header "user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" "${videoUrl}"`;
+      const command = `"${ytDlpPath}" --dump-json --no-check-certificates --no-warnings --prefer-free-formats --add-header "referer:https://www.douyin.com/" --add-header "user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" "${videoUrl}"`;
       
       console.log('执行命令:', command);
       
@@ -97,10 +125,10 @@ export class VideoProcessor {
       console.log('⬇️  开始下载视频并提取音频...');
       
       // 使用真正的 yt-dlp 二进制文件
-      const ytDlpPath = process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp';
+      const ytDlpPath = this.getYtDlpPath();
       
       // 构建下载命令
-      const command = `${ytDlpPath} -x --audio-format mp3 --audio-quality 0 -o "${audioPath}" --no-check-certificates --no-warnings --prefer-free-formats --match-filter "duration <= ${this.MAX_DURATION}" --add-header "referer:https://www.douyin.com/" --add-header "user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" "${videoUrl}"`;
+      const command = `"${ytDlpPath}" -x --audio-format mp3 --audio-quality 0 -o "${audioPath}" --no-check-certificates --no-warnings --prefer-free-formats --match-filter "duration <= ${this.MAX_DURATION}" --add-header "referer:https://www.douyin.com/" --add-header "user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" "${videoUrl}"`;
       
       console.log('执行下载命令:', command);
       
@@ -155,8 +183,8 @@ export class VideoProcessor {
   }> {
     try {
       // 检查 yt-dlp 是否可用
-      const ytDlpPath = process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp';
-      execSync(`${ytDlpPath} --version`, { encoding: 'utf8' });
+      const ytDlpPath = this.getYtDlpPath();
+      execSync(`"${ytDlpPath}" --version`, { encoding: 'utf8' });
 
       console.log('✅ yt-dlp 可用');
       
