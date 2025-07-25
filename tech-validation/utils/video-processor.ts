@@ -32,7 +32,41 @@ export class VideoProcessor {
     try {
       console.log(`📊 获取视频元数据: ${videoUrl}`);
       
-      // 在 Vercel 环境中，直接使用备用方案（跳过 Replit）
+      // 在 Vercel 环境中，优先使用 Railway 服务
+      if (process.env.VERCEL && process.env.RAILWAY_VIDEO_SERVICE_URL) {
+        console.log('🚀 使用 Railway 视频处理服务');
+        
+        try {
+          const { RailwayVideoService } = await import('./railway-video-service');
+          const railwayService = new RailwayVideoService();
+          
+          // 检查服务健康状态
+          const isHealthy = await railwayService.checkHealth();
+          if (!isHealthy) {
+            throw new Error('Railway 服务不可用');
+          }
+          
+          // 处理视频
+          const result = await railwayService.processVideo(videoUrl);
+          
+          if (!result.success || !result.video_info) {
+            throw new Error(result.error || '视频处理失败');
+          }
+          
+          return {
+            duration: result.video_info.duration,
+            title: result.video_info.title,
+            format: 'mp3',
+            url: videoUrl,
+            audioData: result.audio?.data, // 音频数据（hex格式）
+          };
+        } catch (error) {
+          console.error('Railway 服务调用失败:', error);
+          // 继续使用模拟数据
+        }
+      }
+      
+      // Vercel 环境备用方案
       if (process.env.VERCEL) {
         console.log('⚠️  Vercel 环境，使用模拟数据');
         
