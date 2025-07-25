@@ -1,4 +1,4 @@
-import { TongyiClient } from '../scripts/tongyi-text-generation';
+import { TongyiClient } from './tongyi-text-generation';
 import { TextGenerationRequest, TextGenerationResponse } from '../interfaces/api-types';
 
 import { Config } from './config';
