@@ -42,7 +42,10 @@ export class VideoProcessor {
         noCheckCertificates: true,
         noWarnings: true,
         preferFreeFormats: true,
-        addHeader: ['referer:youtube.com', 'user-agent:Mozilla/5.0'],
+        addHeader: [
+          'referer:https://www.douyin.com/',
+          'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        ],
       });
 
       // 当使用 dumpSingleJson 时，返回的是视频信息对象
@@ -112,10 +115,8 @@ export class VideoProcessor {
         // 添加必要的 headers 支持抖音等平台
         addHeader: [
           'referer:https://www.douyin.com/',
-          'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        ],
-        // 支持更多平台
-        cookies: 'cookies.txt', // 如果需要的话
+          'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        ]
       });
 
       // 验证音频文件是否存在
