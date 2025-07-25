@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
+import { execSync } from 'child_process';
 
-import youtubedl from 'youtube-dl-exec';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface VideoMetadata {
@@ -36,24 +36,19 @@ export class VideoProcessor {
     try {
       console.log(`📊 获取视频元数据: ${videoUrl}`);
       
-      // 使用 youtube-dl-exec 获取视频信息
-      const result = await youtubedl(videoUrl, {
-        dumpSingleJson: true,
-        noCheckCertificates: true,
-        noWarnings: true,
-        preferFreeFormats: true,
-        addHeader: [
-          'referer:https://www.douyin.com/',
-          'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        ],
-      });
-
-      // 当使用 dumpSingleJson 时，返回的是视频信息对象
-      if (typeof result === 'string') {
-        throw this.createError('METADATA_FETCH_FAILED', '获取视频信息失败：返回格式错误');
-      }
-
-      const info = result as any; // 类型断言，youtube-dl-exec 的类型定义不完整
+      // 使用真正的 yt-dlp 二进制文件
+      const ytDlpPath = process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp';
+      
+      // 构建命令
+      const command = `${ytDlpPath} --dump-json --no-check-certificates --no-warnings --prefer-free-formats --add-header "referer:https://www.douyin.com/" --add-header "user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" "${videoUrl}"`;
+      
+      console.log('执行命令:', command);
+      
+      // 执行命令并获取结果
+      const output = execSync(command, { encoding: 'utf8' });
+      
+      // 解析 JSON 输出
+      const info = JSON.parse(output);
       const duration = info.duration || 0;
 
       console.log(`⏱️  视频时长: ${duration} 秒`);
@@ -101,23 +96,16 @@ export class VideoProcessor {
     try {
       console.log('⬇️  开始下载视频并提取音频...');
       
-      // 使用 youtube-dl-exec 下载并转换为音频
-      await youtubedl(videoUrl, {
-        extractAudio: true,
-        audioFormat: 'mp3',
-        audioQuality: 0,
-        output: audioPath,
-        noCheckCertificates: true,
-        noWarnings: true,
-        preferFreeFormats: true,
-        // 限制下载时长
-        matchFilter: `duration <= ${this.MAX_DURATION}`,
-        // 添加必要的 headers 支持抖音等平台
-        addHeader: [
-          'referer:https://www.douyin.com/',
-          'user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        ]
-      });
+      // 使用真正的 yt-dlp 二进制文件
+      const ytDlpPath = process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp';
+      
+      // 构建下载命令
+      const command = `${ytDlpPath} -x --audio-format mp3 --audio-quality 0 -o "${audioPath}" --no-check-certificates --no-warnings --prefer-free-formats --match-filter "duration <= ${this.MAX_DURATION}" --add-header "referer:https://www.douyin.com/" --add-header "user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" "${videoUrl}"`;
+      
+      console.log('执行下载命令:', command);
+      
+      // 执行下载命令
+      execSync(command, { encoding: 'utf8', stdio: 'inherit' });
 
       // 验证音频文件是否存在
       const stats = await fs.stat(audioPath);
@@ -166,10 +154,11 @@ export class VideoProcessor {
     missing: string[];
   }> {
     try {
-      // 检查 youtube-dl-exec 是否可用
-      await youtubedl('--version');
+      // 检查 yt-dlp 是否可用
+      const ytDlpPath = process.platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp';
+      execSync(`${ytDlpPath} --version`, { encoding: 'utf8' });
 
-      console.log('✅ youtube-dl-exec 可用');
+      console.log('✅ yt-dlp 可用');
       
       // 检查 ffmpeg（使用系统安装的）
       console.log('✅ ffmpeg 应该已通过系统包管理器安装');
