@@ -4,7 +4,12 @@
       "maxDuration": 60,
       "includeFiles": "tech-validation/**"
     },
+    "api/test-components.ts": {
+      "maxDuration": 30,
+      "includeFiles": "tech-validation/**"
+    },
     "api/**/*.ts": {
+      "maxDuration": 10,
       "includeFiles": "tech-validation/**"
     }
   },
