@@ -54,11 +54,11 @@ ${MOCK_TRANSCRIPT.slice(0, 100)}...
 输出JSON格式：
 {"title":"视频标题","scenes":[{"scene_number":1,"timestamp":"00:00-00:10","description":"场景描述","dialogue":"对话内容","notes":"拍摄建议"}]}`;
 
-    const scriptResult = await tongyiClient.generateScript({
+    const scriptResult = await tongyiClient.generateText({
       prompt: simplePrompt,
       model: 'qwen-turbo',
       temperature: 0.7,
-      maxTokens: 300, // 进一步减少
+      max_tokens: 300, // 进一步减少
     });
     
     log('✅ 脚本生成完成');

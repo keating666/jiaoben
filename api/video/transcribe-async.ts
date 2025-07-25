@@ -20,8 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const startTime = Date.now();
   
   try {
-    // 1. 安全验证
-    const securityValidator = new SecurityValidator();
+    // 1. 参数提取和基本验证
     const { url, apiToken, style = 'default', language = 'zh-CN' } = req.body;
     
     // 验证必需参数
@@ -36,20 +35,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     
     // 执行安全验证
-    const validationResult = securityValidator.validateRequest({
-      url,
-      apiToken,
-      style,
-      language
-    });
-    
-    if (!validationResult.isValid) {
+    const urlValidation = SecurityValidator.validateVideoUrl(url);
+    if (!urlValidation.valid) {
       return res.status(400).json({
         success: false,
         error: {
-          code: 'VALIDATION_FAILED',
-          message: validationResult.error || '请求验证失败',
-          details: validationResult.details
+          code: 'INVALID_URL',
+          message: urlValidation.reason || 'URL 验证失败'
+        }
+      });
+    }
+    
+    const tokenValidation = SecurityValidator.validateApiToken(apiToken);
+    if (!tokenValidation.valid) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_TOKEN',
+          message: tokenValidation.reason || 'API Token 验证失败'
         }
       });
     }

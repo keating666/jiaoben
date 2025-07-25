@@ -30,11 +30,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 输出JSON格式：
 {"title":"视频标题","scenes":[{"scene_number":1,"timestamp":"00:00-00:10","description":"场景描述","dialogue":"对话内容","notes":"拍摄建议"}]}`;
 
-    const result = await client.generateScript({
+    const result = await client.generateText({
       prompt: simplePrompt,
       model: 'qwen-turbo',
       temperature: 0.7,
-      maxTokens: 500, // 减少 token 数量
+      max_tokens: 500, // 减少 token 数量
     });
     
     const generateTime = Date.now() - generateStart;
