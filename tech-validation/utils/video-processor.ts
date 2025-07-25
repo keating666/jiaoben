@@ -25,11 +25,21 @@ export class VideoProcessor {
    * 获取 yt-dlp 可执行文件路径
    */
   private static getYtDlpPath(): string {
+    // 打印环境信息帮助调试
+    console.log('🔍 环境调试信息:');
+    console.log('  - process.cwd():', process.cwd());
+    console.log('  - __dirname:', __dirname);
+    console.log('  - process.platform:', process.platform);
+    
     // 尝试多个可能的路径
     const possiblePaths = [
-      // Vercel 环境中的路径
+      // Vercel 环境中的路径 - 注意 Vercel 编译 TypeScript 后的路径
+      '/var/task/.vercel/output/functions/api/video/bin/yt-dlp',
+      '/var/task/bin/yt-dlp',  
       join(process.cwd(), 'bin', 'yt-dlp'),
       join(__dirname, '..', '..', '..', 'bin', 'yt-dlp'),
+      join(__dirname, '..', '..', 'bin', 'yt-dlp'),
+      join(__dirname, '..', 'bin', 'yt-dlp'),
       // 本地开发环境
       join(process.cwd(), 'bin', 'yt-dlp.exe'),
       join(__dirname, '..', '..', '..', 'bin', 'yt-dlp.exe'),
@@ -38,7 +48,9 @@ export class VideoProcessor {
       'yt-dlp.exe',
     ];
 
+    console.log('🔍 尝试查找 yt-dlp 在以下路径:');
     for (const path of possiblePaths) {
+      console.log(`  - ${path}: ${existsSync(path) ? '✅ 存在' : '❌ 不存在'}`);
       if (existsSync(path)) {
         console.log(`✅ 找到 yt-dlp: ${path}`);
         return path;
@@ -64,16 +76,29 @@ export class VideoProcessor {
     try {
       console.log(`📊 获取视频元数据: ${videoUrl}`);
       
-      // 使用真正的 yt-dlp 二进制文件
-      const ytDlpPath = this.getYtDlpPath();
+      let ytDlpPath: string;
+      try {
+        // 使用真正的 yt-dlp 二进制文件
+        ytDlpPath = this.getYtDlpPath();
+      } catch (pathError) {
+        console.error('❌ yt-dlp 路径查找失败:', pathError);
+        throw pathError;
+      }
       
       // 构建命令
       const command = `"${ytDlpPath}" --dump-json --no-check-certificates --no-warnings --prefer-free-formats --add-header "referer:https://www.douyin.com/" --add-header "user-agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" "${videoUrl}"`;
       
       console.log('执行命令:', command);
       
-      // 执行命令并获取结果
-      const output = execSync(command, { encoding: 'utf8' });
+      let output: string;
+      try {
+        // 执行命令并获取结果
+        output = execSync(command, { encoding: 'utf8' });
+      } catch (execError: any) {
+        console.error('❌ yt-dlp 执行失败:', execError.message);
+        console.error('错误输出:', execError.stderr || execError.stdout);
+        throw this.createError('METADATA_FETCH_FAILED', `yt-dlp 执行失败: ${execError.message}`);
+      }
       
       // 解析 JSON 输出
       const info = JSON.parse(output);
