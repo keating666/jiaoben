@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcribe V3 API 测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .error {
+            color: #d32f2f;
+        }
+        .success {
+            color: #388e3c;
+        }
+        .loading {
+            color: #1976d2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Transcribe V3 API 测试工具</h1>
+        
+        <div class="form-group">
+            <label for="endpoint">API 端点:</label>
+            <select id="endpoint">
+                <option value="https://jiaoben.vercel.app/api/video/transcribe-v3-simple">Vercel 部署版</option>
+                <option value="http://localhost:3003/api/video/transcribe-v3">本地测试版</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="apiKey">API Key:</label>
+            <input type="text" id="apiKey" value="test-api-key-123" placeholder="输入 API Key">
+        </div>
+
+        <div class="form-group">
+            <label for="inputType">输入类型:</label>
+            <select id="inputType" onchange="toggleInputFields()">
+                <option value="mixedText">混合文本（包含链接）</option>
+                <option value="videoUrl">直接视频链接</option>
+            </select>
+        </div>
+
+        <div class="form-group" id="mixedTextGroup">
+            <label for="mixedText">混合文本:</label>
+            <textarea id="mixedText" rows="3" placeholder="例如：看这个视频 https://v.douyin.com/xxx/ 太好笑了">看这个视频 https://v.douyin.com/iRyLb8kf/ 太好笑了</textarea>
+        </div>
+
+        <div class="form-group" id="videoUrlGroup" style="display: none;">
+            <label for="videoUrl">视频链接:</label>
+            <input type="text" id="videoUrl" placeholder="https://v.douyin.com/xxx/">
+        </div>
+
+        <div class="form-group">
+            <label for="style">脚本风格:</label>
+            <select id="style">
+                <option value="default">默认</option>
+                <option value="humorous">幽默</option>
+                <option value="professional">专业</option>
+            </select>
+        </div>
+
+        <button onclick="testAPI()" id="testButton">测试 API</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function toggleInputFields() {
+            const inputType = document.getElementById('inputType').value;
+            document.getElementById('mixedTextGroup').style.display = 
+                inputType === 'mixedText' ? 'block' : 'none';
+            document.getElementById('videoUrlGroup').style.display = 
+                inputType === 'videoUrl' ? 'block' : 'none';
+        }
+
+        async function testAPI() {
+            const endpoint = document.getElementById('endpoint').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const inputType = document.getElementById('inputType').value;
+            const style = document.getElementById('style').value;
+            const resultDiv = document.getElementById('result');
+            const button = document.getElementById('testButton');
+
+            // 构建请求数据
+            const requestData = { style };
+            if (inputType === 'mixedText') {
+                requestData.mixedText = document.getElementById('mixedText').value;
+            } else {
+                requestData.videoUrl = document.getElementById('videoUrl').value;
+            }
+
+            // 显示加载状态
+            button.disabled = true;
+            button.textContent = '处理中...';
+            resultDiv.innerHTML = '<div class="loading">正在发送请求...</div>';
+
+            const startTime = Date.now();
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                const elapsed = Date.now() - startTime;
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    resultDiv.innerHTML = `<div class="success">✅ 请求成功！(${elapsed}ms)</div>\n` +
+                        `<strong>响应数据:</strong>\n${JSON.stringify(data, null, 2)}`;
+                    
+                    // 高亮显示关键信息
+                    if (data.data) {
+                        resultDiv.innerHTML += `\n\n<strong>关键信息:</strong>\n` +
+                            `- 处理时间: ${data.data.processingTime}ms\n` +
+                            `- 原文长度: ${data.data.originalText?.length || 0} 字符\n` +
+                            `- 场景数量: ${data.data.script?.scenes?.length || 0}\n` +
+                            `- 服务提供商: ${JSON.stringify(data.data.provider)}`;
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ 请求失败 (状态码: ${response.status})</div>\n` +
+                        `<strong>错误信息:</strong>\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ 网络错误</div>\n` +
+                    `<strong>错误详情:</strong>\n${error.message}`;
+            } finally {
+                button.disabled = false;
+                button.textContent = '测试 API';
+            }
+        }
+
+        // 页面加载时自动聚焦
+        window.onload = () => {
+            document.getElementById('mixedText').focus();
+        };
+    </script>
+</body>
+</html>

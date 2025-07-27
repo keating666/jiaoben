@@ -99,6 +99,112 @@ async function callTongyi(prompt) {
   });
 }
 
+// 提取抖音视频ID
+function extractVideoId(url) {
+  // 处理短链接（需要重定向获取真实ID，这里暂时跳过）
+  const shortLinkMatch = url.match(/v\.douyin\.com\/([a-zA-Z0-9]+)/);
+  if (shortLinkMatch) {
+    console.log('检测到短链接，暂时无法直接提取ID');
+    return null;
+  }
+  
+  // 处理长链接
+  const longLinkMatch = url.match(/video\/(\d+)/);
+  if (longLinkMatch) {
+    return longLinkMatch[1];
+  }
+  
+  // 处理其他格式
+  const patterns = [
+    /aweme_id=(\d+)/,
+    /\/(\d{19})/,
+    /modal_id=(\d+)/
+  ];
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) {
+      return match[1];
+    }
+  }
+  
+  return null;
+}
+
+// 调用 TikHub API 解析视频地址
+async function resolveVideoUrl(shareUrl) {
+  return new Promise((resolve, reject) => {
+    // 尝试提取视频ID
+    const videoId = extractVideoId(shareUrl);
+    
+    // 如果无法提取ID（比如短链接），暂时跳过TikHub
+    if (!videoId) {
+      console.log('无法提取视频ID，跳过TikHub解析');
+      reject(new Error('无法从URL提取视频ID'));
+      return;
+    }
+    
+    console.log('提取到视频ID:', videoId);
+    
+    // 使用 GET 请求，正确的端点路径
+    const queryParams = `?aweme_id=${encodeURIComponent(videoId)}`;
+    const options = {
+      hostname: 'api.tikhub.io',
+      path: `/api/v1/douyin/web/fetch_one_video${queryParams}`,
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${process.env.TIKHUB_API_TOKEN}`,
+        'Content-Type': 'application/json'
+      }
+    };
+    
+    const req = https.request(options, (res) => {
+      let responseData = '';
+      res.on('data', chunk => responseData += chunk);
+      res.on('end', () => {
+        try {
+          console.log('TikHub 响应状态码:', res.statusCode);
+          
+          if (res.statusCode !== 200) {
+            console.log('TikHub 错误响应:', responseData.substring(0, 200));
+            reject(new Error(`TikHub API 错误: ${res.statusCode}`));
+            return;
+          }
+          
+          const parsed = JSON.parse(responseData);
+          
+          // 根据TikHub客户端代码，解析响应
+          const video = parsed.aweme_detail || parsed.item || parsed;
+          const urlList = video.video?.play_addr?.url_list || [];
+          
+          console.log(`找到 ${urlList.length} 个视频地址`);
+          
+          // 选择最佳URL
+          const validUrls = urlList.filter(url => {
+            return url && typeof url === 'string' && url.startsWith('http');
+          });
+          
+          if (validUrls.length > 0) {
+            console.log('选择视频链接:', validUrls[0].substring(0, 80) + '...');
+            resolve(validUrls[0]);
+          } else {
+            reject(new Error('TikHub 未返回可用的视频地址'));
+          }
+        } catch (error) {
+          console.log('解析错误，原始响应长度:', responseData.length);
+          reject(new Error(`解析 TikHub 响应失败: ${error.message}`));
+        }
+      });
+    });
+    
+    req.on('error', (error) => {
+      reject(new Error(`TikHub 请求失败: ${error.message}`));
+    });
+    
+    req.end();
+  });
+}
+
 // 主处理函数
 async function handler(req, res) {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
@@ -163,9 +269,16 @@ async function handler(req, res) {
     
     console.log('提取的视频链接:', videoUrl);
     
-    // 步骤 2: 解析视频地址（简化：直接使用原URL）
-    const realVideoUrl = videoUrl; // 实际应该调用 TikHub API
-    console.log('视频地址:', realVideoUrl);
+    // 步骤 2: 解析视频地址（调用 TikHub API）
+    let realVideoUrl = videoUrl;
+    try {
+      realVideoUrl = await resolveVideoUrl(videoUrl);
+      console.log('解析后的视频地址:', realVideoUrl);
+    } catch (error) {
+      console.error('TikHub 解析失败，使用原链接:', error.message);
+      // 降级处理：如果 TikHub 失败，使用原链接
+      realVideoUrl = videoUrl;
+    }
     
     // 步骤 3: 视频转文字（简化：使用模拟数据）
     const transcriptText = `这是一个有趣的短视频。
@@ -251,7 +364,7 @@ async function handler(req, res) {
         script: scriptData,
         processingTime: processingTime,
         provider: {
-          videoResolver: 'Direct',
+          videoResolver: 'TikHub',
           transcription: 'Mock',
           scriptGenerator: 'TongYi'
         }

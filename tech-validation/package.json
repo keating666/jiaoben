@@ -46,7 +46,7 @@
   "dependencies": {
     "@types/node": "^24.1.0",
     "@vercel/node": "^3.0.0",
-    "axios": "^1.10.0",
+    "axios": "^1.11.0",
     "dotenv": "^17.2.0",
     "form-data": "^4.0.4",
     "ts-node": "^10.9.2",

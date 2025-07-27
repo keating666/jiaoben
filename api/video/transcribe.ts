@@ -110,9 +110,11 @@ function createVideoError(code: string, message: string, details?: any): VideoPr
   return error;
 }
 
-// 导入安全验证器
+// 导入安全验证器和监控
 import { SecurityValidator } from '../../tech-validation/utils/security-validator';
 import { ConcurrencyController } from '../../tech-validation/utils/concurrency-controller';
+import { monitoring, Monitor } from '../../tech-validation/utils/monitoring';
+import { ErrorHandler } from '../../tech-validation/utils/error-types';
 
 // 创建全局并发控制器（限制 3 个并发请求）
 const concurrencyController = new ConcurrencyController(3);
@@ -122,8 +124,15 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ): Promise<void> {
+  // 开始监控
+  const spanId = monitoring.startSpan('api.video.transcribe', {
+    method: req.method,
+    url: req.url
+  });
   // 仅允许 POST 请求
   if (req.method !== 'POST') {
+    monitoring.endSpan(spanId, 'error');
+    monitoring.recordMetric('api.error.count', 1, { error_type: 'method_not_allowed' });
     res.status(405).json({
       success: false,
       error: {
@@ -137,6 +146,8 @@ export default async function handler(
   // API 密钥验证（使用安全验证器）
   const authValidation = SecurityValidator.validateAuthorizationHeader(req.headers.authorization);
   if (!authValidation.valid) {
+    monitoring.endSpan(spanId, 'error');
+    monitoring.recordMetric('api.error.count', 1, { error_type: 'unauthorized' });
     res.status(401).json({
       success: false,
       error: {
@@ -351,6 +362,9 @@ export default async function handler(
     clearTimeout(timeoutWarningTimer);
     
     // 发送成功响应
+    monitoring.endSpan(spanId, 'success');
+    monitoring.recordMetric('api.success.count', 1);
+    monitoring.recordMetric('api.processing_time', processingResult.data?.processing_time || 0);
     res.status(200).json(processingResult);
     return;
 
@@ -368,6 +382,14 @@ export default async function handler(
       ? SecurityValidator.sanitizeForLogging(error.message)
       : 'Unknown error';
     console.error(`❌ 视频处理失败: session ${sessionId} (${processingTime}ms)`, sanitizedError);
+    
+    // 监控错误
+    monitoring.endSpan(spanId, 'error', error as Error);
+    monitoring.recordError(error as Error, {
+      sessionId,
+      processingTime,
+      errorCode: videoError.code || 'UNKNOWN'
+    });
     
     // 超时检测
     if (processingTime > 55000) {
