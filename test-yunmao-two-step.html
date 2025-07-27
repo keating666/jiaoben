@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>云猫两步式转文字测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #0070f3;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0051cc;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+            min-height: 100px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success { color: #22c55e; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #e7f3ff;
+            border-radius: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 云猫两步式转文字测试</h1>
+        
+        <div class="input-group">
+            <label for="videoUrl">视频链接：</label>
+            <input type="text" id="videoUrl" 
+                   placeholder="https://example.com/video.mp4" 
+                   value="https://v5-hl-ws-ov-coldy.zjcdn.com/05eacbee020aa80468ac10931fb1dd6e/68863acd/video/tos/cn/tos-cn-ve-192/oYuoPT6pDAQoQBQ6gIFZS0NDQfHzfqUEAMB1QE/?a=1128">
+        </div>
+        
+        <div class="input-group">
+            <label for="language">语言：</label>
+            <select id="language">
+                <option value="chinese">中文</option>
+                <option value="english">英语</option>
+                <option value="guangdongChinese">粤语</option>
+            </select>
+        </div>
+        
+        <div>
+            <button onclick="submitTask()" id="submitBtn">步骤1: 提交任务</button>
+            <button onclick="checkStatus()" id="checkBtn" disabled>步骤2: 查询状态</button>
+        </div>
+        
+        <div id="status"></div>
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        let currentTaskId = null;
+        let checkInterval = null;
+        
+        function log(message, type = 'info') {
+            const status = document.getElementById('status');
+            const time = new Date().toLocaleTimeString();
+            status.innerHTML += `<span class="${type}">[${time}] ${message}</span>\n`;
+            status.scrollTop = status.scrollHeight;
+        }
+        
+        async function submitTask() {
+            const videoUrl = document.getElementById('videoUrl').value;
+            const language = document.getElementById('language').value;
+            
+            if (!videoUrl) {
+                log('请输入视频链接', 'error');
+                return;
+            }
+            
+            document.getElementById('submitBtn').disabled = true;
+            log('提交任务中...', 'info');
+            
+            try {
+                const response = await fetch('/api/video/submit-transcription', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        videoUrl,
+                        language,
+                        chat: false
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentTaskId = data.data.taskId;
+                    log(`✅ 任务提交成功！任务ID: ${currentTaskId}`, 'success');
+                    log('现在可以点击"查询状态"按钮', 'info');
+                    
+                    document.getElementById('checkBtn').disabled = false;
+                    
+                    // 自动开始定期检查
+                    startAutoCheck();
+                } else {
+                    log(`❌ 提交失败: ${data.error.message}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ 请求失败: ${error.message}`, 'error');
+            } finally {
+                document.getElementById('submitBtn').disabled = false;
+            }
+        }
+        
+        async function checkStatus() {
+            if (!currentTaskId) {
+                log('没有有效的任务ID', 'error');
+                return;
+            }
+            
+            log('查询任务状态...', 'info');
+            
+            try {
+                const response = await fetch(`/api/video/check-transcription?taskId=${currentTaskId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const status = data.data.status;
+                    
+                    if (status === 'completed') {
+                        log('✅ 任务完成！', 'success');
+                        displayResult(data.data.text);
+                        stopAutoCheck();
+                    } else if (status === 'processing') {
+                        log('⏳ 任务处理中...', 'info');
+                    } else {
+                        log(`状态: ${status}`, 'info');
+                    }
+                } else {
+                    log(`❌ 查询失败: ${data.error.message}`, 'error');
+                    stopAutoCheck();
+                }
+            } catch (error) {
+                log(`❌ 请求失败: ${error.message}`, 'error');
+            }
+        }
+        
+        function startAutoCheck() {
+            // 每5秒自动检查一次
+            checkInterval = setInterval(() => {
+                checkStatus();
+            }, 5000);
+            
+            log('已启动自动检查（每5秒）', 'info');
+        }
+        
+        function stopAutoCheck() {
+            if (checkInterval) {
+                clearInterval(checkInterval);
+                checkInterval = null;
+                log('已停止自动检查', 'info');
+            }
+        }
+        
+        function displayResult(text) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <h3>转录结果：</h3>
+                <p>${text}</p>
+                <p><small>文本长度: ${text.length} 字符</small></p>
+            `;
+        }
+        
+        // 页面加载时的提示
+        window.onload = function() {
+            log('准备就绪', 'success');
+            log('提示：视频URL已预填充 TikHub 解析的结果', 'info');
+        };
+    </script>
+</body>
+</html>

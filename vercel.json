@@ -56,6 +56,10 @@
       "dest": "/test-api.html"
     },
     {
+      "src": "/test-yunmao-two-step.html",
+      "dest": "/test-yunmao-two-step.html"
+    },
+    {
       "src": "/(.*)",
       "dest": "/public/$1"
     }

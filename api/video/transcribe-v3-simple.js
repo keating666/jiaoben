@@ -577,8 +577,16 @@ async function handler(req, res) {
       // 检查是否有云猫 API 密钥
       if (process.env.YUNMAO_API_KEY) {
         console.log('使用云猫 API 进行视频转文字...');
-        transcriptText = await callYunmao(realVideoUrl);
-        transcriptionProvider = 'Yunmao';
+        console.log('视频URL长度:', realVideoUrl.length);
+        console.log('视频URL前100字符:', realVideoUrl.substring(0, 100));
+        
+        // 暂时跳过云猫，因为异步回调在 Vercel 中无法正常工作
+        // transcriptText = await callYunmao(realVideoUrl);
+        // transcriptionProvider = 'Yunmao';
+        
+        // 临时方案：直接使用模拟数据，但标记为待实现
+        console.log('云猫 API 需要异步回调，在 Serverless 环境中暂时无法使用');
+        throw new Error('Yunmao requires async callback, not suitable for serverless');
       } else {
         console.log('云猫 API 密钥未配置，使用模拟数据');
         throw new Error('YUNMAO_API_KEY not configured');
