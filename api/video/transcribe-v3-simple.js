@@ -205,6 +205,128 @@ async function resolveVideoUrl(shareUrl) {
   });
 }
 
+// 调用云猫转码 API
+async function callYunmao(videoUrl) {
+  return new Promise((resolve, reject) => {
+    // 步骤1：创建任务
+    const createTaskData = JSON.stringify({
+      video_url: videoUrl,
+      language: 'zh-CN',
+      output_format: 'text'
+    });
+    
+    const createOptions = {
+      hostname: 'api.yunmaovideo.com',
+      path: '/v1/extract-text',
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.YUNMAO_API_KEY}`,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(createTaskData)
+      }
+    };
+    
+    const createReq = https.request(createOptions, (res) => {
+      let responseData = '';
+      res.on('data', chunk => responseData += chunk);
+      res.on('end', () => {
+        try {
+          console.log('云猫创建任务响应状态:', res.statusCode);
+          
+          if (res.statusCode !== 200 && res.statusCode !== 201) {
+            console.log('云猫错误响应:', responseData.substring(0, 200));
+            reject(new Error(`云猫 API 错误: ${res.statusCode}`));
+            return;
+          }
+          
+          const parsed = JSON.parse(responseData);
+          const taskId = parsed.task_id || parsed.id;
+          
+          if (!taskId) {
+            reject(new Error('云猫未返回任务ID'));
+            return;
+          }
+          
+          console.log('云猫任务创建成功，任务ID:', taskId);
+          
+          // 步骤2：轮询任务状态
+          pollTaskStatus(taskId, resolve, reject);
+          
+        } catch (error) {
+          reject(new Error(`解析云猫响应失败: ${error.message}`));
+        }
+      });
+    });
+    
+    createReq.on('error', (error) => {
+      reject(new Error(`云猫请求失败: ${error.message}`));
+    });
+    
+    createReq.write(createTaskData);
+    createReq.end();
+  });
+}
+
+// 轮询任务状态
+async function pollTaskStatus(taskId, resolve, reject) {
+  const maxAttempts = 60; // 最多尝试60次
+  const pollInterval = 5000; // 5秒间隔
+  let attempts = 0;
+  
+  const poll = () => {
+    attempts++;
+    
+    if (attempts > maxAttempts) {
+      reject(new Error('云猫任务处理超时'));
+      return;
+    }
+    
+    const options = {
+      hostname: 'api.yunmaovideo.com',
+      path: `/v1/tasks/${taskId}`,
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${process.env.YUNMAO_API_KEY}`
+      }
+    };
+    
+    const req = https.request(options, (res) => {
+      let responseData = '';
+      res.on('data', chunk => responseData += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(responseData);
+          console.log(`云猫任务状态 (${attempts}/${maxAttempts}):`, parsed.status);
+          
+          if (parsed.status === 'completed') {
+            const text = parsed.result?.text || parsed.text || '';
+            console.log('云猫转录完成，文本长度:', text.length);
+            resolve(text);
+          } else if (parsed.status === 'failed') {
+            reject(new Error(`云猫任务失败: ${parsed.error?.message || '未知错误'}`));
+          } else {
+            // 继续轮询
+            setTimeout(poll, pollInterval);
+          }
+        } catch (error) {
+          console.log('解析状态响应失败，继续尝试');
+          setTimeout(poll, pollInterval);
+        }
+      });
+    });
+    
+    req.on('error', (error) => {
+      console.log('查询状态失败，继续尝试:', error.message);
+      setTimeout(poll, pollInterval);
+    });
+    
+    req.end();
+  };
+  
+  // 开始轮询
+  setTimeout(poll, 2000); // 等待2秒后开始第一次查询
+}
+
 // 主处理函数
 async function handler(req, res) {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
@@ -238,6 +360,7 @@ async function handler(req, res) {
   
   try {
     const body = req.body;
+    let transcriptionProvider = 'Mock'; // 默认使用模拟数据
     
     // 验证输入
     if (!body.mixedText && !body.videoUrl) {
@@ -280,14 +403,32 @@ async function handler(req, res) {
       realVideoUrl = videoUrl;
     }
     
-    // 步骤 3: 视频转文字（简化：使用模拟数据）
-    const transcriptText = `这是一个有趣的短视频。
+    // 步骤 3: 视频转文字（调用云猫 API）
+    let transcriptText = '';
+    
+    try {
+      // 检查是否有云猫 API 密钥
+      if (process.env.YUNMAO_API_KEY) {
+        console.log('使用云猫 API 进行视频转文字...');
+        transcriptText = await callYunmao(realVideoUrl);
+        transcriptionProvider = 'Yunmao';
+      } else {
+        console.log('云猫 API 密钥未配置，使用模拟数据');
+        throw new Error('YUNMAO_API_KEY not configured');
+      }
+    } catch (error) {
+      console.error('云猫转录失败，使用模拟数据:', error.message);
+      // 降级处理：使用模拟数据
+      transcriptText = `这是一个有趣的短视频。
 视频开始展示了一个搞笑的场景，主角在尝试做一个高难度动作。
 随后镜头切换到观众的反应，大家都被逗笑了。
 最后以一个意想不到的结局收尾，让人印象深刻。
 整个视频节奏紧凑，充满欢乐气氛。`;
+      transcriptionProvider = 'Mock';
+    }
     
     console.log('转录文本长度:', transcriptText.length);
+    console.log('转录服务提供商:', transcriptionProvider);
     
     // 步骤 4: 生成脚本
     const style = body.style || 'default';
@@ -365,7 +506,7 @@ async function handler(req, res) {
         processingTime: processingTime,
         provider: {
           videoResolver: 'TikHub',
-          transcription: 'Mock',
+          transcription: transcriptionProvider,
           scriptGenerator: 'TongYi'
         }
       }
