@@ -115,6 +115,7 @@
         <div>
             <button onclick="submitTask()" id="submitBtn">步骤1: 提交任务</button>
             <button onclick="checkStatus()" id="checkBtn" disabled>步骤2: 查询状态</button>
+            <button onclick="checkLogs()" style="background-color: #6b7280;">查看日志</button>
         </div>
         
         <div id="status"></div>
@@ -217,6 +218,28 @@
                 }
             } catch (error) {
                 log(`❌ 请求失败: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkLogs() {
+            log('查询云猫日志...', 'info');
+            
+            try {
+                const response = await fetch('/api/yunmao-logs');
+                const data = await response.json();
+                
+                if (data.success) {
+                    log(`找到 ${data.data.taskCount} 个任务记录`, 'info');
+                    if (data.data.taskCount > 0) {
+                        Object.entries(data.data.results).forEach(([taskId, result]) => {
+                            log(`任务 ${taskId}: ${result.status}`, result.status === 'completed' ? 'success' : 'error');
+                        });
+                    }
+                } else {
+                    log('获取日志失败', 'error');
+                }
+            } catch (error) {
+                log(`❌ 查询日志失败: ${error.message}`, 'error');
             }
         }
         

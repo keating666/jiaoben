@@ -90,14 +90,15 @@ async function handler(req, res) {
                 source: 'api'
               }
             });
-          } else if (parsed.code === 6001) {
-            // 处理中
+          } else if (parsed.code === 6001 || parsed.code === 1001) {
+            // 处理中 (6001: 处理中, 1001: 等待处理)
             res.status(200).json({
               success: true,
               data: {
                 taskId,
                 status: 'processing',
-                message: '任务处理中，请稍后再试'
+                message: parsed.message || '任务处理中，请稍后再试',
+                code: parsed.code
               }
             });
           } else {
