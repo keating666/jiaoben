@@ -261,9 +261,8 @@ async function callYunmao(videoUrl) {
           
           console.log('云猫任务创建成功，任务ID:', taskId);
           
-          // 由于使用回调方式，这里需要模拟等待
-          // 在生产环境中应该使用真实的回调接收
-          pollTaskSimulated(taskId, resolve, reject);
+          // 开始轮询任务结果
+          pollTaskResult(taskId, resolve, reject);
           
         } catch (error) {
           reject(new Error(`解析云猫响应失败: ${error.message}`));
@@ -280,29 +279,53 @@ async function callYunmao(videoUrl) {
   });
 }
 
-// 模拟等待任务完成（生产环境应使用回调）
-async function pollTaskSimulated(taskId, resolve, reject) {
+// 轮询任务结果（通过查询端点）
+async function pollTaskResult(taskId, resolve, reject) {
   const maxWaitTime = 300000; // 最多等待5分钟
+  const pollInterval = 5000; // 5秒查询一次
   const startTime = Date.now();
   
-  // 广帆API使用回调通知，这里模拟等待过程
-  // 在实际应用中，应该实现一个回调端点来接收结果
-  console.log('云猫任务已提交，等待处理完成...');
-  console.log('注意：当前使用模拟等待，实际应使用回调接收结果');
+  console.log(`云猫任务 ${taskId} 已提交，开始轮询结果...`);
   
-  // 模拟任务处理时间（通常需要30-60秒）
-  const estimatedTime = 45000; // 估计45秒
+  // 记录任务创建时间（用于计算处理时长）
+  if (!global.yunmaoResults) {
+    global.yunmaoResults = {};
+  }
+  global.yunmaoResults[taskId] = {
+    status: 'pending',
+    createdAt: Date.now()
+  };
   
-  setTimeout(() => {
-    if (Date.now() - startTime > maxWaitTime) {
-      reject(new Error('云猫任务处理超时'));
-    } else {
-      // 在生产环境中，这里应该是从回调接收到的实际转录文本
-      // 现在返回模拟文本表示功能集成完成
-      console.log('云猫任务完成（模拟）');
-      resolve('【注意：这是模拟文本，实际使用需要实现回调端点】\n视频内容转录文本将在这里显示。');
+  const poll = async () => {
+    try {
+      // 检查是否超时
+      if (Date.now() - startTime > maxWaitTime) {
+        reject(new Error('云猫任务处理超时'));
+        return;
+      }
+      
+      // 查询结果（内部查询，避免网络请求）
+      const result = global.yunmaoResults?.[taskId];
+      
+      if (result && result.status === 'completed') {
+        console.log(`云猫任务 ${taskId} 完成，文本长度: ${result.text?.length || 0}`);
+        resolve(result.text || '');
+      } else if (result && result.status === 'failed') {
+        reject(new Error(`云猫任务失败: ${result.error}`));
+      } else {
+        // 继续轮询
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        console.log(`等待云猫任务完成... (${elapsed}秒)`);
+        setTimeout(poll, pollInterval);
+      }
+    } catch (error) {
+      console.error('轮询出错，继续尝试:', error.message);
+      setTimeout(poll, pollInterval);
     }
-  }, estimatedTime);
+  };
+  
+  // 开始轮询
+  setTimeout(poll, 3000); // 3秒后开始第一次查询
 }
 
 // 主处理函数
