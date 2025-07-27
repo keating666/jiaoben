@@ -138,6 +138,25 @@
                     log('✅ 成功！', 'success');
                     log(`处理时间: ${data.data.processingTime}ms`, 'info');
                     log(`服务: ${JSON.stringify(data.data.provider)}`, 'info');
+                    
+                    // 显示提取的视频链接
+                    if (data.data.extractedUrl) {
+                        log(`提取的链接: ${data.data.extractedUrl}`, 'info');
+                    }
+                    
+                    // 显示解析后的视频地址
+                    if (data.data.resolvedUrl) {
+                        log(`解析后地址: ${data.data.resolvedUrl}`, 'info');
+                    }
+                    
+                    // 显示调试信息
+                    if (data.data.debugInfo) {
+                        log('调试信息:', 'info');
+                        Object.entries(data.data.debugInfo).forEach(([key, value]) => {
+                            log(`  ${key}: ${value}`, 'info');
+                        });
+                    }
+                    
                     if (data.data.script?.scenes?.length > 0) {
                         log(`生成 ${data.data.script.scenes.length} 个场景`, 'success');
                     }

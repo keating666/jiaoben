@@ -134,13 +134,23 @@ function extractVideoId(url) {
 // 调用 TikHub API 解析视频地址
 async function resolveVideoUrl(shareUrl) {
   return new Promise((resolve, reject) => {
+    const debugInfo = {
+      originalUrl: shareUrl,
+      videoId: null,
+      tikhubError: null,
+      tikhubResponse: null
+    };
+    
     // 尝试提取视频ID
     const videoId = extractVideoId(shareUrl);
+    debugInfo.videoId = videoId;
     
     // 如果无法提取ID（比如短链接），暂时跳过TikHub
     if (!videoId) {
       console.log('无法提取视频ID，跳过TikHub解析');
-      reject(new Error('无法从URL提取视频ID'));
+      debugInfo.tikhubError = '无法从URL提取视频ID';
+      // 返回调试信息而不是直接 reject
+      resolve({ error: true, debugInfo, message: '无法从URL提取视频ID' });
       return;
     }
     
@@ -164,10 +174,17 @@ async function resolveVideoUrl(shareUrl) {
       res.on('end', () => {
         try {
           console.log('TikHub 响应状态码:', res.statusCode);
+          debugInfo.tikhubResponse = {
+            statusCode: res.statusCode,
+            headers: res.headers,
+            bodyLength: responseData.length,
+            bodyPreview: responseData.substring(0, 500)
+          };
           
           if (res.statusCode !== 200) {
             console.log('TikHub 错误响应:', responseData.substring(0, 200));
-            reject(new Error(`TikHub API 错误: ${res.statusCode}`));
+            debugInfo.tikhubError = `HTTP ${res.statusCode}: ${responseData.substring(0, 200)}`;
+            resolve({ error: true, debugInfo, message: `TikHub API 错误: ${res.statusCode}` });
             return;
           }
           
@@ -178,6 +195,7 @@ async function resolveVideoUrl(shareUrl) {
           const urlList = video.video?.play_addr?.url_list || [];
           
           console.log(`找到 ${urlList.length} 个视频地址`);
+          debugInfo.videoUrlsFound = urlList.length;
           
           // 选择最佳URL
           const validUrls = urlList.filter(url => {
@@ -186,19 +204,22 @@ async function resolveVideoUrl(shareUrl) {
           
           if (validUrls.length > 0) {
             console.log('选择视频链接:', validUrls[0].substring(0, 80) + '...');
-            resolve(validUrls[0]);
+            resolve({ success: true, url: validUrls[0], debugInfo });
           } else {
-            reject(new Error('TikHub 未返回可用的视频地址'));
+            debugInfo.tikhubError = 'TikHub 未返回可用的视频地址';
+            resolve({ error: true, debugInfo, message: 'TikHub 未返回可用的视频地址' });
           }
         } catch (error) {
           console.log('解析错误，原始响应长度:', responseData.length);
-          reject(new Error(`解析 TikHub 响应失败: ${error.message}`));
+          debugInfo.tikhubError = `解析错误: ${error.message}`;
+          resolve({ error: true, debugInfo, message: `解析 TikHub 响应失败: ${error.message}` });
         }
       });
     });
     
     req.on('error', (error) => {
-      reject(new Error(`TikHub 请求失败: ${error.message}`));
+      debugInfo.tikhubError = `请求错误: ${error.message}`;
+      resolve({ error: true, debugInfo, message: `TikHub 请求失败: ${error.message}` });
     });
     
     req.end();
@@ -395,13 +416,21 @@ async function handler(req, res) {
     
     // 步骤 2: 解析视频地址（调用 TikHub API）
     let realVideoUrl = videoUrl;
-    try {
-      realVideoUrl = await resolveVideoUrl(videoUrl);
+    let tikhubDebugInfo = null;
+    let videoResolverProvider = 'None';
+    
+    const resolveResult = await resolveVideoUrl(videoUrl);
+    tikhubDebugInfo = resolveResult.debugInfo;
+    
+    if (resolveResult.success) {
+      realVideoUrl = resolveResult.url;
+      videoResolverProvider = 'TikHub';
       console.log('解析后的视频地址:', realVideoUrl);
-    } catch (error) {
-      console.error('TikHub 解析失败，使用原链接:', error.message);
+    } else {
+      console.error('TikHub 解析失败:', resolveResult.message);
       // 降级处理：如果 TikHub 失败，使用原链接
       realVideoUrl = videoUrl;
+      videoResolverProvider = 'Fallback';
     }
     
     // 步骤 3: 视频转文字（调用云猫 API）
@@ -506,10 +535,13 @@ async function handler(req, res) {
         script: scriptData,
         processingTime: processingTime,
         provider: {
-          videoResolver: 'TikHub',
+          videoResolver: videoResolverProvider,
           transcription: transcriptionProvider,
           scriptGenerator: 'TongYi'
-        }
+        },
+        extractedUrl: videoUrl,
+        resolvedUrl: realVideoUrl,
+        debugInfo: tikhubDebugInfo
       }
     });
     
