@@ -85,7 +85,10 @@
             <label for="videoUrl">视频链接：</label>
             <input type="text" id="videoUrl" 
                    placeholder="https://example.com/video.mp4" 
-                   value="https://v5-hl-ws-ov-coldy.zjcdn.com/05eacbee020aa80468ac10931fb1dd6e/68863acd/video/tos/cn/tos-cn-ve-192/oYuoPT6pDAQoQBQ6gIFZS0NDQfHzfqUEAMB1QE/?a=1128">
+                   value="https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4">
+            <small style="display: block; margin-top: 5px; color: #666;">
+                默认使用测试视频，您也可以粘贴 TikHub 解析的 URL
+            </small>
         </div>
         
         <div class="input-group">
@@ -142,7 +145,10 @@
                     })
                 });
                 
+                log(`响应状态: ${response.status}`, 'info');
+                
                 const data = await response.json();
+                console.log('完整响应:', data);
                 
                 if (data.success) {
                     currentTaskId = data.data.taskId;
