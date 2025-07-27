@@ -100,14 +100,7 @@ async function callTongyi(prompt) {
 }
 
 // 提取抖音视频ID
-function extractVideoId(url) {
-  // 处理短链接（需要重定向获取真实ID，这里暂时跳过）
-  const shortLinkMatch = url.match(/v\.douyin\.com\/([a-zA-Z0-9]+)/);
-  if (shortLinkMatch) {
-    console.log('检测到短链接，暂时无法直接提取ID');
-    return null;
-  }
-  
+async function extractVideoId(url) {
   // 处理长链接
   const longLinkMatch = url.match(/video\/(\d+)/);
   if (longLinkMatch) {
@@ -128,12 +121,64 @@ function extractVideoId(url) {
     }
   }
   
+  // 处理短链接 - 需要通过重定向获取真实URL
+  const shortLinkMatch = url.match(/v\.douyin\.com\/([a-zA-Z0-9]+)/);
+  if (shortLinkMatch) {
+    console.log('检测到短链接，尝试获取重定向...');
+    try {
+      // 获取重定向后的URL
+      const redirectedUrl = await followRedirect(url);
+      console.log('重定向后的URL:', redirectedUrl);
+      
+      // 从重定向后的URL提取ID
+      const videoIdMatch = redirectedUrl.match(/video\/(\d+)/);
+      if (videoIdMatch) {
+        return videoIdMatch[1];
+      }
+      
+      // 尝试其他模式
+      const modalIdMatch = redirectedUrl.match(/modal_id=(\d+)/);
+      if (modalIdMatch) {
+        return modalIdMatch[1];
+      }
+    } catch (error) {
+      console.error('获取重定向失败:', error.message);
+    }
+  }
+  
   return null;
+}
+
+// 跟随重定向获取最终URL
+function followRedirect(url) {
+  return new Promise((resolve, reject) => {
+    const urlObj = new URL(url);
+    const options = {
+      hostname: urlObj.hostname,
+      path: urlObj.pathname + urlObj.search,
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    };
+    
+    const req = https.request(options, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        // 处理重定向
+        resolve(res.headers.location);
+      } else {
+        reject(new Error(`无法获取重定向: ${res.statusCode}`));
+      }
+    });
+    
+    req.on('error', reject);
+    req.end();
+  });
 }
 
 // 调用 TikHub API 解析视频地址
 async function resolveVideoUrl(shareUrl) {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const debugInfo = {
       originalUrl: shareUrl,
       videoId: null,
@@ -142,7 +187,7 @@ async function resolveVideoUrl(shareUrl) {
     };
     
     // 尝试提取视频ID
-    const videoId = extractVideoId(shareUrl);
+    const videoId = await extractVideoId(shareUrl);
     debugInfo.videoId = videoId;
     
     // 如果无法提取ID（比如短链接），暂时跳过TikHub
