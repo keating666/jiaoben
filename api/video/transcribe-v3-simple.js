@@ -141,8 +141,16 @@ async function extractVideoId(url) {
       if (modalIdMatch) {
         return modalIdMatch[1];
       }
+      
+      // 尝试从重定向URL中寻找19位数字ID
+      const idMatch = redirectedUrl.match(/(\d{19})/);
+      if (idMatch) {
+        return idMatch[1];
+      }
     } catch (error) {
       console.error('获取重定向失败:', error.message);
+      // 如果重定向失败，TikHub可能支持直接使用短链接代码作为参数
+      // 但这需要不同的API端点
     }
   }
   
@@ -235,9 +243,67 @@ async function resolveVideoUrl(shareUrl) {
           
           const parsed = JSON.parse(responseData);
           
-          // 根据TikHub客户端代码，解析响应
-          const video = parsed.aweme_detail || parsed.item || parsed;
-          const urlList = video.video?.play_addr?.url_list || [];
+          // 记录响应结构
+          debugInfo.responseStructure = {
+            hasAwemeDetail: !!parsed.aweme_detail,
+            hasItem: !!parsed.item,
+            hasData: !!parsed.data,
+            topLevelKeys: Object.keys(parsed).slice(0, 10)
+          };
+          
+          // 尝试多种解析路径
+          let video = null;
+          let urlList = [];
+          
+          // 尝试不同的数据路径
+          if (parsed.data) {
+            video = parsed.data.aweme_detail || parsed.data.item || parsed.data;
+            debugInfo.dataPath = 'data';
+          } else if (parsed.aweme_detail) {
+            video = parsed.aweme_detail;
+            debugInfo.dataPath = 'aweme_detail';
+          } else if (parsed.item) {
+            video = parsed.item;
+            debugInfo.dataPath = 'item';
+          } else {
+            video = parsed;
+            debugInfo.dataPath = 'root';
+          }
+          
+          // 提取视频URL列表
+          if (video) {
+            // 尝试多种路径获取视频URL
+            urlList = video.video?.play_addr?.url_list || 
+                     video.video?.play_addr?.urls || 
+                     video.video?.download_addr?.url_list ||
+                     video.video?.bit_rate?.[0]?.play_addr?.url_list ||
+                     [];
+            
+            // 如果还是没有，尝试其他可能的路径
+            if (urlList.length === 0 && video.video) {
+              // 遍历video对象寻找可能的URL数组
+              for (const key of Object.keys(video.video)) {
+                const value = video.video[key];
+                if (value && typeof value === 'object') {
+                  const urls = value.url_list || value.urls || [];
+                  if (Array.isArray(urls) && urls.length > 0) {
+                    urlList = urls;
+                    debugInfo.urlFoundIn = key;
+                    break;
+                  }
+                }
+              }
+            }
+            
+            // 记录视频对象结构
+            debugInfo.videoStructure = {
+              hasVideo: !!video.video,
+              hasPlayAddr: !!video.video?.play_addr,
+              hasDownloadAddr: !!video.video?.download_addr,
+              hasBitRate: !!video.video?.bit_rate,
+              videoKeys: video.video ? Object.keys(video.video).slice(0, 20) : []
+            };
+          }
           
           console.log(`找到 ${urlList.length} 个视频地址`);
           debugInfo.videoUrlsFound = urlList.length;
