@@ -209,15 +209,16 @@ async function resolveVideoUrl(shareUrl) {
     
     console.log('提取到视频ID:', videoId);
     
-    // 使用 GET 请求，正确的端点路径
+    // 使用 App API v3 端点，返回更完整的数据
     const queryParams = `?aweme_id=${encodeURIComponent(videoId)}`;
     const options = {
       hostname: 'api.tikhub.io',
-      path: `/api/v1/douyin/web/fetch_one_video${queryParams}`,
+      path: `/api/v1/douyin/app/v3/fetch_one_video${queryParams}`,
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${process.env.TIKHUB_API_TOKEN}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'User-Agent': 'TikHub-API-Demo/1.0'
       }
     };
     
@@ -231,7 +232,22 @@ async function resolveVideoUrl(shareUrl) {
             statusCode: res.statusCode,
             headers: res.headers,
             bodyLength: responseData.length,
-            bodyPreview: responseData.substring(0, 500)
+            bodyPreview: responseData.substring(0, 1000),
+            // 尝试解析并显示响应的前几层结构
+            parsedPreview: (() => {
+              try {
+                const preview = JSON.parse(responseData);
+                return {
+                  topKeys: Object.keys(preview || {}),
+                  dataKeys: preview.data ? Object.keys(preview.data).slice(0, 20) : null,
+                  hasAwemeList: !!preview.data?.aweme_list,
+                  hasItemList: !!preview.data?.item_list,
+                  awemeListLength: preview.data?.aweme_list?.length || 0
+                };
+              } catch (e) {
+                return 'Parse error';
+              }
+            })()
           };
           
           if (res.statusCode !== 200) {
@@ -256,8 +272,18 @@ async function resolveVideoUrl(shareUrl) {
           let urlList = [];
           
           // 尝试不同的数据路径
-          if (parsed.data) {
-            video = parsed.data.aweme_detail || parsed.data.item || parsed.data;
+          // App API v3 可能返回 aweme_list 数组
+          if (parsed.data?.aweme_list && parsed.data.aweme_list.length > 0) {
+            video = parsed.data.aweme_list[0];
+            debugInfo.dataPath = 'data.aweme_list[0]';
+          } else if (parsed.data?.aweme_detail) {
+            video = parsed.data.aweme_detail;
+            debugInfo.dataPath = 'data.aweme_detail';
+          } else if (parsed.data?.item) {
+            video = parsed.data.item;
+            debugInfo.dataPath = 'data.item';
+          } else if (parsed.data) {
+            video = parsed.data;
             debugInfo.dataPath = 'data';
           } else if (parsed.aweme_detail) {
             video = parsed.aweme_detail;
