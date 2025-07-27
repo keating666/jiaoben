@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>云猫两步式转文字测试</title>
+    <title>云猫转文字测试（Fetch版）</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -75,11 +75,23 @@
             border-radius: 5px;
             display: none;
         }
+        .notice {
+            background-color: #fffbeb;
+            border: 1px solid #fbbf24;
+            color: #92400e;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎬 云猫两步式转文字测试</h1>
+        <h1>🎬 云猫转文字测试（Fetch版）</h1>
+        
+        <div class="notice">
+            ⚠️ 使用Fetch API版本，可能更适合Vercel环境
+        </div>
         
         <div class="input-group">
             <label for="videoUrl">视频链接：</label>
@@ -130,7 +142,7 @@
             }
             
             document.getElementById('submitBtn').disabled = true;
-            log('提交任务中...', 'info');
+            log('提交任务中（使用Fetch API）...', 'info');
             
             try {
                 const response = await fetch('/api/video/submit-transcription-fetch', {
@@ -161,9 +173,11 @@
                     startAutoCheck();
                 } else {
                     log(`❌ 提交失败: ${data.error.message}`, 'error');
+                    if (data.error.code) {
+                        log(`错误代码: ${data.error.code}`, 'error');
+                    }
                     if (data.error.details) {
-                        log(`视频URL长度: ${data.error.details.videoUrlLength}`, 'error');
-                        log(`云猫响应: ${data.error.details.response}`, 'error');
+                        log(`详细信息: ${JSON.stringify(data.error.details)}`, 'error');
                     }
                 }
             } catch (error) {
@@ -235,8 +249,8 @@
         
         // 页面加载时的提示
         window.onload = function() {
-            log('准备就绪', 'success');
-            log('提示：视频URL已预填充 TikHub 解析的结果', 'info');
+            log('准备就绪（Fetch API版本）', 'success');
+            log('提示：本版本使用Fetch API，可能更适合Vercel环境', 'info');
         };
     </script>
 </body>

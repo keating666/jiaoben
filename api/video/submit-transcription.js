@@ -52,7 +52,8 @@ async function handler(req, res) {
         'api-key': process.env.YUNMAO_API_KEY,
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(requestData)
-      }
+      },
+      timeout: 30000 // 30秒超时
     };
     
     // 发送请求
@@ -96,6 +97,18 @@ async function handler(req, res) {
               message: '解析云猫响应失败'
             }
           });
+        }
+      });
+    });
+    
+    apiReq.on('timeout', () => {
+      console.error('请求超时');
+      apiReq.destroy();
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'TIMEOUT_ERROR',
+          message: '请求云猫API超时，请稍后重试'
         }
       });
     });
