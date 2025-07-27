@@ -39,6 +39,9 @@ async function handler(req, res) {
       chat
     });
     
+    console.log('发送到云猫的请求数据:', requestData);
+    console.log('视频URL长度:', videoUrl.length);
+    
     const options = {
       hostname: 'api.guangfan.tech',
       path: '/v1/get-text',
@@ -69,11 +72,16 @@ async function handler(req, res) {
               }
             });
           } else {
+            console.error('云猫 API 错误:', parsed);
             res.status(400).json({
               success: false,
               error: {
                 code: `YUNMAO_${parsed.code}`,
-                message: parsed.message || '云猫 API 错误'
+                message: parsed.message || '云猫 API 错误',
+                details: {
+                  videoUrlLength: videoUrl.length,
+                  response: responseData.substring(0, 200)
+                }
               }
             });
           }

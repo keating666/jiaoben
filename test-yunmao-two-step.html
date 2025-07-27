@@ -155,6 +155,10 @@
                     startAutoCheck();
                 } else {
                     log(`❌ 提交失败: ${data.error.message}`, 'error');
+                    if (data.error.details) {
+                        log(`视频URL长度: ${data.error.details.videoUrlLength}`, 'error');
+                        log(`云猫响应: ${data.error.details.response}`, 'error');
+                    }
                 }
             } catch (error) {
                 log(`❌ 请求失败: ${error.message}`, 'error');
