@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抖音视频转文字完整流程</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        .header p {
+            opacity: 0.9;
+        }
+        .content {
+            padding: 40px;
+        }
+        .workflow {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            position: relative;
+        }
+        .workflow::before {
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 50px;
+            right: 50px;
+            height: 2px;
+            background: #e0e0e0;
+            z-index: 0;
+        }
+        .step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+        .step-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #f5f5f5;
+            border: 2px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .step.active .step-circle {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        .step.completed .step-circle {
+            background: #10b981;
+            color: white;
+            border-color: #10b981;
+        }
+        .step-title {
+            font-size: 14px;
+            color: #666;
+        }
+        .input-section {
+            margin-bottom: 30px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        button {
+            flex: 1;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        .btn-primary:disabled {
+            background: #ccc;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #666;
+        }
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        .status-section {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            min-height: 150px;
+        }
+        .status-title {
+            font-weight: 500;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .status-content {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #666;
+            white-space: pre-wrap;
+        }
+        .result-section {
+            display: none;
+            background: #ecfdf5;
+            border: 2px solid #10b981;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .result-title {
+            color: #065f46;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+        .result-content {
+            color: #064e3b;
+            line-height: 1.6;
+        }
+        .error {
+            color: #dc2626;
+        }
+        .success {
+            color: #10b981;
+        }
+        .info {
+            color: #3b82f6;
+        }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #667eea;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .examples {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        .example-link {
+            color: #667eea;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .example-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 抖音视频转文字完整流程</h1>
+            <p>TikHub 链接解析 → 云猫转码 → 文字输出</p>
+        </div>
+        
+        <div class="content">
+            <!-- 工作流程指示器 -->
+            <div class="workflow">
+                <div class="step" id="step1">
+                    <div class="step-circle">1</div>
+                    <div class="step-title">输入链接</div>
+                </div>
+                <div class="step" id="step2">
+                    <div class="step-circle">2</div>
+                    <div class="step-title">解析视频</div>
+                </div>
+                <div class="step" id="step3">
+                    <div class="step-circle">3</div>
+                    <div class="step-title">转换文字</div>
+                </div>
+                <div class="step" id="step4">
+                    <div class="step-circle">4</div>
+                    <div class="step-title">获取结果</div>
+                </div>
+            </div>
+            
+            <!-- 输入区域 -->
+            <div class="input-section">
+                <div class="input-group">
+                    <label for="douyinUrl">抖音视频链接</label>
+                    <input type="text" id="douyinUrl" 
+                           placeholder="https://v.douyin.com/xxxxx 或分享文案" 
+                           value="">
+                    <div class="examples">
+                        示例: 
+                        <a class="example-link" onclick="setExample('https://v.douyin.com/iRyBWfGS/')">短链接</a> | 
+                        <a class="example-link" onclick="setExample('https://www.douyin.com/video/7123456789')">完整链接</a> |
+                        <a class="example-link" onclick="setExample('测试视频')">测试视频</a>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="language">识别语言</label>
+                    <select id="language">
+                        <option value="chinese">中文</option>
+                        <option value="english">英语</option>
+                        <option value="guangdongChinese">粤语</option>
+                        <option value="sichuanChinese">四川话</option>
+                        <option value="japanse">日语</option>
+                        <option value="korean">韩语</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- 按钮区域 -->
+            <div class="button-group">
+                <button class="btn-primary" onclick="processVideo()" id="processBtn">
+                    🚀 开始处理
+                </button>
+                <button class="btn-secondary" onclick="clearAll()">
+                    🔄 清空重置
+                </button>
+            </div>
+            
+            <!-- 状态显示 -->
+            <div class="status-section">
+                <div class="status-title">处理状态</div>
+                <div class="status-content" id="status">等待开始...</div>
+            </div>
+            
+            <!-- 结果显示 -->
+            <div class="result-section" id="resultSection">
+                <div class="result-title">✅ 转录结果</div>
+                <div class="result-content" id="result"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTaskId = null;
+        let checkInterval = null;
+        let currentStep = 0;
+        
+        function setExample(url) {
+            document.getElementById('douyinUrl').value = url;
+        }
+        
+        function updateStep(step) {
+            // 清除所有状态
+            document.querySelectorAll('.step').forEach(s => {
+                s.classList.remove('active', 'completed');
+            });
+            
+            // 设置完成和当前状态
+            for (let i = 1; i < step; i++) {
+                document.getElementById(`step${i}`).classList.add('completed');
+            }
+            if (step <= 4) {
+                document.getElementById(`step${step}`).classList.add('active');
+            }
+            currentStep = step;
+        }
+        
+        function log(message, type = 'info') {
+            const status = document.getElementById('status');
+            const time = new Date().toLocaleTimeString();
+            const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : '📝';
+            status.innerHTML += `<span class="${type}">${icon} [${time}] ${message}</span>\n`;
+            status.scrollTop = status.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('status').innerHTML = '';
+        }
+        
+        async function processVideo() {
+            const douyinUrl = document.getElementById('douyinUrl').value.trim();
+            const language = document.getElementById('language').value;
+            
+            if (!douyinUrl) {
+                log('请输入抖音链接', 'error');
+                return;
+            }
+            
+            // 重置状态
+            clearLog();
+            document.getElementById('resultSection').style.display = 'none';
+            document.getElementById('processBtn').disabled = true;
+            updateStep(1);
+            
+            try {
+                log('开始处理抖音视频...', 'info');
+                updateStep(2);
+                
+                // 如果是"测试视频"，使用测试URL
+                const isTest = douyinUrl === '测试视频';
+                const requestUrl = isTest ? 
+                    'https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4' : 
+                    douyinUrl;
+                
+                log(isTest ? '使用测试视频...' : '解析抖音链接...', 'info');
+                
+                // 调用处理API
+                const response = await fetch('/api/douyin/process-video', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        douyinUrl: requestUrl,
+                        language: language,
+                        waitForResult: false // 异步处理
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentTaskId = data.data.taskId;
+                    log(`任务提交成功！任务ID: ${currentTaskId}`, 'success');
+                    log('视频URL: ' + data.data.videoUrl, 'info');
+                    
+                    updateStep(3);
+                    log('正在转换文字，请稍候...', 'info');
+                    
+                    // 开始自动检查状态
+                    startAutoCheck();
+                } else {
+                    throw new Error(data.error.message);
+                }
+                
+            } catch (error) {
+                log(`处理失败: ${error.message}`, 'error');
+                document.getElementById('processBtn').disabled = false;
+                updateStep(0);
+            }
+        }
+        
+        async function checkStatus() {
+            if (!currentTaskId) return;
+            
+            try {
+                const response = await fetch(`/api/video/check-transcription?taskId=${currentTaskId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.data.status === 'completed') {
+                        log('转换完成！', 'success');
+                        updateStep(4);
+                        displayResult(data.data.text);
+                        stopAutoCheck();
+                        document.getElementById('processBtn').disabled = false;
+                    } else if (data.data.status === 'processing') {
+                        // 继续等待
+                        if (!checkInterval) {
+                            log('任务仍在处理中...', 'info');
+                        }
+                    }
+                } else {
+                    throw new Error(data.error.message);
+                }
+            } catch (error) {
+                log(`查询失败: ${error.message}`, 'error');
+                stopAutoCheck();
+                document.getElementById('processBtn').disabled = false;
+            }
+        }
+        
+        function startAutoCheck() {
+            // 立即检查一次
+            checkStatus();
+            
+            // 每5秒检查一次
+            checkInterval = setInterval(() => {
+                checkStatus();
+            }, 5000);
+            
+            log('已启动自动状态检查（每5秒）', 'info');
+        }
+        
+        function stopAutoCheck() {
+            if (checkInterval) {
+                clearInterval(checkInterval);
+                checkInterval = null;
+                log('已停止自动检查', 'info');
+            }
+        }
+        
+        function displayResult(text) {
+            const resultSection = document.getElementById('resultSection');
+            const result = document.getElementById('result');
+            
+            resultSection.style.display = 'block';
+            result.innerHTML = `
+                <div style="margin-bottom: 10px;">
+                    <strong>转录文本：</strong>
+                </div>
+                <div style="background: white; padding: 15px; border-radius: 5px; margin-bottom: 10px;">
+                    ${text || '（无内容）'}
+                </div>
+                <div style="font-size: 14px; color: #666;">
+                    文本长度: ${(text || '').length} 字符
+                </div>
+            `;
+        }
+        
+        function clearAll() {
+            stopAutoCheck();
+            currentTaskId = null;
+            document.getElementById('douyinUrl').value = '';
+            document.getElementById('status').innerHTML = '等待开始...';
+            document.getElementById('resultSection').style.display = 'none';
+            document.getElementById('processBtn').disabled = false;
+            updateStep(0);
+        }
+        
+        // 页面加载完成
+        window.onload = function() {
+            log('系统准备就绪', 'success');
+            updateStep(1);
+        };
+    </script>
+</body>
+</html>

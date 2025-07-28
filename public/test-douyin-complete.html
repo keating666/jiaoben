@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抖音视频智能转文字系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+        }
+        
+        .app-header {
+            background: linear-gradient(135deg, #000000 0%, #333333 100%);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .app-header h1 {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 500;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .workflow-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .workflow-step {
+            text-align: center;
+            flex: 1;
+            position: relative;
+        }
+        
+        .workflow-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            right: -50%;
+            width: 100%;
+            height: 2px;
+            background: #e0e0e0;
+            z-index: 0;
+        }
+        
+        .step-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 8px;
+            position: relative;
+            z-index: 1;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+        
+        .workflow-step.active .step-icon {
+            background: #000;
+            color: white;
+        }
+        
+        .workflow-step.completed .step-icon {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .step-label {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .input-group input:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: #333;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+        }
+        
+        .btn-primary {
+            background: #000;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #333;
+        }
+        
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .status-log {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 16px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .log-entry {
+            margin-bottom: 8px;
+        }
+        
+        .log-time {
+            color: #6c757d;
+            margin-right: 8px;
+        }
+        
+        .log-success { color: #28a745; }
+        .log-error { color: #dc3545; }
+        .log-info { color: #007bff; }
+        .log-warning { color: #ffc107; }
+        
+        .result-box {
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+            border-radius: 6px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .result-title {
+            font-weight: 600;
+            color: #2e7d32;
+            margin-bottom: 10px;
+        }
+        
+        .result-content {
+            background: white;
+            padding: 16px;
+            border-radius: 4px;
+            margin-top: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .examples {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .example-link {
+            color: #007bff;
+            text-decoration: none;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        
+        .example-link:hover {
+            text-decoration: underline;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #333;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-header">
+        <h1>🎬 抖音视频智能转文字系统</h1>
+    </div>
+    
+    <div class="container">
+        <!-- 工作流程指示 -->
+        <div class="workflow-steps">
+            <div class="workflow-step" id="step1">
+                <div class="step-icon">📱</div>
+                <div class="step-label">输入链接</div>
+            </div>
+            <div class="workflow-step" id="step2">
+                <div class="step-icon">🔗</div>
+                <div class="step-label">TikHub解析</div>
+            </div>
+            <div class="workflow-step" id="step3">
+                <div class="step-icon">🎥</div>
+                <div class="step-label">云猫转码</div>
+            </div>
+            <div class="workflow-step" id="step4">
+                <div class="step-icon">📝</div>
+                <div class="step-label">文字输出</div>
+            </div>
+        </div>
+        
+        <div class="main-grid">
+            <!-- 左侧：输入区域 -->
+            <div class="card">
+                <h2 class="card-title">视频信息输入</h2>
+                
+                <div class="input-group">
+                    <label for="douyinUrl">抖音视频链接</label>
+                    <input type="text" id="douyinUrl" 
+                           placeholder="粘贴抖音分享链接或视频ID">
+                    <div class="examples">
+                        快速测试: 
+                        <a class="example-link" onclick="setExample('test')">测试视频</a>
+                        <a class="example-link" onclick="setExample('https://v.douyin.com/iRyBWfGS/')">示例链接</a>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="language">识别语言</label>
+                    <select id="language">
+                        <option value="chinese">中文（普通话）</option>
+                        <option value="guangdongChinese">粤语</option>
+                        <option value="sichuanChinese">四川话</option>
+                        <option value="english">英语</option>
+                        <option value="japanse">日语</option>
+                        <option value="korean">韩语</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label>
+                        <input type="checkbox" id="waitForResult"> 
+                        等待完成后返回结果（可能需要30-60秒）
+                    </label>
+                </div>
+                
+                <div>
+                    <button class="btn btn-primary" onclick="startProcess()" id="processBtn">
+                        开始处理
+                    </button>
+                    <button class="btn btn-secondary" onclick="resetAll()">
+                        重置
+                    </button>
+                </div>
+                
+                <!-- 统计信息 -->
+                <div class="stats" style="margin-top: 30px;">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalRequests">0</div>
+                        <div class="stat-label">总请求数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="successCount">0</div>
+                        <div class="stat-label">成功数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="avgTime">0s</div>
+                        <div class="stat-label">平均耗时</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右侧：状态和结果 -->
+            <div>
+                <div class="card">
+                    <h2 class="card-title">处理状态</h2>
+                    <div class="status-log" id="statusLog">
+                        <div class="log-entry">
+                            <span class="log-time">[准备就绪]</span>
+                            <span class="log-info">系统已初始化，等待输入...</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="result-box" id="resultBox">
+                    <div class="result-title">✅ 转录结果</div>
+                    <div class="result-content" id="resultContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 全局变量
+        let currentTaskId = null;
+        let checkInterval = null;
+        let startTime = null;
+        let stats = {
+            total: 0,
+            success: 0,
+            totalTime: 0
+        };
+        
+        // 从localStorage加载统计
+        function loadStats() {
+            const saved = localStorage.getItem('videoStats');
+            if (saved) {
+                stats = JSON.parse(saved);
+                updateStatsDisplay();
+            }
+        }
+        
+        // 保存统计
+        function saveStats() {
+            localStorage.setItem('videoStats', JSON.stringify(stats));
+            updateStatsDisplay();
+        }
+        
+        // 更新统计显示
+        function updateStatsDisplay() {
+            document.getElementById('totalRequests').textContent = stats.total;
+            document.getElementById('successCount').textContent = stats.success;
+            const avgTime = stats.success > 0 ? Math.round(stats.totalTime / stats.success) : 0;
+            document.getElementById('avgTime').textContent = avgTime + 's';
+        }
+        
+        // 设置示例
+        function setExample(value) {
+            document.getElementById('douyinUrl').value = value;
+        }
+        
+        // 更新步骤状态
+        function updateStep(step) {
+            document.querySelectorAll('.workflow-step').forEach((el, index) => {
+                el.classList.remove('active', 'completed');
+                if (index < step - 1) {
+                    el.classList.add('completed');
+                } else if (index === step - 1) {
+                    el.classList.add('active');
+                }
+            });
+        }
+        
+        // 添加日志
+        function addLog(message, type = 'info') {
+            const log = document.getElementById('statusLog');
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `
+                <span class="log-time">[${time}]</span>
+                <span class="log-${type}">${message}</span>
+            `;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        // 清空日志
+        function clearLog() {
+            document.getElementById('statusLog').innerHTML = '';
+        }
+        
+        // 开始处理
+        async function startProcess() {
+            const url = document.getElementById('douyinUrl').value.trim();
+            const language = document.getElementById('language').value;
+            const waitForResult = document.getElementById('waitForResult').checked;
+            
+            if (!url) {
+                addLog('请输入抖音视频链接', 'error');
+                return;
+            }
+            
+            // 重置状态
+            clearLog();
+            document.getElementById('resultBox').style.display = 'none';
+            document.getElementById('processBtn').disabled = true;
+            updateStep(1);
+            
+            // 记录开始时间
+            startTime = Date.now();
+            stats.total++;
+            
+            try {
+                addLog('开始处理视频...', 'info');
+                updateStep(2);
+                
+                // 处理测试视频
+                const isTest = url === 'test';
+                const requestUrl = isTest ? 
+                    'https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4' : 
+                    url;
+                
+                addLog(isTest ? '使用测试视频' : '正在通过TikHub解析视频...', 'info');
+                
+                // 调用API
+                const response = await fetch('/api/douyin/process-video', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        douyinUrl: requestUrl,
+                        language: language,
+                        waitForResult: waitForResult
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentTaskId = data.data.taskId;
+                    addLog(`任务创建成功，ID: ${currentTaskId}`, 'success');
+                    
+                    if (data.data.status === 'completed') {
+                        // 直接返回了结果
+                        updateStep(4);
+                        displayResult(data.data.text);
+                        recordSuccess();
+                    } else {
+                        // 需要轮询状态
+                        updateStep(3);
+                        addLog('云猫正在转码处理，请稍候...', 'info');
+                        startStatusCheck();
+                    }
+                } else {
+                    throw new Error(data.error.message);
+                }
+                
+            } catch (error) {
+                addLog(`处理失败: ${error.message}`, 'error');
+                document.getElementById('processBtn').disabled = false;
+                updateStep(0);
+            }
+        }
+        
+        // 开始状态检查
+        function startStatusCheck() {
+            checkStatus(); // 立即检查一次
+            checkInterval = setInterval(checkStatus, 5000); // 每5秒检查
+        }
+        
+        // 停止状态检查
+        function stopStatusCheck() {
+            if (checkInterval) {
+                clearInterval(checkInterval);
+                checkInterval = null;
+            }
+        }
+        
+        // 检查任务状态
+        async function checkStatus() {
+            if (!currentTaskId) return;
+            
+            try {
+                const response = await fetch(`/api/video/check-transcription?taskId=${currentTaskId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.data.status === 'completed') {
+                        updateStep(4);
+                        addLog('转换完成！', 'success');
+                        displayResult(data.data.text);
+                        stopStatusCheck();
+                        recordSuccess();
+                        document.getElementById('processBtn').disabled = false;
+                    } else if (data.data.status === 'processing') {
+                        // 继续等待
+                        const elapsed = Math.round((Date.now() - startTime) / 1000);
+                        addLog(`处理中... (已等待 ${elapsed} 秒)`, 'info');
+                    }
+                } else {
+                    throw new Error(data.error.message);
+                }
+            } catch (error) {
+                addLog(`状态查询失败: ${error.message}`, 'error');
+                stopStatusCheck();
+                document.getElementById('processBtn').disabled = false;
+            }
+        }
+        
+        // 显示结果
+        function displayResult(text) {
+            const resultBox = document.getElementById('resultBox');
+            const resultContent = document.getElementById('resultContent');
+            
+            resultBox.style.display = 'block';
+            resultContent.innerHTML = `
+                <div style="white-space: pre-wrap;">${text || '（无内容）'}</div>
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; color: #666;">
+                    文本长度: ${(text || '').length} 字符
+                </div>
+            `;
+        }
+        
+        // 记录成功
+        function recordSuccess() {
+            stats.success++;
+            const elapsed = Math.round((Date.now() - startTime) / 1000);
+            stats.totalTime += elapsed;
+            saveStats();
+            addLog(`总耗时: ${elapsed} 秒`, 'info');
+        }
+        
+        // 重置所有
+        function resetAll() {
+            stopStatusCheck();
+            currentTaskId = null;
+            document.getElementById('douyinUrl').value = '';
+            clearLog();
+            addLog('系统已重置', 'info');
+            document.getElementById('resultBox').style.display = 'none';
+            document.getElementById('processBtn').disabled = false;
+            updateStep(1);
+        }
+        
+        // 页面加载
+        window.onload = function() {
+            loadStats();
+            updateStep(1);
+            addLog('系统已初始化，等待输入...', 'info');
+        };
+    </script>
+</body>
+</html>

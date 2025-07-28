@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>云猫转文字优化测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #0070f3;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0051cc;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success { color: #22c55e; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+        .warning { color: #f59e0b; }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #e7f3ff;
+            border-radius: 5px;
+            display: none;
+        }
+        .test-videos {
+            background: #fffbeb;
+            border: 1px solid #fbbf24;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .test-videos h3 {
+            margin-top: 0;
+            color: #92400e;
+        }
+        .video-option {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .video-option:hover {
+            background: #fef3c7;
+            transform: translateX(5px);
+        }
+        .video-option strong {
+            color: #0070f3;
+        }
+        .timer {
+            font-size: 18px;
+            font-weight: bold;
+            color: #0070f3;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #0070f3 0%, #0051cc 100%);
+            width: 0%;
+            transition: width 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 云猫转文字优化测试</h1>
+        
+        <div class="test-videos">
+            <h3>⚡ 快速测试视频（点击选择）</h3>
+            <div class="video-option" onclick="selectVideo('tiny')">
+                <strong>极小视频 (5秒)</strong> - 最快速度测试
+                <br><small>https://www.w3schools.com/html/mov_bbb.mp4</small>
+            </div>
+            <div class="video-option" onclick="selectVideo('small')">
+                <strong>小视频 (10秒)</strong> - 快速测试
+                <br><small>https://sample-videos.com/video321/mp4/240/big_buck_bunny_240p_1mb.mp4</small>
+            </div>
+            <div class="video-option" onclick="selectVideo('medium')">
+                <strong>中等视频 (30秒)</strong> - 标准测试
+                <br><small>https://sample-videos.com/video321/mp4/360/big_buck_bunny_360p_2mb.mp4</small>
+            </div>
+            <div class="video-option" onclick="selectVideo('custom')">
+                <strong>自定义视频</strong> - 输入您的视频URL
+            </div>
+        </div>
+        
+        <div class="input-group">
+            <label for="videoUrl">视频链接：</label>
+            <input type="text" id="videoUrl" placeholder="选择上方测试视频或输入自定义URL">
+        </div>
+        
+        <div class="input-group">
+            <label for="language">语言：</label>
+            <select id="language">
+                <option value="chinese">中文</option>
+                <option value="english">英语</option>
+                <option value="guangdongChinese">粤语</option>
+            </select>
+        </div>
+        
+        <div>
+            <button onclick="submitTask()" id="submitBtn">🚀 提交任务</button>
+            <button onclick="checkStatus()" id="checkBtn" disabled>🔍 查询状态</button>
+            <button onclick="stopAutoCheck()" id="stopBtn" style="background-color: #ef4444; display: none;">⏹️ 停止检查</button>
+            <button onclick="clearAll()" style="background-color: #6b7280;">🔄 清空重置</button>
+        </div>
+        
+        <div class="timer" id="timer" style="display: none;">
+            ⏱️ 已等待: <span id="elapsed">0</span> 秒
+        </div>
+        
+        <div class="progress-bar" id="progressBar" style="display: none;">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        
+        <div id="status"></div>
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        let currentTaskId = null;
+        let checkInterval = null;
+        let startTime = null;
+        let timerInterval = null;
+        
+        const testVideos = {
+            tiny: {
+                url: 'https://www.w3schools.com/html/mov_bbb.mp4',
+                duration: 5,
+                size: '~200KB'
+            },
+            small: {
+                url: 'https://sample-videos.com/video321/mp4/240/big_buck_bunny_240p_1mb.mp4',
+                duration: 10,
+                size: '1MB'
+            },
+            medium: {
+                url: 'https://sample-videos.com/video321/mp4/360/big_buck_bunny_360p_2mb.mp4',
+                duration: 30,
+                size: '2MB'
+            }
+        };
+        
+        function selectVideo(type) {
+            if (type === 'custom') {
+                document.getElementById('videoUrl').value = '';
+                document.getElementById('videoUrl').focus();
+            } else {
+                const video = testVideos[type];
+                document.getElementById('videoUrl').value = video.url;
+                log(`已选择${type === 'tiny' ? '极小' : type === 'small' ? '小' : '中等'}视频 (${video.duration}秒, ${video.size})`, 'info');
+            }
+        }
+        
+        function log(message, type = 'info') {
+            const status = document.getElementById('status');
+            const time = new Date().toLocaleTimeString();
+            const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : '📝';
+            status.innerHTML += `<span class="${type}">${icon} [${time}] ${message}</span>\n`;
+            status.scrollTop = status.scrollHeight;
+        }
+        
+        function startTimer() {
+            startTime = Date.now();
+            document.getElementById('timer').style.display = 'block';
+            document.getElementById('progressBar').style.display = 'block';
+            
+            timerInterval = setInterval(() => {
+                const elapsed = Math.round((Date.now() - startTime) / 1000);
+                document.getElementById('elapsed').textContent = elapsed;
+                
+                // 更新进度条（假设最长120秒）
+                const progress = Math.min((elapsed / 120) * 100, 95);
+                document.getElementById('progressFill').style.width = progress + '%';
+            }, 100);
+        }
+        
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                document.getElementById('progressFill').style.width = '100%';
+            }
+        }
+        
+        async function submitTask() {
+            const videoUrl = document.getElementById('videoUrl').value;
+            const language = document.getElementById('language').value;
+            
+            if (!videoUrl) {
+                log('请选择或输入视频链接', 'error');
+                return;
+            }
+            
+            // 检测视频类型
+            let videoType = 'custom';
+            for (const [key, video] of Object.entries(testVideos)) {
+                if (video.url === videoUrl) {
+                    videoType = key;
+                    break;
+                }
+            }
+            
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('stopBtn').style.display = 'inline-block';
+            
+            log(`提交任务中... (${videoType === 'custom' ? '自定义' : videoType === 'tiny' ? '极小' : videoType === 'small' ? '小' : '中等'}视频)`, 'info');
+            
+            startTimer();
+            
+            try {
+                const response = await fetch('/api/video/submit-transcription-fetch', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        videoUrl,
+                        language,
+                        chat: false
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentTaskId = data.data.taskId;
+                    log(`✅ 任务提交成功！任务ID: ${currentTaskId}`, 'success');
+                    
+                    // 根据视频大小估算时间
+                    let estimatedTime = 60;
+                    if (videoType === 'tiny') estimatedTime = 20;
+                    else if (videoType === 'small') estimatedTime = 40;
+                    else if (videoType === 'medium') estimatedTime = 80;
+                    
+                    log(`预计处理时间: ${estimatedTime} 秒`, 'info');
+                    
+                    document.getElementById('checkBtn').disabled = false;
+                    
+                    // 自动开始检查
+                    startAutoCheck();
+                } else {
+                    throw new Error(data.error.message);
+                }
+            } catch (error) {
+                log(`❌ 提交失败: ${error.message}`, 'error');
+                stopTimer();
+                document.getElementById('submitBtn').disabled = false;
+                document.getElementById('stopBtn').style.display = 'none';
+            }
+        }
+        
+        async function checkStatus() {
+            if (!currentTaskId) {
+                log('没有有效的任务ID', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/video/check-transcription?taskId=${currentTaskId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const status = data.data.status;
+                    
+                    if (status === 'completed') {
+                        stopTimer();
+                        const totalTime = Math.round((Date.now() - startTime) / 1000);
+                        log(`✅ 任务完成！总耗时: ${totalTime} 秒`, 'success');
+                        displayResult(data.data.text);
+                        stopAutoCheck();
+                    } else if (status === 'processing') {
+                        const elapsed = Math.round((Date.now() - startTime) / 1000);
+                        log(`⏳ 任务处理中... (已等待 ${elapsed} 秒)`, 'info');
+                    }
+                } else {
+                    throw new Error(data.error.message);
+                }
+            } catch (error) {
+                log(`❌ 查询失败: ${error.message}`, 'error');
+                stopAutoCheck();
+            }
+        }
+        
+        function startAutoCheck() {
+            // 根据视频大小调整检查频率
+            const videoUrl = document.getElementById('videoUrl').value;
+            let checkIntervalTime = 5000; // 默认5秒
+            
+            if (videoUrl === testVideos.tiny.url) {
+                checkIntervalTime = 2000; // 极小视频2秒检查一次
+            } else if (videoUrl === testVideos.small.url) {
+                checkIntervalTime = 3000; // 小视频3秒检查一次
+            }
+            
+            checkInterval = setInterval(() => {
+                checkStatus();
+            }, checkIntervalTime);
+            
+            log(`已启动自动检查（每${checkIntervalTime/1000}秒）`, 'info');
+        }
+        
+        function stopAutoCheck() {
+            if (checkInterval) {
+                clearInterval(checkInterval);
+                checkInterval = null;
+                log('已停止自动检查', 'info');
+            }
+            stopTimer();
+            document.getElementById('submitBtn').disabled = false;
+            document.getElementById('stopBtn').style.display = 'none';
+        }
+        
+        function displayResult(text) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <h3>✅ 转录结果：</h3>
+                <p>${text || '（无内容）'}</p>
+                <p><small>文本长度: ${(text || '').length} 字符</small></p>
+            `;
+        }
+        
+        function clearAll() {
+            stopAutoCheck();
+            currentTaskId = null;
+            document.getElementById('videoUrl').value = '';
+            document.getElementById('status').innerHTML = '';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('timer').style.display = 'none';
+            document.getElementById('progressBar').style.display = 'none';
+            document.getElementById('submitBtn').disabled = false;
+            document.getElementById('checkBtn').disabled = true;
+            log('系统已重置', 'info');
+        }
+        
+        // 页面加载时
+        window.onload = function() {
+            log('系统准备就绪', 'success');
+            log('请选择测试视频或输入自定义URL', 'info');
+        };
+    </script>
+</body>
+</html>
