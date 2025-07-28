@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>云猫性能诊断</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #0070f3;
+        }
+        button {
+            background: #0070f3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #0051cc;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .log {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        .metric {
+            display: inline-block;
+            margin: 10px 20px 10px 0;
+            padding: 10px 15px;
+            background: #e7f3ff;
+            border-radius: 6px;
+        }
+        .metric-label {
+            font-size: 12px;
+            color: #666;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0070f3;
+        }
+        .recommendation {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+        .recommendation h4 {
+            margin-top: 0;
+            color: #856404;
+        }
+        .recommendation ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .status-good { color: #28a745; }
+        .status-warning { color: #ffc107; }
+        .status-bad { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 云猫性能诊断工具</h1>
+        
+        <!-- 性能测试 -->
+        <div class="test-section">
+            <h3>1. API性能测试</h3>
+            <button onclick="runPerformanceTest()">运行性能测试</button>
+            <div id="perfLog" class="log"></div>
+        </div>
+        
+        <!-- 视频源测试 -->
+        <div class="test-section">
+            <h3>2. 视频源对比测试</h3>
+            <button onclick="testVideo('china')">测试国内CDN视频</button>
+            <button onclick="testVideo('overseas')">测试国外CDN视频</button>
+            <button onclick="testVideo('local')">测试本地小视频</button>
+            
+            <div class="metric">
+                <div class="metric-label">提交响应时间</div>
+                <div class="metric-value" id="submitTime">-</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">总处理时间</div>
+                <div class="metric-value" id="totalTime">-</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">查询次数</div>
+                <div class="metric-value" id="queryCount">-</div>
+            </div>
+            
+            <div id="videoLog" class="log"></div>
+        </div>
+        
+        <!-- 优化建议 -->
+        <div class="recommendation" id="recommendations" style="display: none;">
+            <h4>📋 优化建议</h4>
+            <ul id="recommendationList"></ul>
+        </div>
+    </div>
+    
+    <script>
+        // 不同的视频源
+        const videoSources = {
+            china: {
+                url: 'https://vd3.bdstatic.com/mda-ih3tgx0p7xh5v3wa/hd/mda-ih3tgx0p7xh5v3wa.mp4', // 百度CDN示例
+                name: '国内CDN视频（百度）',
+                size: '~1MB'
+            },
+            overseas: {
+                url: 'https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
+                name: '国外CDN视频',
+                size: '1MB'
+            },
+            local: {
+                url: 'https://www.w3schools.com/html/mov_bbb.mp4',
+                name: '极小测试视频',
+                size: '~200KB'
+            }
+        };
+        
+        let currentTaskId = null;
+        let startTime = null;
+        let queryCount = 0;
+        
+        function log(elementId, message, type = 'info') {
+            const logEl = document.getElementById(elementId);
+            const time = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'status-bad' : type === 'success' ? 'status-good' : '';
+            logEl.innerHTML += `<div class="${color}">[${time}] ${message}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        // 运行性能测试
+        async function runPerformanceTest() {
+            log('perfLog', '开始性能测试...');
+            
+            try {
+                const response = await fetch('/api/test-yunmao-performance');
+                const data = await response.json();
+                
+                log('perfLog', `总测试时间: ${data.totalTime}`, 'success');
+                
+                data.tests.forEach(test => {
+                    const status = test.status === 'pass' ? 'success' : 'error';
+                    log('perfLog', `${test.name}: ${test.time} - ${test.details}`, status);
+                });
+                
+                // 显示建议
+                showRecommendations(data.recommendations);
+                
+            } catch (error) {
+                log('perfLog', `测试失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 测试不同视频源
+        async function testVideo(type) {
+            const video = videoSources[type];
+            log('videoLog', `测试 ${video.name} (${video.size})...`);
+            
+            // 重置计数器
+            queryCount = 0;
+            document.getElementById('submitTime').textContent = '-';
+            document.getElementById('totalTime').textContent = '-';
+            document.getElementById('queryCount').textContent = '0';
+            
+            startTime = Date.now();
+            
+            try {
+                // 提交任务
+                const submitStart = Date.now();
+                const response = await fetch('/api/video/submit-transcription-fetch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        videoUrl: video.url,
+                        language: 'chinese'
+                    })
+                });
+                
+                const submitTime = Date.now() - submitStart;
+                document.getElementById('submitTime').textContent = `${submitTime}ms`;
+                
+                const data = await response.json();
+                if (data.success) {
+                    currentTaskId = data.data.taskId;
+                    log('videoLog', `任务提交成功，ID: ${currentTaskId}`);
+                    
+                    // 开始查询
+                    checkVideoStatus();
+                } else {
+                    log('videoLog', `提交失败: ${data.error.message}`, 'error');
+                }
+                
+            } catch (error) {
+                log('videoLog', `请求失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 查询状态
+        async function checkVideoStatus() {
+            if (!currentTaskId) return;
+            
+            queryCount++;
+            document.getElementById('queryCount').textContent = queryCount;
+            
+            try {
+                const response = await fetch(`/api/video/check-transcription?taskId=${currentTaskId}`);
+                const data = await response.json();
+                
+                if (data.success && data.data.status === 'completed') {
+                    const totalTime = Date.now() - startTime;
+                    document.getElementById('totalTime').textContent = `${Math.round(totalTime/1000)}s`;
+                    
+                    log('videoLog', `✅ 完成！总时间: ${Math.round(totalTime/1000)}秒，查询${queryCount}次`, 'success');
+                    log('videoLog', `结果预览: ${data.data.text.substring(0, 50)}...`);
+                    
+                    // 生成优化建议
+                    const recommendations = [];
+                    if (totalTime > 60000) {
+                        recommendations.push('处理时间超过60秒，建议使用更小的视频或国内CDN');
+                    }
+                    if (queryCount > 10) {
+                        recommendations.push('查询次数过多，可能是视频处理时间过长');
+                    }
+                    showRecommendations(recommendations);
+                    
+                } else {
+                    // 继续查询
+                    setTimeout(checkVideoStatus, 3000);
+                }
+                
+            } catch (error) {
+                log('videoLog', `查询失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 显示优化建议
+        function showRecommendations(recommendations) {
+            if (recommendations.length > 0) {
+                document.getElementById('recommendations').style.display = 'block';
+                const list = document.getElementById('recommendationList');
+                list.innerHTML = recommendations.map(r => `<li>${r}</li>`).join('');
+            }
+        }
+        
+        // 页面加载
+        window.onload = function() {
+            log('perfLog', '诊断工具准备就绪');
+            log('videoLog', '请选择视频源进行测试');
+        };
+    </script>
+</body>
+</html>
