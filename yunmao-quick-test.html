@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>云猫快速测试</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 600px; 
+            margin: 50px auto; 
+            padding: 20px;
+        }
+        button { 
+            padding: 10px 20px; 
+            margin: 5px; 
+            cursor: pointer;
+            background: #0070f3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover { background: #0051cc; }
+        #log { 
+            background: #f5f5f5; 
+            padding: 10px; 
+            margin-top: 20px; 
+            height: 300px; 
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 云猫快速测试</h1>
+    
+    <div>
+        <button onclick="test('tiny')">测试5秒视频</button>
+        <button onclick="test('small')">测试10秒视频</button>
+        <button onclick="test('default')">测试30秒视频</button>
+    </div>
+    
+    <div id="log"></div>
+    
+    <script>
+        const videos = {
+            tiny: 'https://www.w3schools.com/html/mov_bbb.mp4',
+            small: 'https://sample-videos.com/video321/mp4/240/big_buck_bunny_240p_1mb.mp4',
+            default: 'https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4'
+        };
+        
+        let taskId = null;
+        let startTime = null;
+        
+        function log(msg) {
+            const logDiv = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${time}] ${msg}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        async function test(type) {
+            log(`开始测试 ${type} 视频...`);
+            startTime = Date.now();
+            
+            // 提交任务
+            const res = await fetch('/api/video/submit-transcription-fetch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    videoUrl: videos[type],
+                    language: 'chinese'
+                })
+            });
+            
+            const data = await res.json();
+            if (data.success) {
+                taskId = data.data.taskId;
+                log(`任务ID: ${taskId}`);
+                checkStatus();
+            } else {
+                log(`错误: ${data.error.message}`);
+            }
+        }
+        
+        async function checkStatus() {
+            if (!taskId) return;
+            
+            const res = await fetch(`/api/video/check-transcription?taskId=${taskId}`);
+            const data = await res.json();
+            
+            if (data.success && data.data.status === 'completed') {
+                const elapsed = Math.round((Date.now() - startTime) / 1000);
+                log(`✅ 完成！耗时 ${elapsed} 秒`);
+                log(`结果: ${data.data.text.substring(0, 100)}...`);
+            } else {
+                log('处理中...');
+                setTimeout(checkStatus, 3000);
+            }
+        }
+        
+        log('准备就绪！');
+    </script>
+</body>
+</html>
