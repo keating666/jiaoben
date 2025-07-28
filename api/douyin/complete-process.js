@@ -367,9 +367,10 @@ async function waitForYunmaoResult(taskId, yunmaoTaskId) {
       try {
         const options = {
           hostname: 'api.guangfan.tech',
-          path: `/v1/get-text/${yunmaoTaskId}`,
+          path: `/v1/get-status?id=${yunmaoTaskId}`,
           method: 'GET',
           headers: {
+            'content-type': 'application/json',
             'api-key': process.env.YUNMAO_API_KEY
           }
         };
@@ -383,14 +384,34 @@ async function waitForYunmaoResult(taskId, yunmaoTaskId) {
               console.log(`[云猫] 状态查询响应:`, parsed);
               
               if (parsed.code === 0 && parsed.data) {
-                if (parsed.data.status === 'success' && parsed.data.text) {
-                  console.log(`[云猫] 处理完成，文本长度: ${parsed.data.text.length}`);
-                  clearInterval(checkInterval);
-                  resolve(parsed.data.text);
-                } else if (parsed.data.status === 'failed') {
-                  clearInterval(checkInterval);
-                  reject(new Error(parsed.data.message || '云猫处理失败'));
+                // 根据文档，data直接就是结果链接或文本
+                console.log(`[云猫] 任务完成，获取到结果`);
+                clearInterval(checkInterval);
+                
+                // 如果是文本字符串，直接返回
+                if (typeof parsed.data === 'string' && !parsed.data.startsWith('http')) {
+                  resolve(parsed.data);
+                } else if (parsed.data.startsWith('http')) {
+                  // 如果是文件链接，需要下载内容
+                  console.log(`[云猫] 获取到文件链接，正在下载...`);
+                  https.get(parsed.data, (fileRes) => {
+                    let textData = '';
+                    fileRes.on('data', chunk => textData += chunk);
+                    fileRes.on('end', () => {
+                      resolve(textData);
+                    });
+                  }).on('error', (err) => {
+                    reject(new Error('下载文本文件失败'));
+                  });
                 }
+              } else if (parsed.code === 10002) {
+                // 任务处理中
+                console.log(`[云猫] 任务处理中...`);
+              } else if (parsed.code !== 0) {
+                // 其他错误
+                console.log(`[云猫] 任务失败，错误码: ${parsed.code}, 消息: ${parsed.message}`);
+                clearInterval(checkInterval);
+                reject(new Error(parsed.message || `云猫处理失败，错误码: ${parsed.code}`));
               }
             } catch (error) {
               console.error(`[云猫] 解析状态响应失败:`, error);
