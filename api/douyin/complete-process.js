@@ -76,7 +76,10 @@ async function handler(req, res) {
 function handleSSE(req, res) {
   const taskId = req.query.taskId;
   
+  console.log(`[SSE] 新连接: ${taskId}`);
+  
   if (!taskId || !global.processingTasks || !global.processingTasks[taskId]) {
+    console.log(`[SSE] 无效任务ID: ${taskId}`);
     res.write(`data: ${JSON.stringify({ error: '无效的任务ID' })}\n\n`);
     res.end();
     return;
@@ -84,6 +87,8 @@ function handleSSE(req, res) {
   
   // 发送当前状态
   const task = global.processingTasks[taskId];
+  let lastStatus = JSON.stringify(task.steps);
+  
   res.write(`data: ${JSON.stringify({
     type: 'status',
     status: task.status,
@@ -95,23 +100,32 @@ function handleSSE(req, res) {
     const currentTask = global.processingTasks[taskId];
     
     if (!currentTask) {
+      console.log(`[SSE] 任务不存在: ${taskId}`);
       clearInterval(interval);
       res.end();
       return;
     }
     
-    // 发送更新
-    res.write(`data: ${JSON.stringify({
-      type: 'update',
-      status: currentTask.status,
-      steps: currentTask.steps,
-      currentStep: currentTask.currentStep
-    })}\n\n`);
+    // 只在状态变化时发送更新
+    const currentStatus = JSON.stringify(currentTask.steps);
+    if (currentStatus !== lastStatus || currentTask.status === 'completed' || currentTask.status === 'failed') {
+      lastStatus = currentStatus;
+      
+      console.log(`[SSE] 发送更新: ${taskId}, 状态: ${currentTask.status}`);
+      
+      res.write(`data: ${JSON.stringify({
+        type: 'update',
+        status: currentTask.status,
+        steps: currentTask.steps,
+        currentStep: currentTask.currentStep
+      })}\n\n`);
+    }
     
     // 如果完成或失败，关闭连接
     if (currentTask.status === 'completed' || currentTask.status === 'failed') {
       clearInterval(interval);
       setTimeout(() => {
+        console.log(`[SSE] 任务结束: ${taskId}, 状态: ${currentTask.status}`);
         res.write(`data: ${JSON.stringify({
           type: 'final',
           status: currentTask.status,
@@ -120,12 +134,19 @@ function handleSSE(req, res) {
           totalTime: Date.now() - currentTask.startTime
         })}\n\n`);
         res.end();
+        
+        // 清理任务数据
+        setTimeout(() => {
+          delete global.processingTasks[taskId];
+          console.log(`[SSE] 清理任务: ${taskId}`);
+        }, 5000);
       }, 100);
     }
   }, 1000);
   
   // 客户端断开时清理
   req.on('close', () => {
+    console.log(`[SSE] 客户端断开: ${taskId}`);
     clearInterval(interval);
   });
 }
@@ -158,7 +179,9 @@ async function processVideo(taskId, douyinUrl, style) {
       startTime: Date.now()
     });
     
+    console.log(`[云猫] 准备提交视频URL: ${videoUrl}`);
     const transcriptData = await submitToYunmao(videoUrl);
+    console.log(`[云猫] 提交成功，云猫任务ID: ${transcriptData.taskId}`);
     const transcript = await waitForYunmaoResult(taskId, transcriptData.taskId);
     
     updateTask(taskId, 'step', {
@@ -310,12 +333,16 @@ async function submitToYunmao(videoUrl) {
       res.on('end', () => {
         try {
           const parsed = JSON.parse(responseData);
+          console.log(`[云猫] 提交响应:`, JSON.stringify(parsed));
+          
           if (parsed.code === 0) {
             resolve({ taskId: parsed.data });
           } else {
+            console.error(`[云猫] 提交失败:`, parsed);
             reject(new Error(parsed.message || '云猫API错误'));
           }
         } catch (error) {
+          console.error(`[云猫] 解析提交响应失败:`, error);
           reject(error);
         }
       });
@@ -329,39 +356,100 @@ async function submitToYunmao(videoUrl) {
 
 // 等待云猫结果
 async function waitForYunmaoResult(taskId, yunmaoTaskId) {
+  console.log(`[云猫] 开始等待结果: ${yunmaoTaskId}`);
+  
   return new Promise((resolve, reject) => {
     let checkCount = 0;
-    const maxChecks = 60;
+    const maxChecks = 60; // 最多等待5分钟
+    
+    // 先尝试直接查询状态
+    const checkStatus = async () => {
+      try {
+        const options = {
+          hostname: 'api.guangfan.tech',
+          path: `/v1/get-text/${yunmaoTaskId}`,
+          method: 'GET',
+          headers: {
+            'api-key': process.env.YUNMAO_API_KEY
+          }
+        };
+        
+        const statusReq = https.request(options, (res) => {
+          let responseData = '';
+          res.on('data', chunk => responseData += chunk);
+          res.on('end', () => {
+            try {
+              const parsed = JSON.parse(responseData);
+              console.log(`[云猫] 状态查询响应:`, parsed);
+              
+              if (parsed.code === 0 && parsed.data) {
+                if (parsed.data.status === 'success' && parsed.data.text) {
+                  console.log(`[云猫] 处理完成，文本长度: ${parsed.data.text.length}`);
+                  clearInterval(checkInterval);
+                  resolve(parsed.data.text);
+                } else if (parsed.data.status === 'failed') {
+                  clearInterval(checkInterval);
+                  reject(new Error(parsed.data.message || '云猫处理失败'));
+                }
+              }
+            } catch (error) {
+              console.error(`[云猫] 解析状态响应失败:`, error);
+            }
+          });
+        });
+        
+        statusReq.on('error', (error) => {
+          console.error(`[云猫] 状态查询错误:`, error);
+        });
+        
+        statusReq.end();
+      } catch (error) {
+        console.error(`[云猫] 查询状态异常:`, error);
+      }
+    };
     
     const checkInterval = setInterval(async () => {
       checkCount++;
+      console.log(`[云猫] 第${checkCount}次检查，任务ID: ${yunmaoTaskId}`);
       
       // 检查回调结果
       if (global.yunmaoResults && global.yunmaoResults[yunmaoTaskId]) {
         const result = global.yunmaoResults[yunmaoTaskId];
-        if (result.status === 'completed') {
+        console.log(`[云猫] 发现回调结果:`, result.status);
+        
+        if (result.status === 'completed' && result.text) {
           clearInterval(checkInterval);
+          console.log(`[云猫] 通过回调获取结果，文本长度: ${result.text.length}`);
           resolve(result.text);
           return;
         } else if (result.status === 'failed') {
           clearInterval(checkInterval);
-          reject(new Error(result.error));
+          reject(new Error(result.error || '云猫处理失败'));
           return;
         }
+      }
+      
+      // 每隔15秒主动查询一次状态
+      if (checkCount % 3 === 0) {
+        checkStatus();
       }
       
       // 更新进度
       updateTask(taskId, 'step', {
         name: '云猫转文字',
         status: 'processing',
-        progress: Math.min(checkCount * 5, 90)
+        progress: Math.min(checkCount * 2, 90)
       });
       
       if (checkCount >= maxChecks) {
         clearInterval(checkInterval);
-        reject(new Error('云猫处理超时'));
+        console.log(`[云猫] 处理超时，任务ID: ${yunmaoTaskId}`);
+        reject(new Error('云猫处理超时（5分钟）'));
       }
     }, 5000);
+    
+    // 立即执行一次状态查询
+    checkStatus();
   });
 }
 
