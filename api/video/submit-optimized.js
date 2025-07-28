@@ -89,10 +89,16 @@ async function handler(req, res) {
         });
       });
       
-      req.on('error', reject);
-      req.setTimeout(10000, () => {
+      req.on('error', (error) => {
+        console.error('[云猫] 请求错误:', error);
+        reject(error);
+      });
+      
+      // 增加超时时间到30秒
+      req.setTimeout(30000, () => {
         req.destroy();
-        reject(new Error('请求超时'));
+        console.error('[云猫] 请求超时（30秒）');
+        reject(new Error('请求超时（30秒）'));
       });
       
       req.write(postData);
