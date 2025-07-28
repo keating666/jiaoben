@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>云猫API直接测试</title>
+    <style>
+        body {
+            font-family: monospace;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #5a67d8;
+        }
+        .log {
+            background: #000;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 4px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 2px solid #444;
+        }
+        .success { border-left-color: #10b981; }
+        .error { border-left-color: #ef4444; }
+        .info { border-left-color: #3b82f6; }
+        .warning { border-left-color: #f59e0b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 云猫API直接测试</h1>
+        <p>这个测试会直接调用云猫API的各个端点，帮助诊断问题</p>
+        
+        <div>
+            <button class="btn" onclick="testSubmit()">1. 测试提交任务</button>
+            <button class="btn" onclick="testCallback()">2. 测试回调端点</button>
+            <button class="btn" onclick="testStatus()">3. 测试状态查询</button>
+            <button class="btn" onclick="testFullFlow()">4. 完整流程测试</button>
+        </div>
+        
+        <div>
+            <h3>任务ID：<span id="taskId">-</span></h3>
+        </div>
+        
+        <div class="log" id="log"></div>
+    </div>
+    
+    <script>
+        let currentTaskId = null;
+        
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${time}] ${message}`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        async function testSubmit() {
+            log('开始测试提交任务...', 'info');
+            
+            try {
+                const response = await fetch('/api/video/submit-optimized', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        videoUrl: 'https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
+                        language: 'chinese'
+                    })
+                });
+                
+                const data = await response.json();
+                log(`响应状态: ${response.status}`, response.ok ? 'success' : 'error');
+                log(`响应数据: ${JSON.stringify(data, null, 2)}`, 'info');
+                
+                if (data.success && data.data.taskId) {
+                    currentTaskId = data.data.taskId;
+                    document.getElementById('taskId').textContent = currentTaskId;
+                    log(`✅ 获取到任务ID: ${currentTaskId}`, 'success');
+                } else {
+                    log(`❌ 提交失败: ${data.error?.message || '未知错误'}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ 网络错误: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testCallback() {
+            log('检查回调端点...', 'info');
+            
+            // 这里我们无法真正触发云猫的回调，但可以检查端点是否可用
+            try {
+                const response = await fetch('/api/yunmao-callback', {
+                    method: 'GET'
+                });
+                
+                const data = await response.json();
+                log(`回调端点响应: ${response.status}`, 'info');
+                log(`响应数据: ${JSON.stringify(data)}`, 'info');
+                
+            } catch (error) {
+                log(`回调端点检查失败: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testStatus() {
+            if (!currentTaskId) {
+                log('⚠️ 请先提交一个任务', 'warning');
+                return;
+            }
+            
+            log(`查询任务状态: ${currentTaskId}`, 'info');
+            
+            try {
+                const response = await fetch(`/api/video/check-transcription?taskId=${currentTaskId}`);
+                const data = await response.json();
+                
+                log(`状态查询响应: ${response.status}`, response.ok ? 'success' : 'error');
+                log(`响应数据: ${JSON.stringify(data, null, 2)}`, 'info');
+                
+                if (data.success && data.data) {
+                    log(`任务状态: ${data.data.status}`, 'info');
+                    if (data.data.text) {
+                        log(`转录文本: ${data.data.text.substring(0, 100)}...`, 'success');
+                    }
+                }
+                
+            } catch (error) {
+                log(`状态查询失败: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testFullFlow() {
+            log('开始完整流程测试...', 'info');
+            
+            // 1. 提交任务
+            await testSubmit();
+            
+            if (!currentTaskId) {
+                log('❌ 无法继续，任务提交失败', 'error');
+                return;
+            }
+            
+            // 2. 轮询状态
+            log('开始轮询任务状态（每5秒一次）...', 'info');
+            
+            let checkCount = 0;
+            const maxChecks = 60;
+            
+            const checkInterval = setInterval(async () => {
+                checkCount++;
+                log(`第 ${checkCount} 次检查...`, 'info');
+                
+                try {
+                    const response = await fetch(`/api/video/check-transcription?taskId=${currentTaskId}`);
+                    const data = await response.json();
+                    
+                    if (data.success && data.data) {
+                        const status = data.data.status;
+                        log(`当前状态: ${status}`, 'info');
+                        
+                        if (status === 'completed') {
+                            clearInterval(checkInterval);
+                            log('✅ 任务完成！', 'success');
+                            if (data.data.text) {
+                                log(`转录文本长度: ${data.data.text.length}`, 'success');
+                                log(`文本预览: ${data.data.text.substring(0, 200)}...`, 'info');
+                            }
+                        } else if (status === 'failed') {
+                            clearInterval(checkInterval);
+                            log(`❌ 任务失败: ${data.data.error || '未知错误'}`, 'error');
+                        }
+                    }
+                    
+                } catch (error) {
+                    log(`检查出错: ${error.message}`, 'error');
+                }
+                
+                if (checkCount >= maxChecks) {
+                    clearInterval(checkInterval);
+                    log('❌ 超时：5分钟内未完成', 'error');
+                }
+                
+            }, 5000);
+        }
+        
+        // 初始化
+        window.onload = function() {
+            log('云猫API测试工具已就绪', 'success');
+            log('请按顺序执行测试，或直接运行完整流程测试', 'info');
+        };
+    </script>
+</body>
+</html>
