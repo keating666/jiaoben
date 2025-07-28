@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>云猫回调优化测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        h1 {
+            color: #1a1a1a;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .method-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+        }
+        .method-card.active {
+            border-color: #0070f3;
+            background: #f0f8ff;
+        }
+        .method-card h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .method-card.recommended::after {
+            content: '推荐';
+            position: absolute;
+            top: -12px;
+            right: 20px;
+            background: #0070f3;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        .video-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .video-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .video-btn:hover {
+            border-color: #0070f3;
+            background: #f0f8ff;
+        }
+        .video-btn.selected {
+            background: #0070f3;
+            color: white;
+            border-color: #0070f3;
+        }
+        .test-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #0070f3;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #0051cc;
+        }
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .metric {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .metric-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #0070f3;
+        }
+        .metric-label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .log {
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 13px;
+            height: 250px;
+            overflow-y: auto;
+            line-height: 1.5;
+        }
+        .log-entry {
+            margin-bottom: 8px;
+        }
+        .log-time {
+            color: #888;
+            margin-right: 10px;
+        }
+        .log-success { color: #4caf50; }
+        .log-error { color: #f44336; }
+        .log-info { color: #2196f3; }
+        .log-warning { color: #ff9800; }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #0070f3 0%, #0051cc 100%);
+            width: 0%;
+            transition: width 0.3s;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 云猫回调优化测试</h1>
+        <p class="subtitle">对比轮询和回调两种方式的性能差异</p>
+        
+        <div class="comparison">
+            <div class="method-card" id="pollingCard">
+                <h3>📊 轮询方式</h3>
+                <p>每5秒查询一次状态</p>
+                <ul>
+                    <li>平均延迟: 2.5秒</li>
+                    <li>网络请求: 多次</li>
+                    <li>服务器负载: 高</li>
+                </ul>
+            </div>
+            <div class="method-card recommended" id="callbackCard">
+                <h3>⚡ 回调方式</h3>
+                <p>任务完成立即通知</p>
+                <ul>
+                    <li>平均延迟: <0.1秒</li>
+                    <li>网络请求: 1次</li>
+                    <li>服务器负载: 低</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- 视频选择 -->
+        <div class="video-options">
+            <button class="video-btn" onclick="selectVideo('tiny', this)">
+                5秒测试视频
+            </button>
+            <button class="video-btn" onclick="selectVideo('small', this)">
+                10秒视频
+            </button>
+            <button class="video-btn" onclick="selectVideo('medium', this)">
+                30秒视频
+            </button>
+            <button class="video-btn" onclick="selectVideo('custom', this)">
+                自定义URL
+            </button>
+        </div>
+        
+        <input type="text" id="customUrl" placeholder="输入自定义视频URL" 
+               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 20px; display: none;">
+        
+        <!-- 测试按钮 -->
+        <div class="test-buttons">
+            <button class="btn btn-primary" onclick="testPolling()" id="pollingBtn">
+                测试轮询方式
+            </button>
+            <button class="btn btn-primary" onclick="testCallback()" id="callbackBtn">
+                测试回调方式（推荐）
+            </button>
+        </div>
+        
+        <!-- 进度条 -->
+        <div class="progress-bar" id="progressBar" style="display: none;">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        
+        <!-- 性能指标 -->
+        <div class="metrics">
+            <div class="metric">
+                <div class="metric-value" id="submitTime">-</div>
+                <div class="metric-label">提交响应时间</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="totalTime">-</div>
+                <div class="metric-label">总处理时间</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="queryCount">-</div>
+                <div class="metric-label">查询次数</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" id="efficiency">-</div>
+                <div class="metric-label">效率提升</div>
+            </div>
+        </div>
+        
+        <!-- 日志 -->
+        <div class="log" id="log"></div>
+    </div>
+    
+    <script>
+        const videos = {
+            tiny: 'https://www.w3schools.com/html/mov_bbb.mp4',
+            small: 'https://sample-videos.com/video321/mp4/240/big_buck_bunny_240p_1mb.mp4',
+            medium: 'https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4'
+        };
+        
+        let selectedVideo = 'tiny';
+        let currentTaskId = null;
+        let startTime = null;
+        let queryCount = 0;
+        let eventSource = null;
+        
+        // 性能记录
+        let pollingTime = null;
+        let callbackTime = null;
+        
+        function selectVideo(type, btn) {
+            selectedVideo = type;
+            document.querySelectorAll('.video-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            
+            const customInput = document.getElementById('customUrl');
+            if (type === 'custom') {
+                customInput.style.display = 'block';
+            } else {
+                customInput.style.display = 'none';
+            }
+        }
+        
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-time">[${time}]</span><span class="log-${type}">${message}</span>`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        function updateMetric(id, value) {
+            document.getElementById(id).textContent = value;
+        }
+        
+        function showProgress(show = true) {
+            document.getElementById('progressBar').style.display = show ? 'block' : 'none';
+            if (show) {
+                document.getElementById('progressFill').style.width = '50%';
+            }
+        }
+        
+        function getVideoUrl() {
+            if (selectedVideo === 'custom') {
+                return document.getElementById('customUrl').value;
+            }
+            return videos[selectedVideo];
+        }
+        
+        // 测试轮询方式
+        async function testPolling() {
+            log('开始测试轮询方式...', 'info');
+            document.getElementById('pollingCard').classList.add('active');
+            document.getElementById('callbackCard').classList.remove('active');
+            
+            // 重置指标
+            updateMetric('submitTime', '-');
+            updateMetric('totalTime', '-');
+            updateMetric('queryCount', '0');
+            updateMetric('efficiency', '-');
+            queryCount = 0;
+            
+            showProgress(true);
+            startTime = Date.now();
+            
+            try {
+                // 提交任务
+                const submitStart = Date.now();
+                const response = await fetch('/api/video/submit-transcription-fetch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        videoUrl: getVideoUrl(),
+                        language: 'chinese'
+                    })
+                });
+                
+                const submitTime = Date.now() - submitStart;
+                updateMetric('submitTime', `${submitTime}ms`);
+                
+                const data = await response.json();
+                if (data.success) {
+                    currentTaskId = data.data.taskId;
+                    log(`任务提交成功，ID: ${currentTaskId}`, 'success');
+                    
+                    // 开始轮询
+                    pollStatus();
+                } else {
+                    throw new Error(data.error.message);
+                }
+                
+            } catch (error) {
+                log(`错误: ${error.message}`, 'error');
+                showProgress(false);
+            }
+        }
+        
+        // 轮询状态
+        async function pollStatus() {
+            if (!currentTaskId) return;
+            
+            queryCount++;
+            updateMetric('queryCount', queryCount);
+            
+            try {
+                const response = await fetch(`/api/video/check-transcription?taskId=${currentTaskId}`);
+                const data = await response.json();
+                
+                if (data.success && data.data.status === 'completed') {
+                    pollingTime = Date.now() - startTime;
+                    updateMetric('totalTime', `${Math.round(pollingTime/1000)}s`);
+                    log(`✅ 轮询完成！总时间: ${Math.round(pollingTime/1000)}秒`, 'success');
+                    showProgress(false);
+                    updateEfficiency();
+                } else {
+                    // 继续轮询
+                    setTimeout(pollStatus, 5000);
+                }
+                
+            } catch (error) {
+                log(`查询失败: ${error.message}`, 'error');
+                showProgress(false);
+            }
+        }
+        
+        // 测试回调方式
+        async function testCallback() {
+            log('开始测试回调方式（使用Server-Sent Events）...', 'info');
+            document.getElementById('callbackCard').classList.add('active');
+            document.getElementById('pollingCard').classList.remove('active');
+            
+            // 重置指标
+            updateMetric('submitTime', '-');
+            updateMetric('totalTime', '-');
+            updateMetric('queryCount', '0');
+            updateMetric('efficiency', '-');
+            
+            showProgress(true);
+            startTime = Date.now();
+            
+            try {
+                // 使用优化的提交端点
+                const submitStart = Date.now();
+                const response = await fetch('/api/video/submit-optimized', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        videoUrl: getVideoUrl(),
+                        language: 'chinese'
+                    })
+                });
+                
+                const submitTime = Date.now() - submitStart;
+                updateMetric('submitTime', `${submitTime}ms`);
+                
+                const data = await response.json();
+                if (data.success) {
+                    currentTaskId = data.data.taskId;
+                    log(`任务提交成功，ID: ${currentTaskId}`, 'success');
+                    log('等待回调通知...', 'info');
+                    
+                    // 连接SSE获取实时更新
+                    connectEventSource(currentTaskId);
+                    
+                    // 同时启动一个简单的状态检查（作为备份）
+                    setTimeout(() => checkCallbackStatus(currentTaskId), 2000);
+                    
+                } else {
+                    throw new Error(data.error.message);
+                }
+                
+            } catch (error) {
+                log(`错误: ${error.message}`, 'error');
+                showProgress(false);
+            }
+        }
+        
+        // 连接Server-Sent Events
+        function connectEventSource(taskId) {
+            if (eventSource) {
+                eventSource.close();
+            }
+            
+            eventSource = new EventSource(`/api/yunmao-events?taskId=${taskId}`);
+            
+            eventSource.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                
+                if (data.status === 'completed') {
+                    callbackTime = Date.now() - startTime;
+                    updateMetric('totalTime', `${Math.round(callbackTime/1000)}s`);
+                    updateMetric('queryCount', '0 (回调)');
+                    log(`✅ 回调完成！总时间: ${Math.round(callbackTime/1000)}秒`, 'success');
+                    log(`处理时间节省: ${data.processingTime ? Math.round(data.processingTime/1000) + '秒' : '-'}`, 'info');
+                    showProgress(false);
+                    updateEfficiency();
+                    eventSource.close();
+                } else if (data.status === 'failed') {
+                    log(`任务失败: ${data.data}`, 'error');
+                    showProgress(false);
+                    eventSource.close();
+                }
+            };
+            
+            eventSource.onerror = () => {
+                log('SSE连接错误，尝试轮询检查...', 'warning');
+                eventSource.close();
+            };
+        }
+        
+        // 备份的状态检查
+        async function checkCallbackStatus(taskId) {
+            try {
+                const response = await fetch(`/api/video/check-transcription?taskId=${taskId}`);
+                const data = await response.json();
+                
+                if (data.success && data.data.status === 'completed') {
+                    if (!callbackTime) {
+                        callbackTime = Date.now() - startTime;
+                        updateMetric('totalTime', `${Math.round(callbackTime/1000)}s`);
+                        updateMetric('queryCount', '1 (备份)');
+                        log(`✅ 完成（通过备份查询）！总时间: ${Math.round(callbackTime/1000)}秒`, 'success');
+                        showProgress(false);
+                        updateEfficiency();
+                    }
+                } else if (data.data.status === 'processing') {
+                    // 继续检查
+                    setTimeout(() => checkCallbackStatus(taskId), 5000);
+                }
+            } catch (error) {
+                log(`备份查询失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 更新效率对比
+        function updateEfficiency() {
+            if (pollingTime && callbackTime) {
+                const improvement = Math.round(((pollingTime - callbackTime) / pollingTime) * 100);
+                updateMetric('efficiency', `${improvement}%`);
+                log(`⚡ 回调方式效率提升: ${improvement}%`, 'success');
+            }
+        }
+        
+        // 初始化
+        window.onload = function() {
+            log('系统初始化完成', 'success');
+            log('请选择视频并点击测试按钮开始', 'info');
+            
+            // 默认选择第一个视频
+            document.querySelector('.video-btn').click();
+        };
+    </script>
+</body>
+</html>
