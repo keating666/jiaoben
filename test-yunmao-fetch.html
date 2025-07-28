@@ -93,6 +93,19 @@
             ⚠️ 使用Fetch API版本，可能更适合Vercel环境
         </div>
         
+        <div style="background: #e7f3ff; border: 1px solid #0070f3; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+            <h4 style="margin-top: 0; color: #0051cc;">⚡ 快速测试选项</h4>
+            <button onclick="setQuickTest('tiny')" style="margin: 5px; padding: 8px 15px; background: #f0f0f0; color: #333; border: 1px solid #ddd;">
+                5秒视频 (最快)
+            </button>
+            <button onclick="setQuickTest('small')" style="margin: 5px; padding: 8px 15px; background: #f0f0f0; color: #333; border: 1px solid #ddd;">
+                10秒视频 (较快)
+            </button>
+            <button onclick="setQuickTest('default')" style="margin: 5px; padding: 8px 15px; background: #f0f0f0; color: #333; border: 1px solid #ddd;">
+                默认视频 (30秒)
+            </button>
+        </div>
+        
         <div class="input-group">
             <label for="videoUrl">视频链接：</label>
             <input type="text" id="videoUrl" 
@@ -125,6 +138,29 @@
     <script>
         let currentTaskId = null;
         let checkInterval = null;
+        let startTime = null;
+        
+        // 测试视频选项
+        const testVideos = {
+            tiny: {
+                url: 'https://www.w3schools.com/html/mov_bbb.mp4',
+                name: '5秒极小视频'
+            },
+            small: {
+                url: 'https://sample-videos.com/video321/mp4/240/big_buck_bunny_240p_1mb.mp4',
+                name: '10秒小视频'
+            },
+            default: {
+                url: 'https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
+                name: '30秒标准视频'
+            }
+        };
+        
+        function setQuickTest(type) {
+            const video = testVideos[type];
+            document.getElementById('videoUrl').value = video.url;
+            log(`已选择: ${video.name}`, 'info');
+        }
         
         function log(message, type = 'info') {
             const status = document.getElementById('status');
@@ -143,7 +179,18 @@
             }
             
             document.getElementById('submitBtn').disabled = true;
-            log('提交任务中（使用Fetch API）...', 'info');
+            startTime = Date.now();
+            
+            // 检测使用的视频类型
+            let videoType = '自定义';
+            for (const [key, video] of Object.entries(testVideos)) {
+                if (video.url === videoUrl) {
+                    videoType = video.name;
+                    break;
+                }
+            }
+            
+            log(`提交任务中（${videoType}，使用Fetch API）...`, 'info');
             
             try {
                 const response = await fetch('/api/video/submit-transcription-fetch', {
@@ -204,11 +251,13 @@
                     const status = data.data.status;
                     
                     if (status === 'completed') {
-                        log('✅ 任务完成！', 'success');
+                        const totalTime = Math.round((Date.now() - startTime) / 1000);
+                        log(`✅ 任务完成！总耗时: ${totalTime} 秒`, 'success');
                         displayResult(data.data.text);
                         stopAutoCheck();
                     } else if (status === 'processing') {
-                        log('⏳ 任务处理中...', 'info');
+                        const elapsed = Math.round((Date.now() - startTime) / 1000);
+                        log(`⏳ 任务处理中... (已等待 ${elapsed} 秒)`, 'info');
                     } else {
                         log(`状态: ${status}`, 'info');
                     }
@@ -245,11 +294,19 @@
         
         function startAutoCheck() {
             // 每5秒自动检查一次
+            // 根据视频大小调整检查频率
+            let intervalTime = 5000; // 默认5秒
+            if (document.getElementById('videoUrl').value === testVideos.tiny.url) {
+                intervalTime = 2000; // 极小视频2秒
+            } else if (document.getElementById('videoUrl').value === testVideos.small.url) {
+                intervalTime = 3000; // 小视频3秒
+            }
+            
             checkInterval = setInterval(() => {
                 checkStatus();
-            }, 5000);
+            }, intervalTime);
             
-            log('已启动自动检查（每5秒）', 'info');
+            log(`已启动自动检查（每${intervalTime/1000}秒）`, 'info');
         }
         
         function stopAutoCheck() {
