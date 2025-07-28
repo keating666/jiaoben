@@ -1,0 +1,17 @@
+{
+  "name": "yunmao-proxy",
+  "version": "1.0.0",
+  "description": "云猫API中转服务",
+  "main": "yunmao-proxy.js",
+  "scripts": {
+    "start": "node yunmao-proxy.js",
+    "dev": "nodemon yunmao-proxy.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
