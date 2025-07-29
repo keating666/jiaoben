@@ -39,6 +39,10 @@
       "dest": "/api/$1"
     },
     {
+      "src": "/hk-test.html",
+      "dest": "/hk-test.html"
+    },
+    {
       "src": "/test-hk-deployment.html",
       "dest": "/test-hk-deployment.html"
     },
