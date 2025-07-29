@@ -75,7 +75,10 @@ export default async function handler(
 
     // 如果没有找到任何内容，返回友好提示
     if (result.links.length === 0 && result.commands.length === 0) {
-      response.data.meta.message = '未找到抖音相关内容';
+      response.data.meta = {
+        ...response.data.meta,
+        message: '未找到抖音相关内容'
+      };
       
       // 添加帮助信息
       if (!result.suggestions || result.suggestions.length === 0) {
