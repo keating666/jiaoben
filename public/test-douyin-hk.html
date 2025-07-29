@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抖音视频处理测试 - 香港区域</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #000 0%, #333 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        
+        .btn-primary {
+            background: #000;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #333;
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 14px;
+            height: 300px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+        }
+        
+        .log-time {
+            color: #6c757d;
+        }
+        
+        .log-success { color: #28a745; }
+        .log-error { color: #dc3545; }
+        .log-info { color: #007bff; }
+        
+        .region-info {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 抖音视频处理测试</h1>
+            <p>香港区域部署版本</p>
+        </div>
+        
+        <div class="card">
+            <div class="region-info" id="regionInfo">
+                <strong>检测部署区域中...</strong>
+            </div>
+            
+            <div class="input-group">
+                <label for="douyinUrl">抖音链接</label>
+                <input type="text" id="douyinUrl" 
+                       placeholder="粘贴抖音分享链接" 
+                       value="https://v.douyin.com/iRyBWfGS/">
+            </div>
+            
+            <div>
+                <button class="btn btn-primary" onclick="testOriginal()">
+                    测试原始API
+                </button>
+                <button class="btn btn-primary" onclick="testFixed()">
+                    测试修复版API
+                </button>
+                <button class="btn btn-secondary" onclick="clearLog()">
+                    清空日志
+                </button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>实时日志</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+    
+    <script>
+        // 检测部署区域
+        async function checkRegion() {
+            try {
+                const response = await fetch('/api/test-region');
+                const data = await response.json();
+                const regionInfo = document.getElementById('regionInfo');
+                regionInfo.innerHTML = `
+                    <strong>部署信息</strong><br>
+                    区域: ${data.deployment.region}<br>
+                    服务器: ${data.server.platform} ${data.server.arch}<br>
+                    时间: ${new Date(data.deployment.timestamp).toLocaleString()}
+                `;
+            } catch (error) {
+                document.getElementById('regionInfo').innerHTML = 
+                    '<strong style="color: red">无法获取部署信息</strong>';
+            }
+        }
+        
+        function addLog(message, type = 'info') {
+            const log = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `
+                <span class="log-time">[${time}]</span>
+                <span class="log-${type}">${message}</span>
+            `;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            addLog('日志已清空', 'info');
+        }
+        
+        // 测试原始API
+        async function testOriginal() {
+            const url = document.getElementById('douyinUrl').value;
+            if (!url) {
+                addLog('请输入抖音链接', 'error');
+                return;
+            }
+            
+            addLog('开始测试原始API...', 'info');
+            
+            try {
+                const response = await fetch('/api/douyin/complete-process', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ douyinUrl: url })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addLog(`任务创建成功: ${data.taskId}`, 'success');
+                    // 连接SSE监听进度
+                    listenSSE(data.sseUrl);
+                } else {
+                    addLog(`错误: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                addLog(`请求失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 测试修复版API
+        async function testFixed() {
+            const url = document.getElementById('douyinUrl').value;
+            if (!url) {
+                addLog('请输入抖音链接', 'error');
+                return;
+            }
+            
+            addLog('开始测试修复版API...', 'info');
+            
+            try {
+                const response = await fetch('/api/douyin/complete-process-fixed', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ douyinUrl: url })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addLog(`任务创建成功: ${data.taskId}`, 'success');
+                    // 连接SSE监听进度
+                    listenSSE(data.sseUrl);
+                } else {
+                    addLog(`错误: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                addLog(`请求失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 监听SSE进度
+        function listenSSE(sseUrl) {
+            const eventSource = new EventSource(sseUrl);
+            
+            eventSource.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                
+                if (data.type === 'update') {
+                    const currentStep = data.steps.find(s => s.name === data.currentStep);
+                    if (currentStep) {
+                        addLog(`${currentStep.name}: ${currentStep.status}`, 'info');
+                        if (currentStep.progress) {
+                            addLog(currentStep.progress, 'info');
+                        }
+                    }
+                } else if (data.type === 'final') {
+                    if (data.status === 'completed') {
+                        addLog('处理完成！', 'success');
+                        if (data.result) {
+                            addLog(`视频URL: ${data.result.videoUrl}`, 'success');
+                            addLog(`转录文本长度: ${data.result.transcript?.length || 0}`, 'success');
+                        }
+                    } else {
+                        addLog(`处理失败: ${data.error}`, 'error');
+                    }
+                    eventSource.close();
+                }
+            };
+            
+            eventSource.onerror = (error) => {
+                addLog('SSE连接错误', 'error');
+                eventSource.close();
+            };
+        }
+        
+        // 页面加载时检测区域
+        window.onload = () => {
+            checkRegion();
+            addLog('系统已初始化', 'info');
+        };
+    </script>
+</body>
+</html>

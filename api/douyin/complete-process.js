@@ -248,8 +248,7 @@ async function getVideoFromTikHub(douyinUrl) {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${process.env.TIKHUB_API_KEY}`,
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(requestData)
+        'Accept': 'application/json'
       }
     };
     

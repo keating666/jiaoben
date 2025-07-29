@@ -1,5 +1,5 @@
 {
-  "regions": ["sin1"],
+  "regions": ["hkg1"],
   "functions": {
     "api/video/transcribe.ts": {
       "maxDuration": 60,
