@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>香港部署测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            color: #28a745;
+        }
+        .error {
+            color: #dc3545;
+        }
+        .info {
+            color: #17a2b8;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌏 香港部署测试</h1>
+        
+        <div class="test-section">
+            <h2>1. 部署区域检测</h2>
+            <button class="test-button" onclick="testRegion()">检测部署区域</button>
+            <div id="region-result" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>2. TikHub API 测试</h2>
+            <input type="text" id="douyin-url" placeholder="输入抖音链接" value="https://v.douyin.com/iRyBWfGS/">
+            <button class="test-button" onclick="testTikHub()">测试 TikHub 解析</button>
+            <div id="tikhub-result" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>3. 完整流程测试</h2>
+            <button class="test-button" onclick="testCompleteProcess()">测试完整流程</button>
+            <div id="complete-result" class="result"></div>
+        </div>
+    </div>
+    
+    <script>
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const time = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            element.innerHTML += `<span class="${className}">[${time}] ${message}</span>\n`;
+            element.scrollTop = element.scrollHeight;
+        }
+        
+        async function testRegion() {
+            const resultDiv = document.getElementById('region-result');
+            resultDiv.innerHTML = '';
+            
+            try {
+                log('region-result', '正在检测部署区域...', 'info');
+                
+                const response = await fetch('/api/test-region');
+                const data = await response.json();
+                
+                log('region-result', `状态码: ${response.status}`, 'info');
+                log('region-result', JSON.stringify(data, null, 2), 'success');
+                
+                if (data.deployment && data.deployment.region) {
+                    const region = data.deployment.region;
+                    const regionNames = {
+                        'hkg1': '香港',
+                        'sin1': '新加坡',
+                        'iad1': '美国东部'
+                    };
+                    log('region-result', `\n部署在: ${regionNames[region] || region} (${region})`, 
+                        region === 'hkg1' ? 'success' : 'error');
+                }
+            } catch (error) {
+                log('region-result', `错误: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testTikHub() {
+            const resultDiv = document.getElementById('tikhub-result');
+            resultDiv.innerHTML = '';
+            
+            const douyinUrl = document.getElementById('douyin-url').value;
+            if (!douyinUrl) {
+                log('tikhub-result', '请输入抖音链接', 'error');
+                return;
+            }
+            
+            try {
+                log('tikhub-result', '正在测试 TikHub API...', 'info');
+                log('tikhub-result', `测试链接: ${douyinUrl}`, 'info');
+                
+                // 这里我们通过 Vercel API 来测试，避免 CORS 问题
+                const response = await fetch('/api/douyin/complete-process', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ douyinUrl })
+                });
+                
+                const data = await response.json();
+                log('tikhub-result', `状态码: ${response.status}`, 'info');
+                log('tikhub-result', JSON.stringify(data, null, 2), 
+                    data.success ? 'success' : 'error');
+                
+            } catch (error) {
+                log('tikhub-result', `错误: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testCompleteProcess() {
+            const resultDiv = document.getElementById('complete-result');
+            resultDiv.innerHTML = '';
+            
+            const douyinUrl = document.getElementById('douyin-url').value;
+            if (!douyinUrl) {
+                log('complete-result', '请输入抖音链接', 'error');
+                return;
+            }
+            
+            try {
+                log('complete-result', '开始完整流程测试...', 'info');
+                
+                // 提交任务
+                const response = await fetch('/api/douyin/complete-process', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ douyinUrl })
+                });
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    log('complete-result', `任务创建失败: ${data.error}`, 'error');
+                    return;
+                }
+                
+                log('complete-result', `任务创建成功: ${data.taskId}`, 'success');
+                log('complete-result', '监听进度更新...', 'info');
+                
+                // 监听 SSE 进度
+                const eventSource = new EventSource(data.sseUrl);
+                
+                eventSource.onmessage = (event) => {
+                    const eventData = JSON.parse(event.data);
+                    
+                    if (eventData.type === 'update') {
+                        const currentStep = eventData.steps.find(s => s.name === eventData.currentStep);
+                        if (currentStep) {
+                            log('complete-result', 
+                                `[${currentStep.name}] ${currentStep.status} ${currentStep.progress || ''}`, 
+                                currentStep.status === 'completed' ? 'success' : 'info');
+                        }
+                    } else if (eventData.type === 'final') {
+                        if (eventData.status === 'completed') {
+                            log('complete-result', '处理完成！', 'success');
+                            if (eventData.result) {
+                                log('complete-result', `视频URL: ${eventData.result.videoUrl}`, 'success');
+                                log('complete-result', `转录文本长度: ${eventData.result.transcript?.length || 0}`, 'success');
+                                if (eventData.result.script) {
+                                    log('complete-result', '脚本生成成功', 'success');
+                                }
+                            }
+                        } else {
+                            log('complete-result', `处理失败: ${eventData.error}`, 'error');
+                        }
+                        eventSource.close();
+                    }
+                };
+                
+                eventSource.onerror = () => {
+                    log('complete-result', 'SSE 连接错误', 'error');
+                    eventSource.close();
+                };
+                
+            } catch (error) {
+                log('complete-result', `错误: ${error.message}`, 'error');
+            }
+        }
+        
+        // 页面加载时自动检测区域
+        window.onload = () => {
+            testRegion();
+        };
+    </script>
+</body>
+</html>

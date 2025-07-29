@@ -292,10 +292,10 @@ async function getVideoFromTikHub(douyinUrl) {
     req.setTimeout(10000, () => {
       req.destroy();
       console.log('TikHub请求超时，使用原始URL');
-      resolve('https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4');
+      resolve(douyinUrl);  // 返回原始URL而不是测试视频
     });
     
-    req.write(requestData);
+    // GET请求不需要写入请求体
     req.end();
   });
 }

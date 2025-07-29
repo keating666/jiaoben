@@ -26,7 +26,7 @@
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@vercel/node": "^3.0.0",
     "axios": "^1.6.2",
-    "dotenv": "^16.3.1",
+    "dotenv": "^16.6.1",
     "uuid": "^9.0.0",
     "youtube-dl-exec": "^2.4.17"
   },

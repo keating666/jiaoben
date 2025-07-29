@@ -1,5 +1,5 @@
 const https = require('https');
-require('dotenv').config();
+require('dotenv').config({ path: './tech-validation/.env' });
 
 /**
  * 直接测试TikHub API，验证返回的数据格式
@@ -9,7 +9,7 @@ async function testTikHub() {
   
   console.log('🧪 开始测试TikHub API...');
   console.log('测试URL:', testUrl);
-  console.log('API Token:', process.env.TIKHUB_API_KEY ? '✅ 已设置' : '❌ 未设置');
+  console.log('API Token:', process.env.TIKHUB_API_TOKEN ? '✅ 已设置' : '❌ 未设置');
   console.log('---');
   
   const options = {
@@ -17,7 +17,7 @@ async function testTikHub() {
     path: `/api/v1/douyin/web/fetch_one_video_by_share_url?share_url=${encodeURIComponent(testUrl)}`,
     method: 'GET',
     headers: {
-      'Authorization': `Bearer ${process.env.TIKHUB_API_KEY}`,
+      'Authorization': `Bearer ${process.env.TIKHUB_API_TOKEN}`,
       'Accept': 'application/json',
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
     }
