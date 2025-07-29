@@ -1,5 +1,6 @@
 {
   "regions": ["hkg1"],
+  "buildCommand": "npm run build || echo 'No build script'",
   "functions": {
     "api/**/*.js": {
       "regions": ["hkg1"]
