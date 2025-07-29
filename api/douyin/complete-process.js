@@ -271,32 +271,32 @@ async function getVideoFromTikHub(douyinUrl) {
             if (videoUrl) {
               resolve(videoUrl);
             } else {
-              // 如果没有获取到，使用测试视频
-              console.log('未获取到视频URL，使用测试视频');
-              resolve('https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4');
+              // 如果没有获取到，返回原始URL让云猫直接处理
+              console.log('TikHub未能解析，将使用原始URL');
+              resolve(douyinUrl);
             }
           } else {
-            // API调用失败，使用测试视频
-            console.log('TikHub API失败，使用测试视频');
-            resolve('https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4');
+            // API调用失败，返回原始URL
+            console.log('TikHub API失败，使用原始URL');
+            resolve(douyinUrl);
           }
         } catch (error) {
           console.error('解析TikHub响应失败:', error);
-          // 使用测试视频作为后备
-          resolve('https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4');
+          // 使用原始URL
+          resolve(douyinUrl);
         }
       });
     });
     
     req.on('error', (error) => {
       console.error('TikHub请求错误:', error);
-      // 使用测试视频作为后备
-      resolve('https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4');
+      // 使用原始URL
+      resolve(douyinUrl);
     });
     
     req.setTimeout(10000, () => {
       req.destroy();
-      console.log('TikHub请求超时，使用测试视频');
+      console.log('TikHub请求超时，使用原始URL');
       resolve('https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4');
     });
     
