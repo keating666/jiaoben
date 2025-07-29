@@ -3,33 +3,26 @@
   "buildCommand": "npm run build || echo 'No build script'",
   "functions": {
     "api/**/*.js": {
-      "regions": ["hkg1"],
       "maxDuration": 30
     },
     "api/**/*.ts": {
-      "regions": ["hkg1"],
       "maxDuration": 10,
       "includeFiles": "tech-validation/**"
     },
     "api/video/transcribe.ts": {
-      "regions": ["hkg1"],
       "maxDuration": 60,
       "includeFiles": "tech-validation/**"
     },
     "api/douyin/complete-process.js": {
-      "regions": ["hkg1"],
       "maxDuration": 60
     },
     "api/test-yunmao-api.js": {
-      "regions": ["hkg1"],
       "maxDuration": 60
     },
     "api/video/submit-optimized.js": {
-      "regions": ["hkg1"],
       "maxDuration": 60
     },
     "api/test-region.js": {
-      "regions": ["hkg1"],
       "maxDuration": 5
     }
   },
