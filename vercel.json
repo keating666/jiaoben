@@ -1,9 +1,14 @@
 {
   "regions": ["hkg1"],
   "functions": {
+    "api/**/*.js": {
+      "regions": ["hkg1"]
+    },
+  "functions": {
     "api/video/transcribe.ts": {
       "maxDuration": 60,
-      "includeFiles": "tech-validation/**"
+      "includeFiles": "tech-validation/**",
+      "regions": ["hkg1"]
     },
     "api/test-components.ts": {
       "maxDuration": 30,
