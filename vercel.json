@@ -1,31 +1,5 @@
 {
   "regions": ["hkg1"],
-  "buildCommand": "npm run build || echo 'No build script'",
-  "functions": {
-    "api/**/*.js": {
-      "maxDuration": 30
-    },
-    "api/**/*.ts": {
-      "maxDuration": 10,
-      "includeFiles": "tech-validation/**"
-    },
-    "api/video/transcribe.ts": {
-      "maxDuration": 60,
-      "includeFiles": "tech-validation/**"
-    },
-    "api/douyin/complete-process.js": {
-      "maxDuration": 60
-    },
-    "api/test-yunmao-api.js": {
-      "maxDuration": 60
-    },
-    "api/video/submit-optimized.js": {
-      "maxDuration": 60
-    },
-    "api/test-region.js": {
-      "maxDuration": 5
-    }
-  },
   "routes": [
     {
       "src": "/api/(.*)",
