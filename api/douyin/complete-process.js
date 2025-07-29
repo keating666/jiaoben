@@ -241,15 +241,11 @@ function updateTask(taskId, type, data) {
 // TikHub获取视频
 async function getVideoFromTikHub(douyinUrl) {
   return new Promise((resolve, reject) => {
-    const requestData = JSON.stringify({
-      url: douyinUrl,
-      hd: true
-    });
-    
+    // 使用正确的API端点
     const options = {
       hostname: 'api.tikhub.io',
-      path: '/api/v1/douyin/video/get_video_info',
-      method: 'POST',
+      path: `/api/v1/douyin/web/fetch_one_video_by_share_url?share_url=${encodeURIComponent(douyinUrl)}`,
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${process.env.TIKHUB_API_KEY}`,
         'Content-Type': 'application/json',
