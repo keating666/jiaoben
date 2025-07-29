@@ -3,66 +3,34 @@
   "buildCommand": "npm run build || echo 'No build script'",
   "functions": {
     "api/**/*.js": {
-      "regions": ["hkg1"]
-    },
-  "functions": {
-    "api/video/transcribe.ts": {
-      "maxDuration": 60,
-      "includeFiles": "tech-validation/**",
-      "regions": ["hkg1"]
-    },
-    "api/test-components.ts": {
-      "maxDuration": 30,
-      "includeFiles": "tech-validation/**"
-    },
-    "api/test-minimax.ts": {
-      "maxDuration": 30,
-      "includeFiles": "tech-validation/**"
-    },
-    "api/test-tongyi.ts": {
-      "maxDuration": 30,
-      "includeFiles": "tech-validation/**"
-    },
-    "api/test-tongyi-optimized.ts": {
-      "maxDuration": 30,
-      "includeFiles": "tech-validation/**"
-    },
-    "api/test-minimax-simple.ts": {
-      "maxDuration": 30,
-      "includeFiles": "tech-validation/**"
-    },
-    "api/test-deployment.ts": {
-      "maxDuration": 5
-    },
-    "api/test-with-progress.ts": {
-      "maxDuration": 30,
-      "includeFiles": "tech-validation/**"
-    },
-    "api/video/transcribe-async.ts": {
-      "maxDuration": 10,
-      "includeFiles": "tech-validation/**"
-    },
-    "api/video/transcribe-test.ts": {
-      "maxDuration": 10
-    },
-    "api/test-full-mock.ts": {
-      "maxDuration": 10
+      "regions": ["hkg1"],
+      "maxDuration": 30
     },
     "api/**/*.ts": {
+      "regions": ["hkg1"],
       "maxDuration": 10,
       "includeFiles": "tech-validation/**"
     },
-    "api/video/submit-optimized.js": {
-      "maxDuration": 60
+    "api/video/transcribe.ts": {
+      "regions": ["hkg1"],
+      "maxDuration": 60,
+      "includeFiles": "tech-validation/**"
     },
     "api/douyin/complete-process.js": {
+      "regions": ["hkg1"],
       "maxDuration": 60
     },
     "api/test-yunmao-api.js": {
+      "regions": ["hkg1"],
       "maxDuration": 60
     },
-    "api/**/*.js": {
-      "maxDuration": 30
+    "api/video/submit-optimized.js": {
+      "regions": ["hkg1"],
+      "maxDuration": 60
+    },
+    "api/test-region.js": {
+      "regions": ["hkg1"],
+      "maxDuration": 5
     }
   },
   "routes": [
@@ -71,12 +39,20 @@
       "dest": "/api/$1"
     },
     {
+      "src": "/test-hk-deployment.html",
+      "dest": "/test-hk-deployment.html"
+    },
+    {
       "src": "/test-api.html",
       "dest": "/test-api.html"
     },
     {
       "src": "/test-yunmao-two-step.html",
       "dest": "/test-yunmao-two-step.html"
+    },
+    {
+      "src": "/test-douyin-hk.html",
+      "dest": "/public/test-douyin-hk.html"
     },
     {
       "src": "/(.*)",
