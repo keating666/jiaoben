@@ -1,4 +1,4 @@
-import { EnhancedApiClient } from '../utils/api-client';
+import { ApiClient } from '../utils/api-client';
 import { logger } from '../utils/logger';
 import { SecurityValidator } from '../utils/security-validator';
 import { 
@@ -49,7 +49,7 @@ interface VideoResolveResponse {
  * 专注于抖音视频地址解析
  */
 export class TikHubClient {
-  private readonly client: EnhancedApiClient;
+  private readonly client: ApiClient;
   private readonly config: Required<TikHubConfig>;
   private readonly validator: SecurityValidator;
 
@@ -65,7 +65,7 @@ export class TikHubClient {
       enableUrlValidation: true
     });
 
-    this.client = new EnhancedApiClient(
+    this.client = new ApiClient(
       'TikHubClient',
       {
         timeout: 15000,

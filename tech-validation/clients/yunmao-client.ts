@@ -1,4 +1,4 @@
-import { EnhancedApiClient } from '../utils/api-client';
+import { ApiClient } from '../utils/api-client';
 import { logger } from '../utils/logger';
 import { SecurityValidator } from '../utils/security-validator';
 
@@ -56,7 +56,7 @@ interface TaskStatusResponse extends ExtractTextResponse {
  * 用于调用云猫转码的视频转文字API
  */
 export class YunmaoClient {
-  private readonly client: EnhancedApiClient;
+  private readonly client: ApiClient;
   private readonly config: Required<YunmaoConfig>;
   private readonly validator: SecurityValidator;
 
@@ -77,7 +77,7 @@ export class YunmaoClient {
     });
 
     // 创建增强的API客户端
-    this.client = new EnhancedApiClient(
+    this.client = new ApiClient(
       'YunmaoClient',
       {
         timeout: 30000,
