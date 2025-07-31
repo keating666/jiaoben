@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能脚本生成 - 个性化定制版</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+        }
+        .feature-box {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border: 1px solid #667eea30;
+        }
+        .personalized-panel {
+            background: linear-gradient(135deg, #f093fb15 0%, #f5576c15 100%);
+            border: 2px solid #f093fb50;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            position: relative;
+        }
+        .personalized-panel h3 {
+            color: #f5576c;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .toggle-panel {
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: #667eea;
+            font-size: 1.1em;
+            padding: 10px 0;
+            width: 100%;
+            text-align: left;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .toggle-panel:hover {
+            color: #764ba2;
+        }
+        .panel-content {
+            display: none;
+            padding-top: 15px;
+        }
+        .panel-content.active {
+            display: block;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.95em;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .preset-templates {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .template-card {
+            background: white;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        .template-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+        .template-card.selected {
+            border-color: #667eea;
+            background: #667eea10;
+        }
+        .template-card h4 {
+            margin: 0 0 8px 0;
+            color: #333;
+            font-size: 1.1em;
+        }
+        .template-card p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9em;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+        .loading {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            color: #667eea;
+            font-weight: 600;
+        }
+        .success {
+            background: linear-gradient(135deg, #28a74515 0%, #20c99715 100%);
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid #28a74530;
+        }
+        .error {
+            background: linear-gradient(135deg, #dc354515 0%, #c8233315 100%);
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid #dc354530;
+        }
+        .step {
+            margin: 10px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            border-radius: 5px;
+        }
+        .script-result {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .script-scene {
+            background: white;
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .personalization-tip {
+            background: linear-gradient(135deg, #ffeaa715 0%, #ffb30015 100%);
+            border: 1px solid #ffeaa750;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 智能脚本生成器</h1>
+        <p class="subtitle">基于AI的个性化视频脚本创作平台</p>
+        
+        <div class="feature-box">
+            <h3>✨ 核心功能</h3>
+            <ul>
+                <li>🎯 <strong>个性化定制</strong> - 根据您的行业、风格、受众定制脚本</li>
+                <li>🎙️ <strong>语音识别</strong> - 腾讯云专业ASR引擎，准确率95%+</li>
+                <li>🤖 <strong>AI创作</strong> - 通义千问大模型，智能生成分镜脚本</li>
+                <li>⚡ <strong>一键生成</strong> - 从抖音链接到完整脚本，3分钟搞定</li>
+            </ul>
+        </div>
+
+        <!-- 个性化设置面板 -->
+        <div class="personalized-panel">
+            <button class="toggle-panel" onclick="togglePersonalization()">
+                <span id="toggle-icon">▶️</span>
+                <span>🎨 个性化设置 (可选)</span>
+                <span style="margin-left: auto; font-size: 0.9em; color: #666;">点击展开高级选项</span>
+            </button>
+            
+            <div class="panel-content" id="personalization-content">
+                <div class="personalization-tip">
+                    <strong>💡 提示：</strong> 填写个性化信息可以让AI生成更符合您需求的脚本内容，提升转化效果！
+                </div>
+
+                <!-- 预设模板 -->
+                <div class="input-group">
+                    <label>🎪 快速模板：</label>
+                    <div class="preset-templates">
+                        <div class="template-card" onclick="selectTemplate('ecommerce')">
+                            <h4>🛒 电商带货</h4>
+                            <p>产品推广、转化导向</p>
+                        </div>
+                        <div class="template-card" onclick="selectTemplate('education')">
+                            <h4>📚 知识分享</h4>
+                            <p>科普教学、干货输出</p>
+                        </div>
+                        <div class="template-card" onclick="selectTemplate('lifestyle')">
+                            <h4>🌟 生活方式</h4>
+                            <p>日常分享、亲和温暖</p>
+                        </div>
+                        <div class="template-card" onclick="selectTemplate('entertainment')">
+                            <h4>🎭 娱乐内容</h4>
+                            <p>轻松幽默、互动性强</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <!-- 基础信息 -->
+                    <div class="input-group">
+                        <label for="nickname">👤 创作者昵称：</label>
+                        <input type="text" id="nickname" placeholder="您的创作者名称">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="industry">🏢 所属行业：</label>
+                        <select id="industry">
+                            <option value="">请选择行业</option>
+                            <option value="电商">🛒 电商零售</option>
+                            <option value="教育">📚 教育培训</option>
+                            <option value="美食">🍽️ 美食餐饮</option>
+                            <option value="时尚">👗 时尚美妆</option>
+                            <option value="科技">💻 科技数码</option>
+                            <option value="健康">💪 健康养生</option>
+                            <option value="旅游">✈️ 旅游出行</option>
+                            <option value="娱乐">🎭 娱乐影视</option>
+                            <option value="其他">🌟 其他行业</option>
+                        </select>
+                    </div>
+
+                    <!-- 商业目的 -->
+                    <div class="input-group">
+                        <label for="purpose">🎯 商业目的：</label>
+                        <select id="purpose">
+                            <option value="">请选择目的</option>
+                            <option value="产品推广">🛍️ 产品推广</option>
+                            <option value="知识分享">📖 知识分享</option>
+                            <option value="品牌宣传">📢 品牌宣传</option>
+                            <option value="个人IP">👑 个人IP打造</option>
+                            <option value="娱乐内容">🎪 娱乐内容</option>
+                            <option value="流量获取">📈 流量获取</option>
+                        </select>
+                    </div>
+
+                    <!-- 目标受众 -->
+                    <div class="input-group">
+                        <label for="targetAge">👥 目标年龄：</label>
+                        <select id="targetAge">
+                            <option value="">请选择年龄段</option>
+                            <option value="18-25">🧒 18-25岁</option>
+                            <option value="25-35">👨‍💼 25-35岁</option>
+                            <option value="35-45">👩‍💼 35-45岁</option>
+                            <option value="45+">👴 45岁以上</option>
+                            <option value="全年龄">🌍 全年龄段</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="targetGender">⚧️ 目标性别：</label>
+                        <select id="targetGender">
+                            <option value="不限">🌈 不限</option>
+                            <option value="男性">👨 男性为主</option>
+                            <option value="女性">👩 女性为主</option>
+                        </select>
+                    </div>
+
+                    <!-- 脚本风格 -->
+                    <div class="input-group">
+                        <label for="style">🎨 脚本风格：</label>
+                        <select id="style">
+                            <option value="">请选择风格</option>
+                            <option value="专业严肃">🎓 专业严肃</option>
+                            <option value="轻松幽默">😄 轻松幽默</option>
+                            <option value="亲和温暖">🤗 亲和温暖</option>
+                            <option value="激情澎湃">🔥 激情澎湃</option>
+                            <option value="知识科普">🧠 知识科普</option>
+                            <option value="时尚潮流">✨ 时尚潮流</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 特殊要求 -->
+                <div class="input-group">
+                    <label for="keywords">🏷️ 关键词标签（可选）：</label>
+                    <input type="text" id="keywords" placeholder="例如：环保,健康,品质生活（用逗号分隔）">
+                    <small style="color: #666; font-size: 0.9em;">这些关键词将体现在生成的脚本中</small>
+                </div>
+
+                <div class="input-group">
+                    <label for="specialRequirements">📝 特殊要求（可选）：</label>
+                    <textarea id="specialRequirements" rows="3" placeholder="例如：希望突出产品的某个特点，或者避免某些表达方式..."></textarea>
+                </div>
+
+                <button onclick="savePersonalization()" class="btn-secondary">💾 保存个性化设置</button>
+                <button onclick="clearPersonalization()" class="btn-danger">🗑️ 清空设置</button>
+            </div>
+        </div>
+
+        <!-- 主功能区域 -->
+        <div class="input-group">
+            <label for="douyinUrl">🔗 抖音分享链接：</label>
+            <input type="text" id="douyinUrl" 
+                   value="https://v.douyin.com/o993PTzBZK4/" 
+                   placeholder="粘贴抖音分享链接">
+        </div>
+
+        <div style="text-align: center; margin: 20px 0;">
+            <button onclick="generateScript()" id="generateBtn">🚀 生成个性化脚本</button>
+            <button onclick="testAPI()" id="apiBtn" class="btn-secondary">🔧 测试API状态</button>
+            <button onclick="clearResult()" class="btn-danger">🗑️ 清空结果</button>
+        </div>
+
+        <div id="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        
+        // 预设模板配置
+        const templates = {
+            ecommerce: {
+                industry: '电商',
+                purpose: '产品推广',
+                targetAge: '25-35',
+                targetGender: '不限',
+                style: '激情澎湃',
+                keywords: '品质,优惠,限时,专业',
+                specialRequirements: '重点突出产品优势和购买理由，增加购买紧迫感'
+            },
+            education: {
+                industry: '教育',
+                purpose: '知识分享',
+                targetAge: '全年龄',
+                targetGender: '不限',
+                style: '知识科普',
+                keywords: '学习,成长,技能,干货',
+                specialRequirements: '内容要有条理性，便于理解记忆'
+            },
+            lifestyle: {
+                industry: '其他',
+                purpose: '个人IP',
+                targetAge: '25-35',
+                targetGender: '不限',
+                style: '亲和温暖',
+                keywords: '生活,分享,真实,温馨',
+                specialRequirements: '展现真实生活状态，增加亲近感'
+            },
+            entertainment: {
+                industry: '娱乐',
+                purpose: '娱乐内容',
+                targetAge: '18-25',
+                targetGender: '不限',
+                style: '轻松幽默',
+                keywords: '有趣,搞笑,互动,创意',
+                specialRequirements: '增加互动元素，提高娱乐性'
+            }
+        };
+
+        // 页面加载时恢复用户设置
+        window.onload = function() {
+            loadPersonalization();
+        };
+
+        function togglePersonalization() {
+            const content = document.getElementById('personalization-content');
+            const icon = document.getElementById('toggle-icon');
+            
+            if (content.classList.contains('active')) {
+                content.classList.remove('active');
+                icon.textContent = '▶️';
+            } else {
+                content.classList.add('active');
+                icon.textContent = '🔽';
+            }
+        }
+
+        function selectTemplate(templateName) {
+            // 清除之前的选择
+            document.querySelectorAll('.template-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // 选中当前模板
+            event.target.closest('.template-card').classList.add('selected');
+            
+            // 应用模板设置
+            const template = templates[templateName];
+            if (template) {
+                document.getElementById('industry').value = template.industry;
+                document.getElementById('purpose').value = template.purpose;
+                document.getElementById('targetAge').value = template.targetAge;
+                document.getElementById('targetGender').value = template.targetGender;
+                document.getElementById('style').value = template.style;
+                document.getElementById('keywords').value = template.keywords;
+                document.getElementById('specialRequirements').value = template.specialRequirements;
+            }
+        }
+
+        function getPersonalizationData() {
+            return {
+                nickname: document.getElementById('nickname').value,
+                industry: document.getElementById('industry').value,
+                purpose: document.getElementById('purpose').value,
+                targetAge: document.getElementById('targetAge').value,
+                targetGender: document.getElementById('targetGender').value,
+                style: document.getElementById('style').value,
+                keywords: document.getElementById('keywords').value,
+                specialRequirements: document.getElementById('specialRequirements').value
+            };
+        }
+
+        function savePersonalization() {
+            const data = getPersonalizationData();
+            localStorage.setItem('jiaoben_personalization', JSON.stringify(data));
+            alert('✅ 个性化设置已保存！');
+        }
+
+        function loadPersonalization() {
+            const saved = localStorage.getItem('jiaoben_personalization');
+            if (saved) {
+                const data = JSON.parse(saved);
+                document.getElementById('nickname').value = data.nickname || '';
+                document.getElementById('industry').value = data.industry || '';
+                document.getElementById('purpose').value = data.purpose || '';
+                document.getElementById('targetAge').value = data.targetAge || '';
+                document.getElementById('targetGender').value = data.targetGender || '';
+                document.getElementById('style').value = data.style || '';
+                document.getElementById('keywords').value = data.keywords || '';
+                document.getElementById('specialRequirements').value = data.specialRequirements || '';
+            }
+        }
+
+        function clearPersonalization() {
+            if (confirm('确定要清空所有个性化设置吗？')) {
+                document.getElementById('nickname').value = '';
+                document.getElementById('industry').value = '';
+                document.getElementById('purpose').value = '';
+                document.getElementById('targetAge').value = '';
+                document.getElementById('targetGender').value = '';
+                document.getElementById('style').value = '';
+                document.getElementById('keywords').value = '';
+                document.getElementById('specialRequirements').value = '';
+                
+                // 清除选中的模板
+                document.querySelectorAll('.template-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+                
+                localStorage.removeItem('jiaoben_personalization');
+                alert('✅ 个性化设置已清空！');
+            }
+        }
+
+        function clearResult() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'none';
+            resultDiv.innerHTML = '';
+        }
+
+        function showStep(number, text, status = 'processing') {
+            const statusEmoji = {
+                'processing': '⏳',
+                'success': '✅',
+                'error': '❌'
+            };
+            return `<div class="step">
+                <span style="font-weight: bold; color: #667eea;">${statusEmoji[status]} 步骤${number}：</span>${text}
+            </div>`;
+        }
+
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            const apiBtn = document.getElementById('apiBtn');
+            
+            apiBtn.disabled = true;
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading">🔄 测试API状态...</div>';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/test`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <h3>API状态检查：</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ 测试失败：</strong>${error.message}
+                    </div>
+                `;
+            } finally {
+                apiBtn.disabled = false;
+            }
+        }
+
+        async function generateScript() {
+            const douyinUrl = document.getElementById('douyinUrl').value;
+            const resultDiv = document.getElementById('result');
+            const generateBtn = document.getElementById('generateBtn');
+            
+            if (!douyinUrl) {
+                alert('请输入抖音链接');
+                return;
+            }
+            
+            generateBtn.disabled = true;
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading">🔄 正在生成个性化脚本，请稍候...</div>';
+            
+            let steps = '';
+            
+            try {
+                const personalization = getPersonalizationData();
+                
+                // 显示个性化信息
+                if (personalization.nickname || personalization.industry || personalization.style) {
+                    steps += `<div class="success">
+                        <strong>🎨 个性化配置：</strong><br>
+                        ${personalization.nickname ? `创作者：${personalization.nickname}<br>` : ''}
+                        ${personalization.industry ? `行业：${personalization.industry}<br>` : ''}
+                        ${personalization.purpose ? `目的：${personalization.purpose}<br>` : ''}
+                        ${personalization.style ? `风格：${personalization.style}<br>` : ''}
+                        ${personalization.keywords ? `关键词：${personalization.keywords}<br>` : ''}
+                    </div>`;
+                }
+                
+                // 显示处理步骤
+                steps += showStep(1, '清洗抖音链接', 'processing');
+                resultDiv.innerHTML = steps;
+                
+                steps = steps.replace('⏳ 步骤1', '✅ 步骤1');
+                steps += showStep(2, '获取视频信息和音频', 'processing');
+                resultDiv.innerHTML = steps;
+                
+                steps = steps.replace('⏳ 步骤2', '✅ 步骤2');
+                steps += showStep(3, '语音识别转写', 'processing');
+                resultDiv.innerHTML = steps;
+                
+                steps = steps.replace('⏳ 步骤3', '✅ 步骤3');
+                steps += showStep(4, '生成个性化脚本', 'processing');
+                resultDiv.innerHTML = steps + '<div class="loading">⏳ AI正在为您定制专属脚本，请耐心等待...</div>';
+                
+                // 调用API
+                const response = await fetch(`${API_URL}/api/process`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        douyinUrl,
+                        personalization  // 传递个性化信息
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP错误！状态：${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    steps = steps.replace('⏳ 步骤4', '✅ 步骤4');
+                    steps += showStep(5, '脚本生成完成！', 'success');
+                    
+                    // 显示结果
+                    let resultHTML = steps + `
+                        <div class="success">
+                            <h3>🎉 个性化脚本生成成功！</h3>
+                            <p><strong>视频信息：</strong></p>
+                            <ul>
+                                <li><strong>标题：</strong>${data.videoInfo.title}</li>
+                                <li><strong>作者：</strong>${data.videoInfo.author}</li>
+                                <li><strong>时长：</strong>${data.videoInfo.duration}</li>
+                                <li><strong>统计：</strong>播放 ${data.videoInfo.statistics.play} | 点赞 ${data.videoInfo.statistics.like}</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="script-result">
+                            <h3>📝 语音转写：</h3>
+                            <pre>${data.transcript}</pre>
+                            
+                            <h3>🎬 个性化分镜脚本：</h3>
+                    `;
+                    
+                    if (Array.isArray(data.script)) {
+                        data.script.forEach((scene, index) => {
+                            resultHTML += `
+                                <div class="script-scene">
+                                    <h4>${scene.scene || `场景 ${index + 1}`}</h4>
+                                    <p><strong>⏰ 时间：</strong>${scene.time || '未指定'}</p>
+                                    <p><strong>🎥 画面：</strong>${scene.visual || '未描述'}</p>
+                                    <p><strong>📹 镜头：</strong>${scene.camera || '未指定'}</p>
+                                    <p><strong>💬 对白：</strong>${scene.dialogue || '无对白'}</p>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        resultHTML += `<pre>${JSON.stringify(data.script, null, 2)}</pre>`;
+                    }
+                    
+                    resultHTML += '</div>';
+                    
+                    resultDiv.innerHTML = resultHTML;
+                } else {
+                    throw new Error(data.error || '处理失败');
+                }
+                
+            } catch (error) {
+                console.error('生成脚本失败:', error);
+                resultDiv.innerHTML = steps + `
+                    <div class="error">
+                        <strong>❌ 生成失败：</strong>${error.message}
+                    </div>
+                `;
+            } finally {
+                generateBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
