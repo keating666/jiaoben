@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>讯飞语音识别调试工具</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .processing {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎙️ 讯飞语音识别调试工具</h1>
+        
+        <div class="info">
+            <strong>使用说明：</strong><br>
+            1. 输入音频文件URL（MP3格式）<br>
+            2. 点击"测试讯飞ASR"按钮<br>
+            3. 查看调试信息，了解识别过程
+        </div>
+
+        <div class="input-group">
+            <label for="audioUrl">音频文件URL：</label>
+            <input type="text" id="audioUrl" 
+                   value="https://sf6-cdn-tos.douyinstatic.com/obj/ies-music/7531294223631846198.mp3" 
+                   placeholder="请输入音频文件URL">
+        </div>
+
+        <button onclick="testXunfeiASR()" id="testBtn">🚀 测试讯飞ASR</button>
+        <button onclick="checkConfig()" id="configBtn">🔍 检查配置</button>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        
+        async function checkConfig() {
+            const resultDiv = document.getElementById('result');
+            const configBtn = document.getElementById('configBtn');
+            
+            configBtn.disabled = true;
+            resultDiv.className = 'result processing';
+            resultDiv.textContent = '正在检查配置...';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/test`);
+                const data = await response.json();
+                
+                resultDiv.className = 'result info';
+                resultDiv.textContent = '配置状态：\n' + JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '检查失败：' + error.message;
+            } finally {
+                configBtn.disabled = false;
+            }
+        }
+        
+        async function testXunfeiASR() {
+            const audioUrl = document.getElementById('audioUrl').value;
+            const resultDiv = document.getElementById('result');
+            const testBtn = document.getElementById('testBtn');
+            
+            if (!audioUrl) {
+                alert('请输入音频文件URL');
+                return;
+            }
+            
+            testBtn.disabled = true;
+            resultDiv.className = 'result processing';
+            resultDiv.textContent = '正在调用讯飞语音识别...\n请稍候，这可能需要几秒钟...';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/debug-xunfei`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ audioUrl })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // 检查是否有识别结果
+                    const hasTranscript = data.steps?.some(step => step.transcript);
+                    
+                    if (hasTranscript) {
+                        resultDiv.className = 'result success';
+                        resultDiv.textContent = '✅ 讯飞识别成功！\n\n' + JSON.stringify(data, null, 2);
+                    } else {
+                        resultDiv.className = 'result error';
+                        resultDiv.textContent = '❌ 讯飞识别失败\n\n' + JSON.stringify(data, null, 2);
+                    }
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '请求失败：\n' + JSON.stringify(data, null, 2);
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '发生错误：\n' + error.message + '\n\n' + error.stack;
+            } finally {
+                testBtn.disabled = false;
+            }
+        }
+        
+        // 页面加载时自动检查配置
+        window.onload = function() {
+            checkConfig();
+        };
+    </script>
+</body>
+</html>

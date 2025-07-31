@@ -1,0 +1,11 @@
+name = "jiaoben-api"
+main = "cloudflare-worker-tencent-asr.js"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# 注意：敏感信息不应该写在这里
+# 使用 wrangler secret put 命令设置
+# 或在 Dashboard 中设置
+
+[vars]
+# 这些会被环境变量覆盖

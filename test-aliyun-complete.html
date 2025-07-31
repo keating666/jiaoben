@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>阿里云完整版测试 - ASR + 通义千问</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #ff6a00;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #fff7f0;
+            border-radius: 8px;
+            border: 1px solid #ffd8a8;
+        }
+        .test-section h3 {
+            color: #cc5500;
+            margin-top: 0;
+        }
+        button {
+            background: #ff6a00;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #cc5500;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        input[type="text"] {
+            width: 70%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+        }
+        .result.success {
+            background: #e8f5e9;
+            border: 1px solid #a5d6a7;
+        }
+        .result.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+        .result.warning {
+            background: #fff8e1;
+            color: #f57c00;
+            border: 1px solid #ffcc80;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .status-item {
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .status-item.configured {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+        }
+        .status-item.not-configured {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+        .status-item.partial {
+            background: #fff8e1;
+            color: #f57c00;
+            border: 1px solid #ffcc80;
+        }
+        .progress-steps {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            display: none;
+        }
+        .step {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border-left: 4px solid #ddd;
+            color: #999;
+        }
+        .step.active {
+            border-left-color: #ff6a00;
+            color: #ff6a00;
+            font-weight: bold;
+        }
+        .step.completed {
+            border-left-color: #4caf50;
+            color: #4caf50;
+        }
+        .step.error {
+            border-left-color: #f44336;
+            color: #f44336;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #1565c0;
+        }
+        .audio-preview {
+            margin-top: 15px;
+            width: 100%;
+        }
+        .transcript-box {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            border: 1px solid #ddd;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .script-preview {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            border: 1px solid #ddd;
+        }
+        .scene-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border-left: 3px solid #ff6a00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 阿里云完整版测试</h1>
+        <p class="subtitle">ASR语音识别 + 通义千问智能生成</p>
+        
+        <div class="info-box">
+            <strong>说明：</strong>完整版集成了阿里云ASR语音识别服务，可以真实识别抖音视频中的人声对话。
+        </div>
+        
+        <div class="test-section">
+            <h3>服务状态</h3>
+            <div class="status-grid" id="statusGrid">
+                <div class="status-item">通义千问：检查中...</div>
+                <div class="status-item">阿里云ASR：检查中...</div>
+            </div>
+            <button onclick="checkStatus()">刷新状态</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>测试阿里云Token获取</h3>
+            <button onclick="testToken()">获取Token</button>
+            <div id="tokenResult" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>完整流程测试</h3>
+            <input type="text" id="douyinUrl" placeholder="输入抖音链接" value="https://v.douyin.com/67CMClLwb1c/">
+            <button onclick="processVideo()" id="processBtn">开始处理</button>
+            
+            <div class="progress-steps" id="progressSteps">
+                <div class="step" id="step1">步骤1：获取视频信息</div>
+                <div class="step" id="step2">步骤2：提取音频URL</div>
+                <div class="step" id="step3">步骤3：阿里云ASR语音识别</div>
+                <div class="step" id="step4">步骤4：通义千问生成脚本</div>
+            </div>
+            
+            <div id="processResult" class="result"></div>
+            
+            <div id="audioPreview" style="display:none;">
+                <h4>音频预览：</h4>
+                <audio class="audio-preview" controls></audio>
+            </div>
+            
+            <div id="transcriptPreview" style="display:none;">
+                <h4>识别结果：</h4>
+                <div class="transcript-box"></div>
+            </div>
+            
+            <div id="scriptPreview" style="display:none;">
+                <h4>生成的分镜脚本：</h4>
+                <div class="script-preview"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const WORKER_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        
+        async function checkStatus() {
+            const statusGrid = document.getElementById('statusGrid');
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/test`);
+                const data = await response.json();
+                
+                let qwenStatus = data.aliyun?.qwenConfigured ? 
+                    '<div class="status-item configured">✅ 通义千问：已配置</div>' : 
+                    '<div class="status-item not-configured">❌ 通义千问：未配置</div>';
+                
+                let asrStatus = data.aliyun?.asrConfigured ? 
+                    '<div class="status-item configured">✅ 阿里云ASR：已配置</div>' : 
+                    '<div class="status-item partial">⚠️ 阿里云ASR：未配置（将使用模拟数据）</div>';
+                
+                statusGrid.innerHTML = qwenStatus + asrStatus;
+            } catch (error) {
+                statusGrid.innerHTML = '<div class="status-item not-configured" style="grid-column: 1/-1">❌ 无法连接到Worker</div>';
+            }
+        }
+        
+        async function testToken() {
+            const resultDiv = document.getElementById('tokenResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = '获取Token中...';
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/get-token`);
+                const data = await response.json();
+                
+                if (data.success && data.token) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = '✅ Token获取成功！\nToken: ' + data.token.substring(0, 20) + '...';
+                } else {
+                    resultDiv.className = 'result warning';
+                    resultDiv.textContent = '⚠️ ASR未配置，将使用模拟数据进行测试';
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ 错误: ' + error.message;
+            }
+        }
+        
+        async function processVideo() {
+            const douyinUrl = document.getElementById('douyinUrl').value;
+            const processBtn = document.getElementById('processBtn');
+            const progressSteps = document.getElementById('progressSteps');
+            const resultDiv = document.getElementById('processResult');
+            
+            if (!douyinUrl) {
+                alert('请输入抖音链接');
+                return;
+            }
+            
+            processBtn.disabled = true;
+            processBtn.textContent = '处理中...';
+            progressSteps.style.display = 'block';
+            resultDiv.style.display = 'none';
+            
+            // 重置步骤状态
+            document.querySelectorAll('.step').forEach(step => {
+                step.className = 'step';
+            });
+            
+            // 隐藏预览
+            document.getElementById('audioPreview').style.display = 'none';
+            document.getElementById('transcriptPreview').style.display = 'none';
+            document.getElementById('scriptPreview').style.display = 'none';
+            
+            try {
+                // 标记步骤1开始
+                document.getElementById('step1').className = 'step active';
+                
+                const response = await fetch(`${WORKER_URL}/api/process`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ douyinUrl })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 标记所有步骤完成
+                    document.querySelectorAll('.step').forEach(step => {
+                        step.className = 'step completed';
+                    });
+                    
+                    resultDiv.style.display = 'block';
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = '✅ 处理成功！';
+                    
+                    // 显示音频
+                    if (data.audioUrl) {
+                        document.getElementById('audioPreview').style.display = 'block';
+                        document.querySelector('.audio-preview').src = data.audioUrl;
+                    }
+                    
+                    // 显示转写结果
+                    if (data.transcript) {
+                        document.getElementById('transcriptPreview').style.display = 'block';
+                        document.querySelector('.transcript-box').textContent = data.transcript;
+                    }
+                    
+                    // 显示脚本
+                    if (data.script && Array.isArray(data.script)) {
+                        document.getElementById('scriptPreview').style.display = 'block';
+                        const scriptHtml = data.script.map(scene => `
+                            <div class="scene-item">
+                                <strong>${scene.scene}</strong><br>
+                                时间：${scene.time}<br>
+                                画面：${scene.visual}<br>
+                                镜头：${scene.camera}<br>
+                                对话：${scene.dialogue}
+                            </div>
+                        `).join('');
+                        document.querySelector('.script-preview').innerHTML = scriptHtml;
+                    }
+                    
+                } else {
+                    // 标记错误步骤
+                    const stepMap = {
+                        'TikHub': 'step1',
+                        'ASR': 'step3',
+                        'Qwen': 'step4'
+                    };
+                    
+                    if (data.step && stepMap[data.step]) {
+                        document.getElementById(stepMap[data.step]).className = 'step error';
+                    }
+                    
+                    resultDiv.style.display = 'block';
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '❌ 处理失败:\n' + JSON.stringify(data, null, 2);
+                }
+                
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ 错误: ' + error.message;
+            } finally {
+                processBtn.disabled = false;
+                processBtn.textContent = '开始处理';
+            }
+        }
+        
+        // 模拟步骤进度
+        function simulateProgress() {
+            setTimeout(() => {
+                document.getElementById('step1').className = 'step completed';
+                document.getElementById('step2').className = 'step active';
+            }, 1000);
+            
+            setTimeout(() => {
+                document.getElementById('step2').className = 'step completed';
+                document.getElementById('step3').className = 'step active';
+            }, 2000);
+            
+            setTimeout(() => {
+                document.getElementById('step3').className = 'step completed';
+                document.getElementById('step4').className = 'step active';
+            }, 5000);
+        }
+        
+        // 页面加载时检查状态
+        window.addEventListener('load', () => {
+            checkStatus();
+        });
+    </script>
+</body>
+</html>

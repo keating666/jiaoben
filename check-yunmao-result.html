@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 检查云猫结果</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; text-align: center; }
+        .btn {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover { background: #0056b3; }
+        .btn.success { background: #28a745; }
+        .btn.success:hover { background: #218838; }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .processing { background: #cce5ff; color: #004085; }
+        .task-list {
+            margin: 20px 0;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+        }
+        .task-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: #e9ecef;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .task-item:hover {
+            background: #dee2e6;
+        }
+        .text-result {
+            background: white;
+            padding: 20px;
+            border: 2px solid #28a745;
+            border-radius: 5px;
+            margin: 20px 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 检查云猫结果</h1>
+        
+        <div class="task-list">
+            <h3>最近的任务ID：</h3>
+            <div class="task-item" onclick="checkTask('YVa48EsgfYGLzSA4')">
+                YVa48EsgfYGLzSA4 <small>(最新)</small>
+            </div>
+            <div class="task-item" onclick="checkTask('SIVORWttS1g02PPO')">
+                SIVORWttS1g02PPO
+            </div>
+            <div class="task-item" onclick="checkTask('TmnebiSBCnMeeVYu')">
+                TmnebiSBCnMeeVYu
+            </div>
+            <div class="task-item" onclick="checkTask('D5oM6XwoUMvFdfOr')">
+                D5oM6XwoUMvFdfOr
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <button class="btn" onclick="listAllTasks()">列出所有任务</button>
+            <button class="btn success" onclick="checkLatest()">检查最新任务</button>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+    
+    <script>
+        const WORKER_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        
+        function showResult(content, type = 'result') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = content;
+        }
+        
+        async function checkTask(taskId) {
+            showResult(`正在查询任务: ${taskId}...`, 'processing');
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/task/query`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ taskId })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.status === 'completed') {
+                    let html = `<div class="text-result">
+                        <h3>✅ 转换完成！</h3>
+                        <p><strong>任务ID:</strong> ${data.taskId}</p>
+                        <p><strong>接收时间:</strong> ${data.receivedAt || '未知'}</p>
+                        <hr>
+                        <h4>转换的文字内容：</h4>
+                        <div style="white-space: pre-wrap; line-height: 1.6;">`;
+                    
+                    // 处理结果文本
+                    let text = data.result;
+                    if (typeof text === 'object') {
+                        text = JSON.stringify(text, null, 2);
+                    }
+                    
+                    html += escapeHtml(text);
+                    html += `</div>
+                        <hr>
+                        <button class="btn" onclick="copyText('${escapeHtml(text)}')">复制文字</button>
+                    </div>`;
+                    
+                    showResult(html, 'success');
+                } else if (data.status === 'processing') {
+                    showResult(`⏳ ${data.message}\n\n注意：${data.note || ''}`, 'processing');
+                } else {
+                    showResult(`查询结果：\n${JSON.stringify(data, null, 2)}`, 'result');
+                }
+                
+            } catch (error) {
+                showResult(`❌ 错误: ${error.message}`, 'error');
+            }
+        }
+        
+        async function listAllTasks() {
+            showResult('正在获取所有任务...', 'processing');
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/tasks/list`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    let html = `<h3>📋 所有任务 (${data.count}个)</h3>\n`;
+                    
+                    if (data.tasks.length === 0) {
+                        html += '<p>暂无任务记录</p>';
+                    } else {
+                        data.tasks.forEach(task => {
+                            html += `<div class="task-item" onclick="showTaskDetail('${task.key}')">
+                                <strong>${task.taskId}</strong> - ${task.receivedAt || '未知时间'}
+                                ${task.code === 0 ? '✅ 成功' : '❌ 失败'}
+                            </div>`;
+                        });
+                    }
+                    
+                    showResult(html, 'result');
+                } else {
+                    showResult(`❌ ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ 错误: ${error.message}`, 'error');
+            }
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('文字已复制到剪贴板！');
+            });
+        }
+        
+        async function checkLatest() {
+            await checkTask('YVa48EsgfYGLzSA4');
+        }
+        
+        // 页面加载时自动检查最新任务
+        window.onload = () => {
+            setTimeout(() => {
+                checkLatest();
+            }, 2000); // 等待2秒，让云猫有时间处理
+        };
+    </script>
+</body>
+</html>

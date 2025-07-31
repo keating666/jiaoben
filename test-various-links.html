@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试各种抖音链接格式</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #667eea;
+            text-align: center;
+        }
+        .test-case {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .test-case h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .test-url {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+            word-break: break-all;
+            margin: 10px 0;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            display: none;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 测试各种抖音链接格式</h1>
+        
+        <div class="test-case">
+            <h3>测试1：带文字的分享链接</h3>
+            <div class="test-url">https://v.douyin.com/iYqnFyCV/ 复制此链接，打开Dou音搜索，直接观看视频！</div>
+            <button onclick="testLink(0)">测试链接清洗</button>
+            <button onclick="testFullProcess(0)">测试完整流程</button>
+            <div class="result" id="result0"></div>
+        </div>
+        
+        <div class="test-case">
+            <h3>测试2：纯短链接</h3>
+            <div class="test-url">https://v.douyin.com/iYqnFyCV/</div>
+            <button onclick="testLink(1)">测试链接清洗</button>
+            <button onclick="testFullProcess(1)">测试完整流程</button>
+            <div class="result" id="result1"></div>
+        </div>
+        
+        <div class="test-case">
+            <h3>测试3：完整视频链接</h3>
+            <div class="test-url">https://www.douyin.com/video/7123456789012345678</div>
+            <button onclick="testLink(2)">测试链接清洗</button>
+            <button onclick="testFullProcess(2)">测试完整流程</button>
+            <div class="result" id="result2"></div>
+        </div>
+        
+        <div class="test-case">
+            <h3>测试4：带参数的链接</h3>
+            <div class="test-url">https://www.douyin.com/video/7123456789012345678?share_source=weixin&utm_campaign=client_share</div>
+            <button onclick="testLink(3)">测试链接清洗</button>
+            <button onclick="testFullProcess(3)">测试完整流程</button>
+            <div class="result" id="result3"></div>
+        </div>
+        
+        <div class="test-case">
+            <h3>测试5：自定义链接</h3>
+            <input type="text" id="customUrl" placeholder="粘贴任意抖音链接" style="width: 100%; padding: 10px; margin-bottom: 10px;">
+            <button onclick="testCustomLink()">测试链接清洗</button>
+            <button onclick="testCustomFullProcess()">测试完整流程</button>
+            <div class="result" id="resultCustom"></div>
+        </div>
+    </div>
+    
+    <script>
+        const WORKER_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        
+        const testUrls = [
+            'https://v.douyin.com/iYqnFyCV/ 复制此链接，打开Dou音搜索，直接观看视频！',
+            'https://v.douyin.com/iYqnFyCV/',
+            'https://www.douyin.com/video/7123456789012345678',
+            'https://www.douyin.com/video/7123456789012345678?share_source=weixin&utm_campaign=client_share'
+        ];
+        
+        // 测试链接清洗（本地模拟）
+        function testLink(index) {
+            const url = testUrls[index];
+            const resultDiv = document.getElementById('result' + index);
+            
+            // 模拟 Worker 中的清洗逻辑
+            const cleaned = cleanDouyinUrl(url);
+            
+            resultDiv.className = 'result success';
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `<pre>原始链接：${url}\n清洗后：${cleaned}</pre>`;
+        }
+        
+        // 测试完整流程
+        async function testFullProcess(index) {
+            const url = testUrls[index];
+            const resultDiv = document.getElementById('result' + index);
+            
+            resultDiv.className = 'result';
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<pre>处理中，请稍候...</pre>';
+            
+            try {
+                const startTime = Date.now();
+                
+                const response = await fetch(`${WORKER_URL}/api/process`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ douyinUrl: url })
+                });
+                
+                const data = await response.json();
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `<pre>✅ 处理成功！耗时：${elapsed}秒\n\n` +
+                        `视频信息：\n` +
+                        `- 标题：${data.videoInfo.title}\n` +
+                        `- 作者：${data.videoInfo.author}\n` +
+                        `- 时长：${data.videoInfo.duration}\n` +
+                        `- 播放：${data.videoInfo.statistics.play}\n` +
+                        `\n语音识别：${data.asrUsed ? '✅ 真实ASR' : '⚠️ 智能模拟'}\n` +
+                        `\n转写内容（前200字）：\n${data.transcript.substring(0, 200)}...\n` +
+                        `\n生成脚本数：${data.script.length}个场景</pre>`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<pre>❌ 处理失败：${data.error}</pre>`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<pre>❌ 请求失败：${error.message}</pre>`;
+            }
+        }
+        
+        // 测试自定义链接
+        function testCustomLink() {
+            const url = document.getElementById('customUrl').value;
+            if (!url) {
+                alert('请输入链接');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('resultCustom');
+            const cleaned = cleanDouyinUrl(url);
+            
+            resultDiv.className = 'result success';
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `<pre>原始链接：${url}\n清洗后：${cleaned}</pre>`;
+        }
+        
+        async function testCustomFullProcess() {
+            const url = document.getElementById('customUrl').value;
+            if (!url) {
+                alert('请输入链接');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('resultCustom');
+            resultDiv.className = 'result';
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<pre>处理中，请稍候...</pre>';
+            
+            try {
+                const startTime = Date.now();
+                
+                const response = await fetch(`${WORKER_URL}/api/process`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ douyinUrl: url })
+                });
+                
+                const data = await response.json();
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `<pre>✅ 处理成功！耗时：${elapsed}秒\n\n详细结果：\n${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<pre>❌ 处理失败：\n${JSON.stringify(data, null, 2)}</pre>`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<pre>❌ 请求失败：${error.message}</pre>`;
+            }
+        }
+        
+        // 本地模拟链接清洗函数
+        function cleanDouyinUrl(url) {
+            if (!url || typeof url !== 'string') return url;
+            
+            url = url.trim();
+            
+            const patterns = [
+                /https?:\/\/v\.douyin\.com\/[A-Za-z0-9]+/,
+                /https?:\/\/www\.douyin\.com\/video\/\d+/,
+                /https?:\/\/www\.douyin\.com\/discover\?modal_id=\d+/,
+                /https?:\/\/m\.douyin\.com\/share\/video\/\d+/,
+                /https?:\/\/[^\/]*douyin\.com\/[^\s?]*/
+            ];
+            
+            for (const pattern of patterns) {
+                const match = url.match(pattern);
+                if (match) {
+                    let cleanUrl = match[0];
+                    cleanUrl = cleanUrl.replace(/[^\w\/:.-]+$/, '');
+                    if (cleanUrl.includes('v.douyin.com') && !cleanUrl.endsWith('/')) {
+                        cleanUrl += '/';
+                    }
+                    return cleanUrl;
+                }
+            }
+            
+            return url;
+        }
+    </script>
+</body>
+</html>

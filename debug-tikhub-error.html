@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikHub 错误调试工具</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #ff6b6b;
+            text-align: center;
+        }
+        .debug-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #ff6b6b;
+        }
+        .url-display {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+            word-break: break-all;
+            margin: 10px 0;
+        }
+        button {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #ff5252;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 TikHub 错误调试工具</h1>
+        
+        <div class="debug-section">
+            <h3>1. 测试链接清洗</h3>
+            <div class="url-display" id="originalUrl">
+                原始链接：1.28 FHi:/ w@F.uf 12/21 当一标车间遇上了新闻联播 # 法兰螺栓# 高强度螺栓# 源头厂家 # 热门# 抖  https://v.douyin.com/X_HPP2LDITI/ 复制此链接，打开Dou音搜索，直接观看视频！
+            </div>
+            <button onclick="testLinkCleaning()">测试链接清洗</button>
+            <div class="result" id="cleanResult" style="display:none;"></div>
+        </div>
+        
+        <div class="debug-section">
+            <h3>2. 直接测试 TikHub API</h3>
+            <button onclick="testTikHubDirect()">直接调用 TikHub（需要在控制台查看）</button>
+            <div class="result" id="tikhubResult" style="display:none;"></div>
+        </div>
+        
+        <div class="debug-section">
+            <h3>3. 通过 Worker 测试</h3>
+            <button onclick="testWorkerProcess()">通过 Worker 处理</button>
+            <div class="result" id="workerResult" style="display:none;"></div>
+        </div>
+        
+        <div class="debug-section">
+            <h3>4. 测试其他链接</h3>
+            <input type="text" id="testUrl" placeholder="输入其他抖音链接测试" style="width: 100%; padding: 10px; margin-bottom: 10px;">
+            <button onclick="testCustomUrl()">测试自定义链接</button>
+            <div class="result" id="customResult" style="display:none;"></div>
+        </div>
+    </div>
+    
+    <script>
+        const WORKER_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        const originalUrl = '1.28 FHi:/ w@F.uf 12/21 当一标车间遇上了新闻联播 # 法兰螺栓# 高强度螺栓# 源头厂家 # 热门# 抖  https://v.douyin.com/X_HPP2LDITI/ 复制此链接，打开Dou音搜索，直接观看视频！';
+        
+        // 链接清洗函数
+        function cleanDouyinUrl(url) {
+            if (!url || typeof url !== 'string') {
+                return { original: url, cleaned: null, error: '无效输入' };
+            }
+            
+            url = url.trim();
+            
+            const patterns = [
+                // 短链接
+                /https?:\/\/v\.douyin\.com\/[A-Za-z0-9_-]+/,
+                // 完整链接
+                /https?:\/\/www\.douyin\.com\/video\/\d+/,
+                /https?:\/\/www\.douyin\.com\/discover\?modal_id=\d+/,
+                // 移动端链接
+                /https?:\/\/m\.douyin\.com\/share\/video\/\d+/,
+                // 带参数的链接
+                /https?:\/\/[^\/]*douyin\.com\/[^\s?]*/
+            ];
+            
+            for (const pattern of patterns) {
+                const match = url.match(pattern);
+                if (match) {
+                    let cleanUrl = match[0];
+                    // 移除尾部的特殊字符
+                    cleanUrl = cleanUrl.replace(/[^\w\/:.-]+$/, '');
+                    // 确保短链接有斜杠结尾
+                    if (cleanUrl.includes('v.douyin.com') && !cleanUrl.endsWith('/')) {
+                        cleanUrl += '/';
+                    }
+                    return { original: url, cleaned: cleanUrl, pattern: pattern.toString() };
+                }
+            }
+            
+            return { original: url, cleaned: null, error: '未找到有效的抖音链接' };
+        }
+        
+        // 测试链接清洗
+        function testLinkCleaning() {
+            const result = cleanDouyinUrl(originalUrl);
+            const resultDiv = document.getElementById('cleanResult');
+            
+            resultDiv.style.display = 'block';
+            if (result.cleaned) {
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ 清洗成功！\n\n原始文本：\n${result.original}\n\n提取的链接：\n${result.cleaned}\n\n匹配模式：\n${result.pattern}`;
+            } else {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ 清洗失败！\n\n错误：${result.error}`;
+            }
+        }
+        
+        // 直接测试 TikHub API
+        async function testTikHubDirect() {
+            const cleanResult = cleanDouyinUrl(originalUrl);
+            if (!cleanResult.cleaned) {
+                alert('请先成功清洗链接');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('tikhubResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.textContent = '⚠️ 由于浏览器 CORS 限制，无法直接调用 TikHub API。\n请查看浏览器控制台（F12）中的网络请求详情。\n\n建议使用 Worker 测试。';
+            
+            console.log('如果您有 TikHub Token，可以在控制台执行以下命令测试：');
+            console.log(`
+fetch('https://api.tikhub.io/api/v1/douyin/web/fetch_one_video_by_share_url?share_url=' + encodeURIComponent('${cleanResult.cleaned}'), {
+    headers: {
+        'Authorization': 'Bearer YOUR_TIKHUB_TOKEN',
+        'Accept': 'application/json'
+    }
+}).then(r => r.json()).then(console.log)
+            `);
+        }
+        
+        // 通过 Worker 测试
+        async function testWorkerProcess() {
+            const resultDiv = document.getElementById('workerResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.textContent = '处理中，请稍候...';
+            
+            try {
+                const startTime = Date.now();
+                
+                const response = await fetch(`${WORKER_URL}/api/process`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ douyinUrl: originalUrl })
+                });
+                
+                const data = await response.json();
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ 处理成功！耗时：${elapsed}秒\n\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ 处理失败！耗时：${elapsed}秒\n\n错误信息：\n${JSON.stringify(data, null, 2)}\n\n可能的原因：\n1. TikHub API 限流\n2. 视频链接已失效\n3. TikHub 服务暂时不可用\n4. Token 配额用完`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ 请求失败：${error.message}`;
+            }
+        }
+        
+        // 测试自定义链接
+        async function testCustomUrl() {
+            const customUrl = document.getElementById('testUrl').value;
+            if (!customUrl) {
+                alert('请输入链接');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('customResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.textContent = '处理中...';
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/process`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ douyinUrl: customUrl })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ 成功！\n\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ 失败！\n\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ 错误：${error.message}`;
+            }
+        }
+        
+        // 页面加载时自动测试链接清洗
+        window.addEventListener('load', () => {
+            testLinkCleaning();
+        });
+    </script>
+</body>
+</html>

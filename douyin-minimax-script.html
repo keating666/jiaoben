@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎬 抖音视频AI分镜脚本生成器 - MiniMax版</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f0f2f5;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        h1 {
+            color: #1a1a1a;
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 18px;
+        }
+        .tech-badge {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .main-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        .input-section {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        input {
+            flex: 1;
+            padding: 15px 20px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        .btn-primary {
+            padding: 15px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .progress-bar {
+            display: none;
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        .progress-bar.active {
+            display: block;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #4CAF50;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .result-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+        }
+        .result-card h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .video-info {
+            background: #e8f5e9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .video-info h4 {
+            margin: 0 0 10px 0;
+            color: #2e7d32;
+        }
+        .video-info p {
+            margin: 5px 0;
+            color: #1b5e20;
+        }
+        .transcript-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 16px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+        }
+        .script-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .scene-card {
+            background: #f0f7ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        .scene-card h5 {
+            margin: 0 0 10px 0;
+            color: #1565C0;
+            font-size: 18px;
+        }
+        .scene-detail {
+            display: grid;
+            gap: 8px;
+            font-size: 14px;
+        }
+        .scene-detail span {
+            display: flex;
+            align-items: start;
+        }
+        .scene-detail strong {
+            min-width: 80px;
+            color: #555;
+        }
+        .audio-player {
+            width: 100%;
+            margin-top: 15px;
+        }
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: none;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .copy-btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .copy-btn:hover {
+            background: #1976D2;
+        }
+        .api-status {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .api-status.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+    </style>
+</head>
+<body>
+    <div class="api-status" id="apiStatus">检查API状态...</div>
+    
+    <div class="header">
+        <h1>🎬 抖音视频AI分镜脚本生成器</h1>
+        <p class="subtitle">智能提取音频 → MiniMax语音转文字 → AI生成分镜脚本</p>
+        <span class="tech-badge">Powered by MiniMax AI</span>
+    </div>
+    
+    <div class="main-card">
+        <div class="input-section">
+            <input type="text" 
+                   id="douyinUrl" 
+                   placeholder="请粘贴抖音分享链接..." 
+                   value="https://v.douyin.com/67CMClLwb1c/">
+            <button class="btn-primary" onclick="processVideo()" id="processBtn">
+                开始生成脚本
+            </button>
+        </div>
+        
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        
+        <div class="error-message" id="errorMessage"></div>
+    </div>
+    
+    <div id="videoInfo" class="video-info" style="display:none;"></div>
+    
+    <div id="results" class="results-grid" style="display:none;">
+        <div class="result-card">
+            <h3>🎵 音频信息</h3>
+            <audio id="audioPlayer" class="audio-player" controls></audio>
+            <p id="audioInfo" style="margin-top:10px; color:#666;"></p>
+        </div>
+        
+        <div class="result-card">
+            <h3>📝 MiniMax语音转文字</h3>
+            <div id="transcript" class="transcript-box">
+                <p style="color:#999; text-align:center;">正在使用MiniMax识别语音内容...</p>
+            </div>
+            <button class="copy-btn" onclick="copyTranscript()">复制文字</button>
+        </div>
+    </div>
+    
+    <div class="main-card" id="scriptCard" style="display:none;">
+        <h3 style="margin-bottom:20px;">🎬 MiniMax AI生成的分镜脚本</h3>
+        <div id="scriptContainer" class="script-container"></div>
+        <button class="copy-btn" onclick="copyScript()">复制脚本</button>
+    </div>
+    
+    <script>
+        const WORKER_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        let currentTranscript = '';
+        let currentScript = '';
+        
+        // 检查API状态
+        async function checkApiStatus() {
+            try {
+                const response = await fetch(`${WORKER_URL}/api/test`);
+                const data = await response.json();
+                
+                const statusEl = document.getElementById('apiStatus');
+                if (data.minimax && data.minimax.configured) {
+                    statusEl.textContent = '✅ MiniMax API已配置';
+                    statusEl.classList.remove('error');
+                } else {
+                    statusEl.textContent = '⚠️ MiniMax API未配置';
+                    statusEl.classList.add('error');
+                }
+            } catch (error) {
+                document.getElementById('apiStatus').textContent = '❌ Worker离线';
+                document.getElementById('apiStatus').classList.add('error');
+            }
+        }
+        
+        function updateProgress(percent) {
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+            progressBar.classList.add('active');
+            progressFill.style.width = percent + '%';
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.style.display = 'block';
+            errorDiv.textContent = message;
+            updateProgress(0);
+        }
+        
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+        
+        async function processVideo() {
+            const douyinUrl = document.getElementById('douyinUrl').value.trim();
+            if (!douyinUrl) {
+                showError('请输入抖音分享链接');
+                return;
+            }
+            
+            const btn = document.getElementById('processBtn');
+            btn.disabled = true;
+            btn.innerHTML = '处理中<span class="loading-spinner"></span>';
+            
+            hideError();
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('scriptCard').style.display = 'none';
+            
+            try {
+                updateProgress(20);
+                
+                // 调用 MiniMax 处理接口
+                const response = await fetch(`${WORKER_URL}/api/process-with-minimax`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ douyinUrl })
+                });
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || '处理失败');
+                }
+                
+                updateProgress(50);
+                
+                // 显示视频信息
+                showVideoInfo(data.videoInfo);
+                
+                // 显示音频
+                document.getElementById('results').style.display = 'grid';
+                document.getElementById('audioPlayer').src = data.audioUrl;
+                document.getElementById('audioInfo').textContent = 
+                    `音频类型: ${data.audioUrl.includes('music') ? '背景音乐' : '视频音轨'}`;
+                
+                updateProgress(70);
+                
+                // 显示转写文本
+                currentTranscript = data.transcript;
+                document.getElementById('transcript').textContent = currentTranscript;
+                
+                updateProgress(90);
+                
+                // 显示分镜脚本
+                showScript(data.script);
+                
+                updateProgress(100);
+                setTimeout(() => {
+                    document.getElementById('progressBar').classList.remove('active');
+                }, 1000);
+                
+            } catch (error) {
+                showError(`处理失败: ${error.message}`);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '开始生成脚本';
+            }
+        }
+        
+        function showVideoInfo(info) {
+            const videoInfoDiv = document.getElementById('videoInfo');
+            videoInfoDiv.style.display = 'block';
+            videoInfoDiv.innerHTML = `
+                <h4>📹 视频信息</h4>
+                <p><strong>标题：</strong>${info.title}</p>
+                <p><strong>作者：</strong>${info.author}</p>
+                <p><strong>背景音乐：</strong>${info.musicTitle}</p>
+            `;
+        }
+        
+        function showScript(scenes) {
+            const scriptCard = document.getElementById('scriptCard');
+            const scriptContainer = document.getElementById('scriptContainer');
+            
+            scriptCard.style.display = 'block';
+            
+            let scriptHtml = '';
+            scenes.forEach((scene, index) => {
+                scriptHtml += `
+                    <div class="scene-card">
+                        <h5>${scene.scene}</h5>
+                        <div class="scene-detail">
+                            <span><strong>时间：</strong>${scene.time}</span>
+                            <span><strong>画面：</strong>${scene.visual}</span>
+                            <span><strong>镜头：</strong>${scene.camera}</span>
+                            <span><strong>对话：</strong>${scene.dialogue}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            scriptContainer.innerHTML = scriptHtml;
+            
+            // 保存脚本文本用于复制
+            currentScript = scenes.map(scene => 
+                `${scene.scene}\n时间：${scene.time}\n画面：${scene.visual}\n镜头：${scene.camera}\n对话：${scene.dialogue}\n`
+            ).join('\n');
+        }
+        
+        function copyTranscript() {
+            navigator.clipboard.writeText(currentTranscript).then(() => {
+                alert('文字内容已复制到剪贴板！');
+            });
+        }
+        
+        function copyScript() {
+            navigator.clipboard.writeText(currentScript).then(() => {
+                alert('分镜脚本已复制到剪贴板！');
+            });
+        }
+        
+        // 回车键提交
+        document.getElementById('douyinUrl').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                processVideo();
+            }
+        });
+        
+        // 页面加载时检查API状态
+        window.addEventListener('load', () => {
+            checkApiStatus();
+        });
+    </script>
+</body>
+</html>

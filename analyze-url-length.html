@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分析 URL 长度问题</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; text-align: center; }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 10px 5px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn:hover { background: #0056b3; }
+        .url-item {
+            margin: 10px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        .url-item.short {
+            background: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .url-item.long {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        .url-text {
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 3px;
+        }
+        .length {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📏 分析 URL 长度问题</h1>
+        
+        <div class="warning">
+            <h3>⚠️ 云猫 API 限制</h3>
+            <p>云猫要求文件URL不能超过 <strong>200个字符</strong></p>
+            <p>抖音视频URL通常有 300-400 个字符，需要使用短链接服务</p>
+        </div>
+        
+        <button class="btn" onclick="analyzeUrls()">分析当前视频的所有URL</button>
+        <button class="btn" onclick="testShortUrl()">测试短链接方案</button>
+        
+        <div id="results"></div>
+    </div>
+    
+    <script>
+        const WORKER_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        const TEST_DOUYIN_URL = 'https://v.douyin.com/67CMClLwb1c/';
+        
+        async function analyzeUrls() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>正在分析...</p>';
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/tikhub/test`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ douyinUrl: TEST_DOUYIN_URL })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.availableUrls) {
+                    let html = '<h3>所有可用的视频URL：</h3>';
+                    
+                    data.availableUrls.forEach((urlInfo, index) => {
+                        const isShort = urlInfo.length <= 200;
+                        html += `
+                            <div class="url-item ${isShort ? 'short' : 'long'}">
+                                <div>
+                                    <strong>${index + 1}. ${urlInfo.type}[${urlInfo.index}]</strong>
+                                    <span class="length ${isShort ? 'success' : 'error'}">
+                                        长度: ${urlInfo.length} 字符 ${isShort ? '✅' : '❌'}
+                                    </span>
+                                </div>
+                                <div class="url-text">${urlInfo.url}</div>
+                            </div>
+                        `;
+                    });
+                    
+                    if (data.shortestUrl) {
+                        html += `
+                            <div style="margin-top: 30px; padding: 20px; background: #e7f3ff; border-radius: 5px;">
+                                <h3>最短的URL：</h3>
+                                <p>类型：${data.shortestUrl.type}[${data.shortestUrl.index}]</p>
+                                <p>长度：<strong>${data.shortestUrl.length}</strong> 字符</p>
+                                ${data.shortestUrl.length <= 200 ? 
+                                    '<p class="success">✅ 可以直接使用！</p>' : 
+                                    '<p class="error">❌ 仍然太长，需要短链接服务</p>'
+                                }
+                            </div>
+                        `;
+                    }
+                    
+                    resultsDiv.innerHTML = html;
+                } else {
+                    resultsDiv.innerHTML = `<p class="error">获取失败：${JSON.stringify(data)}</p>`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<p class="error">错误：${error.message}</p>`;
+            }
+        }
+        
+        async function testShortUrl() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>测试短链接服务...</p>';
+            
+            const longUrl = 'https://v5-dy-o-abtest.zjcdn.com/7390b7b149693a9718b04432d95b509e/6888c11f/video/tos/cn/tos-cn-ve-15/oUysIPHC32EAiEKEaIwQaAqPQU9EIQgBiyZHS/?a=6383&ch=26&cr=3&dr=0&lr=all&cd=0%7C0%7C0%7C3&cv=1&br=784&bt=784&cs=0&ds=4&ft=LUGqLeFmsQOCCp5Sup-Q6_Mme-rLWa5eFsPqhSd-IXGjjqkwUBMEq&mime_type=video_mp4&qs=0&rc=Ojo2ZGc0Zjc5ZWdoZzhlZEBpanNkOGw5cmo7NTMzNGkzM0AxMzFiL19gNmAxNGFgYjMuYSNvbDAvMmQ0Yi9hLS1kLTBzcw%3D%3D&btag=80000e00020000&cquery=100H_100K_100o_100w_100B&dy_q=1753781948&feature_id=46a7bb47b4fd1280f3d3825bf2b29388&l=20250729173908320428EEA2716D2FA0BC';
+            
+            let html = `
+                <h3>测试短链接服务</h3>
+                <p>原始URL长度：<strong class="error">${longUrl.length} 字符</strong></p>
+                <div class="url-text">${longUrl}</div>
+                <h4>测试结果：</h4>
+            `;
+            
+            // 测试 TinyURL
+            try {
+                const tinyResponse = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
+                if (tinyResponse.ok) {
+                    const shortUrl = await tinyResponse.text();
+                    html += `<p class="success">✅ TinyURL: ${shortUrl.trim()} (${shortUrl.trim().length} 字符)</p>`;
+                }
+            } catch (e) {
+                html += `<p class="error">❌ TinyURL 失败: ${e.message}</p>`;
+            }
+            
+            // 建议的解决方案
+            html += `
+                <div style="margin-top: 30px; padding: 20px; background: #d4edda; border-radius: 5px;">
+                    <h3>💡 解决方案</h3>
+                    <ol>
+                        <li><strong>使用 Worker 内置短链接</strong> - 已在新版本中实现</li>
+                        <li><strong>使用抖音官方短链接</strong> - download_addr 的第3个URL通常较短</li>
+                        <li><strong>第三方短链接服务</strong> - TinyURL、is.gd 等</li>
+                        <li><strong>自建短链接服务</strong> - 使用 Cloudflare KV 存储映射</li>
+                    </ol>
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        // 页面加载时自动分析
+        window.onload = analyzeUrls;
+    </script>
+</body>
+</html>

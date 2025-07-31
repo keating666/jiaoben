@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通义千问Audio测试 - 直接URL处理</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .feature-box {
+            background-color: #e8f5e9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4caf50;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            border: 1px solid #e0e0e0;
+        }
+        .loading {
+            text-align: center;
+            color: #3498db;
+        }
+        .error {
+            color: #e74c3c;
+            background-color: #fee;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .success {
+            color: #27ae60;
+            background-color: #eafaf1;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .sample-links {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f0f7ff;
+            border-radius: 5px;
+        }
+        .sample-btn {
+            background-color: #9b59b6;
+            font-size: 14px;
+            padding: 8px 15px;
+        }
+        .sample-btn:hover {
+            background-color: #8e44ad;
+        }
+        .step {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-left: 3px solid #3498db;
+            border-radius: 3px;
+        }
+        .step-number {
+            font-weight: bold;
+            color: #3498db;
+        }
+        pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 通义千问Audio测试 - 直接URL处理</h1>
+        
+        <div class="feature-box">
+            <h3>✨ 关键优势</h3>
+            <ul>
+                <li>✅ 无需下载音频文件</li>
+                <li>✅ 避免Base64编码内存问题</li>
+                <li>✅ 绕过Cloudflare CDN保护</li>
+                <li>✅ 支持大文件处理</li>
+                <li>✅ 更快的处理速度</li>
+            </ul>
+        </div>
+
+        <div class="input-group">
+            <label for="douyinUrl">抖音分享链接：</label>
+            <input type="text" id="douyinUrl" 
+                   value="https://v.douyin.com/o993PTzBZK4/" 
+                   placeholder="粘贴抖音分享链接">
+        </div>
+
+        <div class="sample-links">
+            <strong>测试链接：</strong><br>
+            <button class="sample-btn" onclick="setUrl('https://v.douyin.com/o993PTzBZK4/')">
+                🎬 测试视频1
+            </button>
+            <button class="sample-btn" onclick="setUrl('https://v.douyin.com/Yq4HqFNgThU/')">
+                🎬 测试视频2
+            </button>
+            <button class="sample-btn" onclick="setUrl('https://v.douyin.com/UT2LtNn/')">
+                🎬 测试视频3
+            </button>
+        </div>
+
+        <button onclick="testQwenAudio()" id="testBtn">🚀 开始测试</button>
+        <button onclick="clearResult()">🗑️ 清空结果</button>
+
+        <div id="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        
+        function setUrl(url) {
+            document.getElementById('douyinUrl').value = url;
+        }
+        
+        function clearResult() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'none';
+            resultDiv.innerHTML = '';
+        }
+        
+        function showStep(number, text, status = 'processing') {
+            const statusEmoji = {
+                'processing': '⏳',
+                'success': '✅',
+                'error': '❌'
+            };
+            return `<div class="step">
+                <span class="step-number">${statusEmoji[status]} 步骤${number}：</span>${text}
+            </div>`;
+        }
+        
+        async function testQwenAudio() {
+            const douyinUrl = document.getElementById('douyinUrl').value;
+            const resultDiv = document.getElementById('result');
+            const testBtn = document.getElementById('testBtn');
+            
+            if (!douyinUrl) {
+                alert('请输入抖音链接');
+                return;
+            }
+            
+            testBtn.disabled = true;
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading">🔄 正在处理，请稍候...</div>';
+            
+            let steps = '';
+            
+            try {
+                // 步骤1：清洗链接
+                steps += showStep(1, '清洗抖音链接', 'processing');
+                resultDiv.innerHTML = steps;
+                
+                // 步骤2：调用API
+                steps = steps.replace('步骤1：</span>清洗抖音链接', '步骤1：</span>清洗抖音链接');
+                steps += showStep(2, '调用TikHub获取视频信息', 'processing');
+                resultDiv.innerHTML = steps;
+                
+                const response = await fetch(`${API_URL}/api/process`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ douyinUrl })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    steps = steps.replace('⏳ 步骤1', '✅ 步骤1');
+                    steps = steps.replace('⏳ 步骤2', '✅ 步骤2');
+                    
+                    // 步骤3：语音识别
+                    if (data.asrUsed) {
+                        steps += showStep(3, '通义千问Audio直接URL识别', 'success');
+                    } else {
+                        steps += showStep(3, '智能生成转写内容', 'success');
+                    }
+                    
+                    // 步骤4：生成脚本
+                    steps += showStep(4, '生成分镜脚本', 'success');
+                    
+                    resultDiv.innerHTML = steps + `
+                        <div class="success">
+                            <h3>✅ ${data.message}</h3>
+                            <p><strong>视频标题：</strong>${data.videoInfo.title}</p>
+                            <p><strong>作者：</strong>${data.videoInfo.author}</p>
+                            <p><strong>时长：</strong>${data.videoInfo.duration}</p>
+                            <p><strong>音频URL：</strong>${data.audioUrl ? '已获取' : '未获取'}</p>
+                            ${data.asrError ? `<p><strong>调试信息：</strong>${data.asrError}</p>` : ''}
+                        </div>
+                        
+                        <h3>📝 转写内容：</h3>
+                        <pre>${data.transcript}</pre>
+                        
+                        <h3>🎬 分镜脚本：</h3>
+                        <pre>${JSON.stringify(data.script, null, 2)}</pre>
+                    `;
+                } else {
+                    steps = steps.replace('⏳ 步骤1', '✅ 步骤1');
+                    steps = steps.replace('⏳ 步骤2', '❌ 步骤2');
+                    
+                    resultDiv.innerHTML = steps + `
+                        <div class="error">
+                            <strong>❌ 处理失败：</strong>${data.error}
+                            ${data.details ? `<pre>${JSON.stringify(data.details, null, 2)}</pre>` : ''}
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ 发生错误：</strong>${error.message}
+                    </div>
+                `;
+            } finally {
+                testBtn.disabled = false;
+            }
+        }
+        
+        // 页面加载时自动聚焦
+        window.onload = function() {
+            document.getElementById('douyinUrl').focus();
+            console.log('通义千问Audio测试页面已加载');
+            console.log('API端点:', API_URL);
+        };
+        
+        // 支持回车键触发测试
+        document.getElementById('douyinUrl').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                testQwenAudio();
+            }
+        });
+    </script>
+</body>
+</html>

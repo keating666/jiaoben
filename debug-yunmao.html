@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 调试云猫API参数</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; text-align: center; }
+        .error-box {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .info-box {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 10px 5px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn:hover { background: #0056b3; }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #218838; }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            font-size: 12px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .test-case {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        code {
+            background: #e9ecef;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 调试云猫API参数</h1>
+        
+        <div class="error-box">
+            <h3>当前错误</h3>
+            <p><strong>错误代码：</strong>2001</p>
+            <p><strong>错误信息：</strong>参数格式错误！</p>
+            <p><strong>URL长度：</strong>200字符（清理后）</p>
+        </div>
+        
+        <div class="info-box">
+            <h3>云猫API要求</h3>
+            <ul>
+                <li><code>language</code>: "chinese" (必填)</li>
+                <li><code>fileUrl</code>: 公网可访问的音视频链接 (必填，≤200字符)</li>
+                <li><code>notifyUrl</code>: 回调地址 (必填)</li>
+                <li><code>resultType</code>: "str" 或 "txt" (可选)</li>
+                <li><code>chat</code>: true/false (可选)</li>
+            </ul>
+        </div>
+        
+        <button class="btn" onclick="testWorkerDebug()">1. 查看Worker发送的参数</button>
+        <button class="btn" onclick="testSimpleUrl()">2. 测试简单的视频URL</button>
+        <button class="btn btn-success" onclick="testYunmaoDirectly()">3. 直接测试云猫API</button>
+        
+        <div id="result" class="result" style="display: none;"></div>
+        
+        <div class="test-case">
+            <h3>测试用例</h3>
+            <p><strong>简短的测试视频URL：</strong></p>
+            <code>https://example.com/test.mp4</code> (26字符)
+            <p>如果这个URL也失败，说明不是长度问题</p>
+        </div>
+    </div>
+    
+    <script>
+        const WORKER_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        
+        function showResult(content) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = typeof content === 'object' ? 
+                JSON.stringify(content, null, 2) : content;
+        }
+        
+        async function testWorkerDebug() {
+            showResult('获取Worker调试信息...');
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/process`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        douyinUrl: 'https://v.douyin.com/67CMClLwb1c/'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                showResult(`Worker响应：
+${JSON.stringify(data, null, 2)}
+
+重点检查：
+1. fileUrl 的格式和内容
+2. 是否有特殊字符需要转义
+3. URL是否真的被截断到200字符`);
+                
+            } catch (error) {
+                showResult('错误：' + error.message);
+            }
+        }
+        
+        async function testSimpleUrl() {
+            showResult('测试简单URL...');
+            
+            // 创建一个测试payload
+            const testPayload = {
+                language: 'chinese',
+                fileUrl: 'https://example.com/test.mp4',
+                notifyUrl: 'https://jiaoben-api.keating8500.workers.dev/api/yunmao/callback',
+                resultType: 'str',
+                chat: false
+            };
+            
+            showResult(`测试参数：
+${JSON.stringify(testPayload, null, 2)}
+
+这是一个简单的测试URL，只有26个字符。
+如果这个也失败，说明问题不在URL长度。
+
+请在Worker中测试这个简单的URL，看是否还报错。`);
+        }
+        
+        async function testYunmaoDirectly() {
+            showResult(`直接测试云猫API的方法：
+
+1. 使用 Postman 或 curl 直接调用：
+
+curl -X POST https://api.guangfan.tech/v1/get-text \\
+  -H "Content-Type: application/json" \\
+  -H "api-key: YOUR_YUNMAO_API_KEY" \\
+  -d '{
+    "language": "chinese",
+    "fileUrl": "https://example.com/test.mp4",
+    "notifyUrl": "https://your-domain.com/callback",
+    "resultType": "str",
+    "chat": false
+  }'
+
+2. 可能的问题：
+- API Key 格式错误（有额外空格？）
+- fileUrl 必须是真实可下载的视频文件
+- notifyUrl 必须是可访问的HTTPS地址
+- JSON格式必须严格正确
+
+3. 建议尝试：
+- 使用云猫提供的示例视频URL测试
+- 检查API Key是否正确（没有多余空格）
+- 确认所有参数类型正确（chat必须是布尔值，不是字符串）`);
+        }
+        
+        // 页面加载时自动运行第一个测试
+        window.onload = testWorkerDebug;
+    </script>
+</body>
+</html>

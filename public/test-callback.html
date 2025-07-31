@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>腾讯云ASR回调版本测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #006eff;
+            border-bottom: 3px solid #006eff;
+            padding-bottom: 10px;
+        }
+        .feature-box {
+            background-color: #e6f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #006eff;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #006eff;
+        }
+        button {
+            background-color: #006eff;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056d3;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            border: 1px solid #e0e0e0;
+        }
+        .loading {
+            text-align: center;
+            color: #006eff;
+        }
+        .error {
+            color: #e74c3c;
+            background-color: #fee;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .success {
+            color: #27ae60;
+            background-color: #eafaf1;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .task-status {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-size: 14px;
+        }
+        .sample-links {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f0f7ff;
+            border-radius: 5px;
+        }
+        .sample-btn {
+            background-color: #17a2b8;
+            font-size: 14px;
+            padding: 8px 15px;
+        }
+        .sample-btn:hover {
+            background-color: #138496;
+        }
+        .progress {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #007bff;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 腾讯云ASR回调版本测试</h1>
+        
+        <div class="feature-box">
+            <h3>✨ 回调模式优势</h3>
+            <ul>
+                <li>✅ 立即返回任务ID，无需等待</li>
+                <li>✅ 避免超时问题（Workers执行时间限制）</li>
+                <li>✅ 支持长音频处理</li>
+                <li>✅ 异步处理，更高效</li>
+            </ul>
+        </div>
+
+        <div class="info">
+            <strong>📋 使用流程：</strong>
+            <ol>
+                <li>提交抖音链接，立即获得任务ID</li>
+                <li>系统自动轮询查询结果（每3秒一次）</li>
+                <li>识别完成后显示转写内容和分镜脚本</li>
+            </ol>
+        </div>
+
+        <div class="input-group">
+            <label for="douyinUrl">抖音分享链接：</label>
+            <input type="text" id="douyinUrl" 
+                   value="https://v.douyin.com/o993PTzBZK4/" 
+                   placeholder="粘贴抖音分享链接">
+        </div>
+
+        <div class="sample-links">
+            <strong>测试链接：</strong><br>
+            <button class="sample-btn" onclick="setUrl('https://v.douyin.com/o993PTzBZK4/')">
+                🎬 测试视频1
+            </button>
+            <button class="sample-btn" onclick="setUrl('https://v.douyin.com/Yq4HqFNgThU/')">
+                🎬 测试视频2
+            </button>
+            <button class="sample-btn" onclick="setUrl('https://v.douyin.com/UT2LtNn/')">
+                🎬 测试视频3
+            </button>
+        </div>
+
+        <button onclick="submitTask()" id="submitBtn">🚀 提交任务</button>
+        <button onclick="clearResult()">🗑️ 清空结果</button>
+
+        <div id="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        let currentTaskId = null;
+        let pollInterval = null;
+        let pollCount = 0;
+        
+        function setUrl(url) {
+            document.getElementById('douyinUrl').value = url;
+        }
+        
+        function clearResult() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'none';
+            resultDiv.innerHTML = '';
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+            currentTaskId = null;
+            pollCount = 0;
+        }
+        
+        async function submitTask() {
+            const douyinUrl = document.getElementById('douyinUrl').value;
+            const resultDiv = document.getElementById('result');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (!douyinUrl) {
+                alert('请输入抖音链接');
+                return;
+            }
+            
+            // 清理之前的轮询
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+            
+            submitBtn.disabled = true;
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading">🔄 正在提交任务...</div>';
+            
+            try {
+                // 提交任务
+                const response = await fetch(`${API_URL}/api/process`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ douyinUrl })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.taskId) {
+                    currentTaskId = data.taskId;
+                    
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h3>✅ 任务提交成功！</h3>
+                            <p><strong>任务ID：</strong>${data.taskId}</p>
+                            <p><strong>视频标题：</strong>${data.videoInfo.title}</p>
+                            <p><strong>作者：</strong>${data.videoInfo.author}</p>
+                            <p><strong>时长：</strong>${data.videoInfo.duration}</p>
+                        </div>
+                        
+                        <div class="task-status" id="taskStatus">
+                            <h4>⏳ 任务状态</h4>
+                            <p>正在处理中，请稍候...</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressBar"></div>
+                            </div>
+                            <p id="pollStatus">开始轮询...</p>
+                        </div>
+                        
+                        <div id="finalResult"></div>
+                    `;
+                    
+                    // 开始轮询结果
+                    pollCount = 0;
+                    startPolling(data.taskId);
+                    
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <strong>❌ 任务提交失败：</strong>${data.error}
+                            ${data.details ? `<pre>${JSON.stringify(data.details, null, 2)}</pre>` : ''}
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ 发生错误：</strong>${error.message}
+                    </div>
+                `;
+            } finally {
+                submitBtn.disabled = false;
+            }
+        }
+        
+        function startPolling(taskId) {
+            const maxPolls = 20; // 最多轮询20次（60秒）
+            
+            pollInterval = setInterval(async () => {
+                pollCount++;
+                
+                const pollStatus = document.getElementById('pollStatus');
+                const progressBar = document.getElementById('progressBar');
+                const finalResult = document.getElementById('finalResult');
+                
+                if (pollStatus) {
+                    pollStatus.textContent = `第 ${pollCount} 次查询（最多 ${maxPolls} 次）...`;
+                }
+                
+                if (progressBar) {
+                    progressBar.style.width = `${(pollCount / maxPolls) * 100}%`;
+                }
+                
+                try {
+                    const response = await fetch(`${API_URL}/api/query-result?taskId=${taskId}`);
+                    const result = await response.json();
+                    
+                    if (result.success && result.status === 'SUCCESS') {
+                        // 任务完成
+                        clearInterval(pollInterval);
+                        pollInterval = null;
+                        
+                        const taskStatus = document.getElementById('taskStatus');
+                        if (taskStatus) {
+                            taskStatus.innerHTML = `
+                                <h4>✅ 识别完成！</h4>
+                                <p>用时约 ${pollCount * 3} 秒</p>
+                            `;
+                        }
+                        
+                        // 解析结果
+                        const sentences = result.result?.Sentences || [];
+                        const transcript = sentences.map(s => s.Text).join(' ');
+                        
+                        if (finalResult) {
+                            finalResult.innerHTML = `
+                                <h3>📝 转写内容：</h3>
+                                <pre>${transcript || '（无识别结果）'}</pre>
+                                
+                                <div class="info" style="margin-top: 20px;">
+                                    <strong>💡 下一步：</strong>
+                                    <br>完整的分镜脚本生成功能需要结合转写结果和通义千问
+                                    <br>这里仅展示了ASR识别结果
+                                </div>
+                            `;
+                        }
+                        
+                    } else if (pollCount >= maxPolls) {
+                        // 超时
+                        clearInterval(pollInterval);
+                        pollInterval = null;
+                        
+                        const taskStatus = document.getElementById('taskStatus');
+                        if (taskStatus) {
+                            taskStatus.innerHTML = `
+                                <h4>⏱️ 查询超时</h4>
+                                <p>已尝试 ${maxPolls} 次，请稍后手动查询</p>
+                                <button onclick="manualQuery('${taskId}')">手动查询</button>
+                            `;
+                        }
+                    }
+                    
+                } catch (error) {
+                    console.error('轮询错误:', error);
+                }
+                
+            }, 3000); // 每3秒查询一次
+        }
+        
+        async function manualQuery(taskId) {
+            const finalResult = document.getElementById('finalResult');
+            
+            try {
+                const response = await fetch(`${API_URL}/api/query-result?taskId=${taskId}`);
+                const result = await response.json();
+                
+                if (result.success && result.result) {
+                    const sentences = result.result?.Sentences || [];
+                    const transcript = sentences.map(s => s.Text).join(' ');
+                    
+                    finalResult.innerHTML = `
+                        <h3>📝 转写内容：</h3>
+                        <pre>${transcript || '（无识别结果）'}</pre>
+                    `;
+                } else {
+                    finalResult.innerHTML = `
+                        <div class="error">
+                            <strong>❌ 查询失败：</strong>${result.message || '未知错误'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                finalResult.innerHTML = `
+                    <div class="error">
+                        <strong>❌ 查询错误：</strong>${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // 页面加载时自动聚焦
+        window.onload = function() {
+            document.getElementById('douyinUrl').focus();
+            console.log('腾讯云ASR回调版本测试页面已加载');
+            console.log('API端点:', API_URL);
+        };
+        
+        // 支持回车键触发测试
+        document.getElementById('douyinUrl').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                submitTask();
+            }
+        });
+    </script>
+</body>
+</html>

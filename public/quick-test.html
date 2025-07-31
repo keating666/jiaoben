@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>快速API测试</title>
+    <style>
+        body {
+            font-family: monospace;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 快速API测试</h1>
+        
+        <h2>1. 测试API健康状态</h2>
+        <button onclick="testHealth()">测试健康检查</button>
+        <pre id="health-result"></pre>
+        
+        <h2>2. 测试抖音处理</h2>
+        <input type="text" id="url" value="https://v.douyin.com/o993PTzBZK4/" style="width: 100%; padding: 8px; margin: 10px 0;">
+        <button onclick="testProcess()">处理抖音链接</button>
+        <pre id="process-result"></pre>
+    </div>
+
+    <script>
+        const API_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        
+        async function testHealth() {
+            const result = document.getElementById('health-result');
+            result.textContent = '测试中...';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/test`);
+                const data = await response.json();
+                result.innerHTML = `<span class="success">✅ API正常运行</span>\n${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                result.innerHTML = `<span class="error">❌ 错误: ${error.message}</span>`;
+            }
+        }
+        
+        async function testProcess() {
+            const url = document.getElementById('url').value;
+            const result = document.getElementById('process-result');
+            result.textContent = '处理中... 这可能需要10-30秒';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/process`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ douyinUrl: url })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    result.innerHTML = `<span class="success">✅ 处理成功</span>\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    result.innerHTML = `<span class="error">❌ 处理失败</span>\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                result.innerHTML = `<span class="error">❌ 错误: ${error.message}</span>`;
+            }
+        }
+        
+        // 页面加载时自动测试健康状态
+        window.onload = () => {
+            testHealth();
+        };
+    </script>
+</body>
+</html>

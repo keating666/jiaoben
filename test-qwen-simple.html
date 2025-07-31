@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通义千问快速测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #ff6a00;
+            text-align: center;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #fff7f0;
+            border-radius: 8px;
+            border: 1px solid #ffd8a8;
+        }
+        .test-section h3 {
+            color: #cc5500;
+            margin-top: 0;
+        }
+        button {
+            background: #ff6a00;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #cc5500;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .result.success {
+            background: #e8f5e9;
+            border: 1px solid #a5d6a7;
+        }
+        .result.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #1565c0;
+        }
+        .step {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .step::before {
+            content: "✓ ";
+            color: #4caf50;
+            font-weight: bold;
+            margin-left: -20px;
+            display: inline-block;
+            width: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 通义千问快速测试</h1>
+        
+        <div class="info-box">
+            <strong>说明：</strong>这是简化版测试，使用模拟的语音识别数据 + 真实的通义千问生成脚本。
+        </div>
+        
+        <div class="test-section">
+            <h3>1. 检查配置状态</h3>
+            <button onclick="checkStatus()">检查状态</button>
+            <div id="statusResult" class="result" style="display:none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>2. 测试通义千问对话</h3>
+            <textarea id="testPrompt" placeholder="输入测试提示词，例如：你好，请介绍一下自己">你好，请介绍一下自己</textarea>
+            <button onclick="testQwen()">测试对话</button>
+            <div id="qwenResult" class="result" style="display:none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>3. 测试完整流程</h3>
+            <input type="text" id="douyinUrl" placeholder="输入抖音链接" value="https://v.douyin.com/67CMClLwb1c/">
+            <button onclick="testFullProcess()">测试完整流程</button>
+            <div id="processSteps" style="margin: 15px 0; display:none;">
+                <div class="step" id="step1">获取视频信息...</div>
+                <div class="step" id="step2">提取音频地址...</div>
+                <div class="step" id="step3">生成模拟对话...</div>
+                <div class="step" id="step4">通义千问生成脚本...</div>
+            </div>
+            <div id="fullResult" class="result" style="display:none;"></div>
+        </div>
+    </div>
+    
+    <script>
+        const WORKER_URL = window.location.hostname === 'localhost' 
+            ? 'https://jiaoben-api.keating8500.workers.dev'
+            : 'https://jiaoben-api.keating8500.workers.dev';
+        
+        async function checkStatus() {
+            const resultDiv = document.getElementById('statusResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = '检查中...';
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/test`);
+                const data = await response.json();
+                
+                if (data.qwen && data.qwen.configured) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = '✅ 通义千问已配置\n\n' + JSON.stringify(data, null, 2);
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '❌ 通义千问未配置\n\n请按照快速开始指南配置 QWEN_API_KEY';
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '错误: ' + error.message;
+            }
+        }
+        
+        async function testQwen() {
+            const resultDiv = document.getElementById('qwenResult');
+            const prompt = document.getElementById('testPrompt').value;
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = '调用通义千问中...';
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/test-qwen`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = '✅ 通义千问响应：\n\n' + data.response;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '❌ 错误：' + (data.error || '未知错误');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '错误: ' + error.message;
+            }
+        }
+        
+        async function testFullProcess() {
+            const resultDiv = document.getElementById('fullResult');
+            const stepsDiv = document.getElementById('processSteps');
+            const douyinUrl = document.getElementById('douyinUrl').value;
+            
+            resultDiv.style.display = 'block';
+            stepsDiv.style.display = 'block';
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = '处理中...';
+            
+            // 重置步骤状态
+            document.querySelectorAll('.step').forEach(step => {
+                step.style.color = '#666';
+            });
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/process-simple`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ douyinUrl })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 标记所有步骤完成
+                    document.querySelectorAll('.step').forEach(step => {
+                        step.style.color = '#4caf50';
+                    });
+                    
+                    resultDiv.className = 'result success';
+                    let output = '✅ 处理成功！\n\n';
+                    
+                    output += '📹 视频信息:\n';
+                    output += JSON.stringify(data.videoInfo, null, 2) + '\n\n';
+                    
+                    output += '🎵 音频URL:\n' + data.audioUrl + '\n\n';
+                    
+                    output += '📝 模拟对话内容:\n' + data.transcript + '\n\n';
+                    
+                    output += '🎬 通义千问生成的分镜脚本:\n';
+                    output += JSON.stringify(data.script, null, 2);
+                    
+                    resultDiv.textContent = output;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '❌ 处理失败:\n' + JSON.stringify(data, null, 2);
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '错误: ' + error.message;
+            }
+        }
+        
+        // 页面加载时自动检查状态
+        window.addEventListener('load', () => {
+            checkStatus();
+        });
+    </script>
+</body>
+</html>

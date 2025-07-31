@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikHub API 诊断工具</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #ff6b6b;
+            text-align: center;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #ff6b6b;
+        }
+        .step-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .result-block {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error-block {
+            background: #fee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success-block {
+            background: #e7f5e7;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        button {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #ff5252;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #ff6b6b;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 TikHub API 诊断工具</h1>
+        
+        <div class="section">
+            <div class="step-title">📋 步骤 1：获取 Worker 日志</div>
+            <p>登录 Cloudflare Dashboard，查看 Worker 的实时日志：</p>
+            <ol>
+                <li>访问 <a href="https://dash.cloudflare.com" target="_blank">Cloudflare Dashboard</a></li>
+                <li>点击 "Workers & Pages"</li>
+                <li>选择您的 Worker: <code>jiaoben-api</code></li>
+                <li>点击 "Logs" 标签页</li>
+                <li>点击 "Begin log stream" 开始实时日志</li>
+            </ol>
+            <div class="code-block">
+日志中应该包含：
+- TikHub response code: XXX
+- 具体的错误信息
+- API 返回的详细内容
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="step-title">🧪 步骤 2：测试链接清洗功能</div>
+            <input type="text" id="testUrl" placeholder="粘贴抖音链接" style="width: 70%; padding: 10px; margin-right: 10px;">
+            <button onclick="testCleaning()">测试清洗</button>
+            <div id="cleanResult" class="result-block" style="display:none;"></div>
+        </div>
+        
+        <div class="section">
+            <div class="step-title">🌐 步骤 3：测试 Worker 连通性</div>
+            <button onclick="testWorker()">测试 Worker</button>
+            <div id="workerResult" class="result-block" style="display:none;"></div>
+        </div>
+        
+        <div class="section">
+            <div class="step-title">🚀 步骤 4：完整流程测试</div>
+            <button onclick="testFullProcess()" id="fullTestBtn">测试完整流程</button>
+            <span id="loading" style="display:none;" class="loading"></span>
+            <div id="fullResult" class="result-block" style="display:none;"></div>
+        </div>
+        
+        <div class="section">
+            <div class="step-title">💡 可能的问题和解决方案</div>
+            <div id="diagnosis" class="error-block">
+                <strong>常见错误代码：</strong><br>
+                • <strong>401/403</strong>: Token 无效或过期<br>
+                • <strong>429</strong>: API 限流，请稍后重试<br>
+                • <strong>500/503</strong>: TikHub 服务暂时不可用<br>
+                • <strong>400</strong>: 链接格式错误或视频不存在<br>
+                • <strong>402</strong>: 账户余额不足<br><br>
+                
+                <strong>检查清单：</strong><br>
+                1. TikHub Token 是否正确配置？<br>
+                2. Token 是否有足够的配额？<br>
+                3. 链接是否有效且视频存在？<br>
+                4. 是否触发了 API 限流？
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="step-title">🔧 临时解决方案</div>
+            <div class="success-block">
+                如果 TikHub 持续不可用，您可以：<br>
+                1. 等待几分钟后重试（可能是限流）<br>
+                2. 检查 TikHub 账户余额<br>
+                3. 联系 TikHub 技术支持<br>
+                4. 使用备用的演示数据
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const WORKER_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        
+        // 测试链接清洗
+        function testCleaning() {
+            const url = document.getElementById('testUrl').value;
+            if (!url) {
+                alert('请输入链接');
+                return;
+            }
+            
+            const cleaned = cleanDouyinUrl(url);
+            const resultDiv = document.getElementById('cleanResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = `原始链接：${url}\n清洗后：${cleaned}`;
+        }
+        
+        // 清洗函数
+        function cleanDouyinUrl(url) {
+            if (!url || typeof url !== 'string') return url;
+            url = url.trim();
+            
+            const patterns = [
+                /https?:\/\/v\.douyin\.com\/[A-Za-z0-9_\-]+/,
+                /https?:\/\/www\.douyin\.com\/video\/\d+/,
+                /https?:\/\/www\.douyin\.com\/discover\?modal_id=\d+/,
+                /https?:\/\/m\.douyin\.com\/share\/video\/\d+/,
+                /https?:\/\/[^\/]*douyin\.com\/[^\s?]*/
+            ];
+            
+            for (const pattern of patterns) {
+                const match = url.match(pattern);
+                if (match) {
+                    let cleanUrl = match[0];
+                    cleanUrl = cleanUrl.replace(/[^\w\/:._-]+$/, '');
+                    if (cleanUrl.includes('v.douyin.com') && !cleanUrl.endsWith('/')) {
+                        cleanUrl += '/';
+                    }
+                    return cleanUrl;
+                }
+            }
+            
+            return url;
+        }
+        
+        // 测试 Worker
+        async function testWorker() {
+            const resultDiv = document.getElementById('workerResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '测试中...';
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/test`);
+                const data = await response.json();
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultDiv.textContent = `错误：${error.message}`;
+            }
+        }
+        
+        // 测试完整流程
+        async function testFullProcess() {
+            const url = document.getElementById('testUrl').value || 'https://v.douyin.com/iYRe8DLP/';
+            const btn = document.getElementById('fullTestBtn');
+            const loading = document.getElementById('loading');
+            const resultDiv = document.getElementById('fullResult');
+            
+            btn.disabled = true;
+            loading.style.display = 'inline-block';
+            resultDiv.style.display = 'none';
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(`${WORKER_URL}/api/process`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ douyinUrl: url })
+                });
+                
+                const data = await response.json();
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+                
+                resultDiv.style.display = 'block';
+                resultDiv.textContent = `耗时：${elapsed}秒\n\n响应内容：\n${JSON.stringify(data, null, 2)}`;
+                
+                // 分析错误
+                if (!data.success && data.error === 'TikHub API error') {
+                    const diagnosis = document.getElementById('diagnosis');
+                    diagnosis.innerHTML += `<br><br><strong style="color: red;">当前错误：</strong><br>`;
+                    if (data.details && data.details.code) {
+                        diagnosis.innerHTML += `TikHub 返回代码：${data.details.code}<br>`;
+                        diagnosis.innerHTML += `错误信息：${data.details.message || '未知'}<br>`;
+                    }
+                }
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.textContent = `请求失败：${error.message}`;
+            } finally {
+                btn.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+        
+        // 页面加载时自动测试 Worker
+        window.addEventListener('load', () => {
+            testWorker();
+        });
+    </script>
+</body>
+</html>

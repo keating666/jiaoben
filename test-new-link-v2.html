@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试新抖音链接 v2</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .test-info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .test-info h3 {
+            margin-top: 0;
+            color: #0066cc;
+        }
+        .url-display {
+            padding: 10px;
+            background: #f0f8ff;
+            border-radius: 5px;
+            margin: 10px 0;
+            word-break: break-all;
+            font-family: monospace;
+        }
+        .test-btn {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 10px 5px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .test-btn:hover {
+            background: #0056b3;
+        }
+        .test-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 600px;
+            overflow-y: auto;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .warning { background: #fff3cd; color: #856404; }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0,0,0,.1);
+            border-radius: 50%;
+            border-top-color: #007bff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .step-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 测试新抖音链接 v2</h1>
+        
+        <div class="test-info">
+            <h3>测试说明</h3>
+            <p>测试新链接：<code>https://v.douyin.com/67CMClLwb1c/</code></p>
+            <p>Worker URL：<code>https://jiaoben-api.keating8500.workers.dev</code></p>
+            <p>测试时间：<span id="testTime"></span></p>
+        </div>
+        
+        <div class="url-display">
+            测试链接：https://v.douyin.com/67CMClLwb1c/
+        </div>
+        
+        <div style="text-align: center;">
+            <button class="test-btn" onclick="testBasic()">1. 测试基本连接</button>
+            <button class="test-btn" onclick="testTikHubDebug()">2. 调试 TikHub API</button>
+            <button class="test-btn" onclick="testFullProcess()">3. 测试完整流程</button>
+            <button class="test-btn" onclick="clearResults()">清空结果</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+    
+    <script>
+        const WORKER_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        const TEST_URL = 'https://v.douyin.com/67CMClLwb1c/';
+        
+        // 更新测试时间
+        document.getElementById('testTime').textContent = new Date().toLocaleString('zh-CN');
+        
+        function showResult(title, content, className = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${className}`;
+            
+            const timestamp = new Date().toLocaleTimeString('zh-CN');
+            let displayContent = `[${timestamp}] ${title}\n\n`;
+            
+            if (typeof content === 'object') {
+                displayContent += JSON.stringify(content, null, 2);
+            } else {
+                displayContent += content;
+            }
+            
+            resultDiv.textContent = displayContent;
+            resultsDiv.appendChild(resultDiv);
+            
+            // 滚动到最新结果
+            resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            showResult('清空结果', '准备就绪，请点击按钮开始测试', 'info');
+        }
+        
+        async function testBasic() {
+            try {
+                showResult('测试基本连接', '正在连接 Worker...', 'info');
+                
+                const response = await fetch(`${WORKER_URL}/api/test`);
+                const data = await response.json();
+                
+                showResult('基本连接测试结果', data, 'success');
+                
+                // 显示区域信息
+                if (data.region) {
+                    showResult('Worker 区域信息', `
+区域代码: ${data.region}
+国家: ${data.country}
+城市: ${data.city || '未知'}
+时间: ${data.timestamp}`, 'info');
+                }
+            } catch (error) {
+                showResult('基本连接测试失败', `错误: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testTikHubDebug() {
+            try {
+                showResult('TikHub API 测试', `正在测试链接: ${TEST_URL}`, 'info');
+                
+                const response = await fetch(`${WORKER_URL}/api/tikhub/test`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        douyinUrl: TEST_URL
+                    })
+                });
+                
+                if (!response.ok) {
+                    const text = await response.text();
+                    showResult('TikHub API 错误', `HTTP ${response.status}: ${text}`, 'error');
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('TikHub API 成功', data, 'success');
+                    
+                    // 显示找到的 URL
+                    if (data.possibleVideoUrls && data.possibleVideoUrls.length > 0) {
+                        let urlList = '找到的视频 URL:\n\n';
+                        data.possibleVideoUrls.forEach((item, index) => {
+                            urlList += `${index + 1}. 路径: ${item.path}\n   URL: ${item.url}\n\n`;
+                        });
+                        showResult('视频 URL 列表', urlList, 'success');
+                    }
+                } else {
+                    showResult('TikHub API 失败', data, 'error');
+                }
+            } catch (error) {
+                showResult('TikHub API 测试异常', `错误: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testFullProcess() {
+            try {
+                showResult('完整流程测试', '开始测试完整的视频处理流程...', 'info');
+                
+                // 步骤 1: 调用处理接口
+                showResult('步骤 1', '调用视频处理接口...', 'info');
+                
+                const response = await fetch(`${WORKER_URL}/api/process`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        douyinUrl: TEST_URL
+                    })
+                });
+                
+                if (!response.ok) {
+                    const text = await response.text();
+                    showResult('处理失败', `HTTP ${response.status}: ${text}`, 'error');
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('处理成功', data, 'success');
+                    
+                    // 显示详细信息
+                    if (data.videoUrl) {
+                        showResult('视频 URL', data.videoUrl, 'success');
+                    }
+                    if (data.taskId) {
+                        showResult('云猫任务 ID', data.taskId, 'success');
+                    }
+                } else {
+                    showResult('处理失败', data, 'error');
+                    
+                    // 显示失败原因
+                    if (data.step) {
+                        showResult('失败步骤', `在 ${data.step} 步骤失败`, 'warning');
+                    }
+                }
+            } catch (error) {
+                showResult('完整流程测试异常', `错误: ${error.message}`, 'error');
+            }
+        }
+        
+        // 页面加载时显示准备状态
+        window.onload = () => {
+            clearResults();
+        };
+    </script>
+</body>
+</html>

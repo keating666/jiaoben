@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>检查ASR配置状态</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .result {
+            background: #f0f0f0;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .error {
+            background: #fee;
+            color: #c00;
+        }
+        .success {
+            background: #efe;
+            color: #060;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            display: block;
+            margin: 20px auto;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 检查ASR配置状态</h1>
+        
+        <button onclick="checkConfig()">检查配置</button>
+        
+        <div id="result" class="result" style="display:none;"></div>
+        
+        <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 5px;">
+            <h3>问题分析：</h3>
+            <p>从您的测试结果看，系统返回了"模拟"的转写内容，而不是真实的语音识别结果。</p>
+            <p>可能的原因：</p>
+            <ol>
+                <li><strong>环境变量未配置</strong>：Cloudflare Worker 中的阿里云密钥可能没有正确设置</li>
+                <li><strong>ASR 调用失败</strong>：Token 获取或 ASR API 调用出错，系统自动降级到模拟模式</li>
+                <li><strong>音频 URL 问题</strong>：抖音的音频 URL 可能无法被阿里云 ASR 直接访问</li>
+            </ol>
+        </div>
+    </div>
+    
+    <script>
+        const WORKER_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        
+        async function checkConfig() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '检查中...';
+            
+            try {
+                // 1. 检查 Worker 配置
+                const testResponse = await fetch(`${WORKER_URL}/api/test`);
+                const testData = await testResponse.json();
+                
+                let result = '=== Worker 配置状态 ===\n';
+                result += JSON.stringify(testData, null, 2);
+                result += '\n\n=== ASR 配置分析 ===\n';
+                
+                if (testData.features && testData.features.realASR) {
+                    result += '✅ ASR 环境变量已配置\n';
+                    resultDiv.className = 'result success';
+                } else {
+                    result += '❌ ASR 环境变量未配置！\n';
+                    result += '需要在 Cloudflare Worker 中设置：\n';
+                    result += '- ALIYUN_ACCESS_KEY_ID\n';
+                    result += '- ALIYUN_ACCESS_KEY_SECRET\n';
+                    result += '- ALIYUN_APP_KEY\n';
+                    resultDiv.className = 'result error';
+                }
+                
+                // 2. 测试一个简单的链接
+                result += '\n\n=== 测试处理流程 ===\n';
+                result += '测试链接：https://v.douyin.com/iYRe8DLP/\n';
+                
+                const processResponse = await fetch(`${WORKER_URL}/api/process`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ douyinUrl: 'https://v.douyin.com/iYRe8DLP/' })
+                });
+                
+                const processData = await processResponse.json();
+                
+                if (processData.asrUsed) {
+                    result += '✅ 使用了真实 ASR\n';
+                } else {
+                    result += '❌ 使用了模拟转写\n';
+                    result += '消息：' + processData.message + '\n';
+                }
+                
+                result += '\n转写内容预览：\n';
+                result += (processData.transcript || '').substring(0, 200) + '...\n';
+                
+                resultDiv.textContent = result;
+                
+                // 3. 提供解决方案
+                if (!testData.features?.realASR || !processData.asrUsed) {
+                    result += '\n\n=== 解决方案 ===\n';
+                    result += '1. 登录 Cloudflare Dashboard\n';
+                    result += '2. 进入 Workers & Pages → jiaoben-api → Settings → Variables\n';
+                    result += '3. 添加以下环境变量：\n';
+                    result += '   - ALIYUN_ACCESS_KEY_ID: 您的阿里云 AccessKey ID\n';
+                    result += '   - ALIYUN_ACCESS_KEY_SECRET: 您的阿里云 AccessKey Secret\n';
+                    result += '   - ALIYUN_APP_KEY: 您的阿里云 ASR 应用 AppKey\n';
+                    result += '4. 保存并重新部署 Worker\n';
+                    resultDiv.textContent = result;
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '检查失败：' + error.message;
+            }
+        }
+        
+        // 页面加载时自动检查
+        window.addEventListener('load', checkConfig);
+    </script>
+</body>
+</html>

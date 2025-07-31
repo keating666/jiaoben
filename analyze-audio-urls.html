@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分析音频 URL - 查找人声音频</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; text-align: center; }
+        h2 { color: #007bff; margin-top: 30px; }
+        .info-box {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .audio-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        .audio-item.voice {
+            background: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .audio-item.music {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+        }
+        .url-text {
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            color: #495057;
+            margin: 5px 0;
+        }
+        .test-btn {
+            background: #28a745;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px 0;
+        }
+        .test-btn:hover { background: #218838; }
+        audio {
+            width: 100%;
+            margin: 10px 0;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 分析抖音视频中的音频 URL</h1>
+        
+        <div class="info-box">
+            <h3>💡 分析说明</h3>
+            <p>抖音视频通常包含两种音频：</p>
+            <ul>
+                <li><strong>背景音乐 (music)</strong>：通常在 `music.play_url` 路径下</li>
+                <li><strong>原声音频 (original sound)</strong>：包含人声对话，可能在其他路径</li>
+            </ul>
+            <p>我们需要找到包含人声的音频文件，而不是纯音乐。</p>
+        </div>
+
+        <h2>1. 测试已知的音频 URL</h2>
+        
+        <div class="audio-item music">
+            <h4>🎵 背景音乐 URL (可能只是 BGM)</h4>
+            <div class="url-text">https://sf5-hl-cdn-tos.douyinstatic.com/obj/ies-music/7511278077888957195.mp3</div>
+            <audio controls id="music-audio">
+                <source src="https://sf5-hl-cdn-tos.douyinstatic.com/obj/ies-music/7511278077888957195.mp3" type="audio/mpeg">
+            </audio>
+            <button class="test-btn" onclick="testAudioWithYunmao('music')">用云猫测试这个音频</button>
+        </div>
+
+        <h2>2. 深度搜索音频 URL</h2>
+        <button class="test-btn" onclick="deepSearchAudio()">深度搜索所有音频 URL</button>
+        
+        <div id="searchResults"></div>
+        
+        <h2>3. 测试结果</h2>
+        <div id="testResults" class="result" style="display: none;"></div>
+    </div>
+    
+    <script>
+        const WORKER_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        const TEST_URL = 'https://v.douyin.com/67CMClLwb1c/';
+        
+        function showResult(content, elementId = 'testResults') {
+            const resultDiv = document.getElementById(elementId);
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = typeof content === 'object' ? 
+                JSON.stringify(content, null, 2) : content;
+        }
+        
+        async function deepSearchAudio() {
+            showResult('正在深度搜索音频 URL...', 'searchResults');
+            
+            try {
+                // 获取完整的 TikHub 响应
+                const response = await fetch(`${WORKER_URL}/api/tikhub/test`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ douyinUrl: TEST_URL })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.allUrls) {
+                    // 筛选可能的音频 URL
+                    const audioUrls = data.allUrls.filter(item => {
+                        const url = item.url.toLowerCase();
+                        return url.includes('.mp3') || 
+                               url.includes('.m4a') || 
+                               url.includes('.aac') ||
+                               url.includes('audio') ||
+                               url.includes('sound') ||
+                               (url.includes('music') && !item.path.includes('music')); // 非music路径下的音频
+                    });
+                    
+                    let html = '<h3>找到的音频 URL：</h3>';
+                    
+                    if (audioUrls.length === 0) {
+                        html += '<p>没有找到额外的音频 URL，可能原声音频嵌入在视频文件中。</p>';
+                        html += '<p>建议：直接使用视频 URL 进行音频提取。</p>';
+                    } else {
+                        audioUrls.forEach((item, index) => {
+                            const isMusic = item.path.includes('music');
+                            html += `
+                                <div class="audio-item ${isMusic ? 'music' : 'voice'}">
+                                    <h4>${isMusic ? '🎵' : '🎤'} 音频 ${index + 1}</h4>
+                                    <p><strong>路径：</strong>${item.path}</p>
+                                    <div class="url-text">${item.url}</div>
+                                </div>
+                            `;
+                        });
+                    }
+                    
+                    document.getElementById('searchResults').innerHTML = html;
+                    
+                    // 分析视频文件本身
+                    showResult(`
+分析结果：
+1. 找到 ${audioUrls.length} 个音频 URL
+2. 其中音乐文件：${audioUrls.filter(u => u.path.includes('music')).length} 个
+3. 其他音频文件：${audioUrls.filter(u => !u.path.includes('music')).length} 个
+
+建议：
+如果没有找到独立的人声音频文件，说明人声音频是嵌入在视频文件中的。
+这种情况下，需要：
+1. 使用视频 URL 而不是音乐 URL
+2. 云猫会自动从视频中提取音频进行语音识别
+                    `);
+                } else {
+                    showResult('获取数据失败：' + JSON.stringify(data), 'searchResults');
+                }
+            } catch (error) {
+                showResult('错误：' + error.message, 'searchResults');
+            }
+        }
+        
+        async function testAudioWithYunmao(type) {
+            const audioUrl = type === 'music' ? 
+                'https://sf5-hl-cdn-tos.douyinstatic.com/obj/ies-music/7511278077888957195.mp3' :
+                document.getElementById(`${type}-url`).textContent;
+                
+            showResult(`正在测试 ${type} 音频...`);
+            
+            try {
+                // 直接调用云猫测试这个音频
+                const response = await fetch(`${WORKER_URL}/api/yunmao/test-audio`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ audioUrl })
+                });
+                
+                const data = await response.json();
+                showResult(data);
+            } catch (error) {
+                showResult('错误：' + error.message);
+            }
+        }
+        
+        // 页面加载时说明
+        window.onload = () => {
+            showResult(`
+提示：
+1. 点击播放按钮试听音频内容
+2. 如果听到的是纯音乐，那么人声可能在视频文件中
+3. 如果听到人声对话，那么可以直接使用这个音频文件
+            `, 'testResults');
+        };
+    </script>
+</body>
+</html>

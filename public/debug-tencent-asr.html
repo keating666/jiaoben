@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>腾讯云ASR调试工具</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #006eff;
+            border-bottom: 3px solid #006eff;
+            padding-bottom: 10px;
+        }
+        .debug-section {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            border: 1px solid #e0e0e0;
+        }
+        button {
+            background-color: #006eff;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056d3;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-size: 14px;
+        }
+        .error {
+            color: #e74c3c;
+            background-color: #fee;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .success {
+            color: #27ae60;
+            background-color: #eafaf1;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .loading {
+            text-align: center;
+            color: #006eff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 腾讯云ASR调试工具</h1>
+        
+        <div class="info">
+            <strong>📋 调试步骤：</strong>
+            <ol>
+                <li>先测试API健康状态，确认环境变量配置</li>
+                <li>测试ASR连接，验证腾讯云密钥是否正确</li>
+                <li>查看Worker日志获取详细错误信息</li>
+            </ol>
+        </div>
+
+        <div class="debug-section">
+            <h2>1. API健康检查</h2>
+            <button onclick="testHealth()" id="healthBtn">测试API状态</button>
+            <div id="health-result"></div>
+        </div>
+
+        <div class="debug-section">
+            <h2>2. 腾讯云ASR连接测试</h2>
+            <button onclick="testASRConnection()" id="asrBtn">测试ASR连接</button>
+            <div id="asr-result"></div>
+        </div>
+
+        <div class="debug-section">
+            <h2>3. 查看Worker日志</h2>
+            <p>在Cloudflare Dashboard中查看实时日志：</p>
+            <code>wrangler tail</code>
+            <p>或访问：<a href="https://dash.cloudflare.com" target="_blank">Cloudflare Dashboard</a> → Workers → jiaoben-api → Logs</p>
+        </div>
+
+        <div class="debug-section">
+            <h2>4. 环境变量配置指南</h2>
+            <pre>必需的环境变量：
+- TENCENT_SECRET_ID: 腾讯云SecretId
+- TENCENT_SECRET_KEY: 腾讯云SecretKey
+- TONGYI_API_KEY: 通义千问API密钥
+- TIKHUB_API_TOKEN: TikHub API令牌
+
+获取腾讯云密钥：
+1. 登录 https://console.cloud.tencent.com/
+2. 访问 https://console.cloud.tencent.com/cam/capi
+3. 创建或查看API密钥</pre>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        
+        async function testHealth() {
+            const resultDiv = document.getElementById('health-result');
+            const healthBtn = document.getElementById('healthBtn');
+            
+            healthBtn.disabled = true;
+            resultDiv.innerHTML = '<div class="loading">🔄 测试中...</div>';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/test`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <div class="${data.success ? 'success' : 'error'}">
+                        <strong>${data.success ? '✅ API正常' : '❌ API异常'}</strong>
+                    </div>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                
+                // 检查各项配置
+                if (data.features) {
+                    const missingConfigs = [];
+                    if (!data.features.tencentASR) missingConfigs.push('腾讯云ASR');
+                    if (!data.features.qianwen) missingConfigs.push('通义千问');
+                    if (!data.features.tikhub) missingConfigs.push('TikHub');
+                    
+                    if (missingConfigs.length > 0) {
+                        resultDiv.innerHTML += `
+                            <div class="error">
+                                <strong>⚠️ 缺少配置：</strong>${missingConfigs.join(', ')}
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ 测试失败：</strong>${error.message}
+                    </div>
+                `;
+            } finally {
+                healthBtn.disabled = false;
+            }
+        }
+        
+        async function testASRConnection() {
+            const resultDiv = document.getElementById('asr-result');
+            const asrBtn = document.getElementById('asrBtn');
+            
+            asrBtn.disabled = true;
+            resultDiv.innerHTML = '<div class="loading">🔄 测试腾讯云ASR连接...</div>';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/debug-asr`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✅ ${data.message}</strong>
+                            <br>TaskId: ${data.taskId}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <strong>❌ ${data.message || data.error}</strong>
+                            ${data.hint ? `<br>提示：${data.hint}` : ''}
+                        </div>
+                    `;
+                }
+                
+                resultDiv.innerHTML += `
+                    <div class="info" style="margin-top: 10px;">
+                        <strong>💡 下一步：</strong>
+                        <br>1. 如果成功，说明腾讯云配置正确
+                        <br>2. 如果失败，请查看Worker日志获取详细错误
+                        <br>3. 使用命令 <code>wrangler tail</code> 查看实时日志
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ 测试失败：</strong>${error.message}
+                    </div>
+                `;
+            } finally {
+                asrBtn.disabled = false;
+            }
+        }
+        
+        // 页面加载时自动执行健康检查
+        window.onload = function() {
+            testHealth();
+        };
+    </script>
+</body>
+</html>

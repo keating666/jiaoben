@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikHub API 测试工具</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .input-group {
+            margin: 20px 0;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .input-group input, .input-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .input-group textarea {
+            height: 100px;
+            font-family: monospace;
+        }
+        .test-btn {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .test-btn:hover {
+            background: #0056b3;
+        }
+        .test-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+        .warning { color: #ffc107; }
+        .test-links {
+            margin: 15px 0;
+            padding: 15px;
+            background: #e7f3ff;
+            border-radius: 5px;
+        }
+        .test-links h3 {
+            margin-top: 0;
+            color: #0066cc;
+        }
+        .link-item {
+            margin: 5px 0;
+            padding: 5px;
+            background: white;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .link-item:hover {
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 TikHub API 测试工具</h1>
+        
+        <div class="test-links">
+            <h3>测试链接（点击使用）</h3>
+            <div class="link-item" onclick="useTestLink('https://v.douyin.com/iRyBWfGS/')">
+                旧链接: https://v.douyin.com/iRyBWfGS/
+            </div>
+            <div class="link-item" onclick="useTestLink('https://www.douyin.com/video/7123456789')">
+                长链接示例: https://www.douyin.com/video/7123456789
+            </div>
+        </div>
+        
+        <div class="input-group">
+            <label for="douyinUrl">抖音链接</label>
+            <input type="text" id="douyinUrl" placeholder="粘贴抖音分享链接" value="https://v.douyin.com/iRyBWfGS/">
+        </div>
+        
+        <div class="input-group">
+            <label for="apiToken">TikHub API Token</label>
+            <textarea id="apiToken" placeholder="粘贴您的 TikHub API Token">458PVEdr/V4XhgcW+jKIwVEtwVU0hqzJsqpqnQjCnm1B6G0tVuRW/FrvMg==</textarea>
+        </div>
+        
+        <div>
+            <button class="test-btn" onclick="testDirectAPI()">直接测试 TikHub API</button>
+            <button class="test-btn" onclick="testWorkerAPI()">通过 Worker 测试</button>
+            <button class="test-btn" onclick="testDifferentEndpoint()">测试其他端点</button>
+        </div>
+        
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+    
+    <script>
+        const WORKER_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        
+        function useTestLink(url) {
+            document.getElementById('douyinUrl').value = url;
+        }
+        
+        function showResult(content, className = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = `result ${className}`;
+            resultDiv.textContent = typeof content === 'object' ? 
+                JSON.stringify(content, null, 2) : content;
+        }
+        
+        // 直接测试 TikHub API（通过 CORS 代理）
+        async function testDirectAPI() {
+            const douyinUrl = document.getElementById('douyinUrl').value;
+            const apiToken = document.getElementById('apiToken').value;
+            
+            if (!douyinUrl || !apiToken) {
+                showResult('请输入抖音链接和 API Token', 'error');
+                return;
+            }
+            
+            showResult('直接测试 TikHub API...', 'info');
+            
+            // 由于 CORS 限制，我们需要通过代理
+            // 这里使用公共 CORS 代理进行测试
+            const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+            const apiUrl = `https://api.tikhub.io/api/v1/douyin/web/fetch_one_video_by_share_url?share_url=${encodeURIComponent(douyinUrl)}`;
+            
+            try {
+                const response = await fetch(proxyUrl + apiUrl, {
+                    headers: {
+                        'Authorization': `Bearer ${apiToken}`,
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                showResult({
+                    status: response.status,
+                    headers: Object.fromEntries(response.headers.entries()),
+                    body: data
+                }, response.status === 200 ? 'success' : 'error');
+            } catch (error) {
+                showResult(`CORS 错误，请使用 Worker 测试\n${error.message}`, 'warning');
+            }
+        }
+        
+        // 通过 Worker 测试
+        async function testWorkerAPI() {
+            const douyinUrl = document.getElementById('douyinUrl').value;
+            
+            if (!douyinUrl) {
+                showResult('请输入抖音链接', 'error');
+                return;
+            }
+            
+            showResult('通过 Cloudflare Worker 测试...', 'info');
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/tikhub/debug`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ douyinUrl })
+                });
+                
+                const data = await response.json();
+                showResult(data, data.success ? 'success' : 'error');
+            } catch (error) {
+                showResult(`错误: ${error.message}`, 'error');
+            }
+        }
+        
+        // 测试不同的 TikHub 端点
+        async function testDifferentEndpoint() {
+            showResult(`TikHub API 端点：
+
+1. Web 端点（当前使用）:
+   /api/v1/douyin/web/fetch_one_video_by_share_url
+
+2. App 端点（可能需要不同参数）:
+   /api/v1/douyin/app/v3/fetch_one_video
+
+3. 其他可能的端点:
+   - /api/v1/douyin/web/fetch_video_info
+   - /api/v1/douyin/app/video/detail
+
+建议：
+- 检查 TikHub 最新文档
+- 尝试使用最新的抖音链接
+- 确认 API Token 是否有效`, 'info');
+        }
+    </script>
+</body>
+</html>

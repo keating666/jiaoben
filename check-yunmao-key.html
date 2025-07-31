@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>检查云猫 API Key 配置</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; text-align: center; }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .test-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        .test-btn:hover { background: #0056b3; }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        code {
+            background: #e9ecef;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 检查云猫 API Key 配置</h1>
+        
+        <div class="warning">
+            <h3>⚠️ 可能的问题</h3>
+            <p>云猫返回"缺少参数"错误，可能是因为：</p>
+            <ol>
+                <li><strong>API Key 未配置</strong>：在 Cloudflare Worker 环境变量中没有设置 <code>YUNMAO_API_KEY</code></li>
+                <li><strong>API Key 格式错误</strong>：Key 可能包含额外的空格或换行符</li>
+                <li><strong>API 端点变更</strong>：云猫可能更新了 API 格式</li>
+            </ol>
+        </div>
+        
+        <button class="test-btn" onclick="testDirectly()">直接测试云猫 API（使用已知工作的参数）</button>
+        <button class="test-btn" onclick="checkWorkerDebug()">检查 Worker 调试信息</button>
+        
+        <div id="result" class="result" style="display: none;"></div>
+        
+        <div style="margin-top: 30px; padding: 20px; background: #e7f3ff; border-radius: 5px;">
+            <h3>📝 解决步骤</h3>
+            <ol>
+                <li>登录 <a href="https://dash.cloudflare.com" target="_blank">Cloudflare Dashboard</a></li>
+                <li>找到你的 Worker: <strong>jiaoben-api</strong></li>
+                <li>点击 "Settings" → "Variables"</li>
+                <li>确认 <code>YUNMAO_API_KEY</code> 已正确设置</li>
+                <li>部署 <code>cloudflare-worker-fix.js</code> 的内容</li>
+            </ol>
+        </div>
+    </div>
+    
+    <script>
+        const WORKER_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        const TEST_VIDEO_URL = 'https://v5-dy-o-abtest.zjcdn.com/6bc62631769cedcea4ccba47e40d1415/6888be7c/video/tos/cn/tos-cn-ve-15/o4gJMq9ffEbIaAL2oCiEfEyQN9DaAnew92gGI1/';
+        
+        function showResult(content, isSuccess = false) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = `result ${isSuccess ? 'success' : 'error'}`;
+            resultDiv.textContent = typeof content === 'object' ? 
+                JSON.stringify(content, null, 2) : content;
+        }
+        
+        async function testDirectly() {
+            showResult('正在直接测试云猫 API...');
+            
+            // 这是一个已知工作的视频URL
+            const testPayload = {
+                language: 'chinese',
+                fileUrl: TEST_VIDEO_URL,
+                resultType: 'str',
+                chat: false
+            };
+            
+            showResult(`测试参数：
+${JSON.stringify(testPayload, null, 2)}
+
+注意：这个测试需要有效的 API Key
+如果你有云猫 API Key，可以在浏览器控制台运行：
+
+fetch('https://api.guangfan.tech/v1/get-text', {
+  method: 'POST',
+  headers: {
+    'api-key': '你的API_KEY',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(${JSON.stringify(testPayload)})
+}).then(r => r.json()).then(console.log)`);
+        }
+        
+        async function checkWorkerDebug() {
+            showResult('检查 Worker 调试信息...');
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/process`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        douyinUrl: 'https://v.douyin.com/67CMClLwb1c/'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.debug) {
+                    showResult(`调试信息：
+API Key 是否存在: ${data.debug.apiKeyPresent ? '✅ 是' : '❌ 否'}
+发送的参数: ${JSON.stringify(data.debug.payloadSent, null, 2)}
+
+云猫响应: ${JSON.stringify(data.yunmaoResponse, null, 2)}`, !data.success);
+                } else {
+                    showResult(data, !data.success);
+                }
+            } catch (error) {
+                showResult('错误：' + error.message, false);
+            }
+        }
+    </script>
+</body>
+</html>

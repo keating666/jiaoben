@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>腾讯云ASR测试 - URL直传版本</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #006eff;
+            border-bottom: 3px solid #006eff;
+            padding-bottom: 10px;
+        }
+        .feature-box {
+            background-color: #e6f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #006eff;
+        }
+        .architecture {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-family: monospace;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #006eff;
+        }
+        button {
+            background-color: #006eff;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056d3;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            border: 1px solid #e0e0e0;
+        }
+        .loading {
+            text-align: center;
+            color: #006eff;
+        }
+        .error {
+            color: #e74c3c;
+            background-color: #fee;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .success {
+            color: #27ae60;
+            background-color: #eafaf1;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .sample-links {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f0f7ff;
+            border-radius: 5px;
+        }
+        .sample-btn {
+            background-color: #17a2b8;
+            font-size: 14px;
+            padding: 8px 15px;
+        }
+        .sample-btn:hover {
+            background-color: #138496;
+        }
+        .step {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-left: 3px solid #006eff;
+            border-radius: 3px;
+        }
+        .step-number {
+            font-weight: bold;
+            color: #006eff;
+        }
+        pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-size: 14px;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 腾讯云ASR测试 - URL直传版本</h1>
+        
+        <div class="feature-box">
+            <h3>✨ 新架构优势</h3>
+            <ul>
+                <li>✅ 音频URL直传腾讯云，无需本地下载</li>
+                <li>✅ 异步处理，支持长音频</li>
+                <li>✅ 专业ASR引擎，识别准确率高</li>
+                <li>✅ 支持普通话+方言识别</li>
+                <li>✅ 完全避免内存和编码问题</li>
+            </ul>
+        </div>
+
+        <div class="architecture">
+            <strong>📐 新架构流程：</strong><br>
+            TikHub获取抖音视频 → 提取音频URL → 腾讯云ASR（URL直传） → 轮询识别结果 → 通义千问生成脚本
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ 配置提醒：</strong>请确保已在 Cloudflare Dashboard 配置以下环境变量：
+            <ul>
+                <li>TENCENT_SECRET_ID - 腾讯云密钥ID</li>
+                <li>TENCENT_SECRET_KEY - 腾讯云密钥</li>
+                <li>TONGYI_API_KEY - 通义千问API密钥</li>
+                <li>TIKHUB_API_TOKEN - TikHub API令牌</li>
+            </ul>
+        </div>
+
+        <div class="input-group">
+            <label for="douyinUrl">抖音分享链接：</label>
+            <input type="text" id="douyinUrl" 
+                   value="https://v.douyin.com/o993PTzBZK4/" 
+                   placeholder="粘贴抖音分享链接">
+        </div>
+
+        <div class="sample-links">
+            <strong>测试链接：</strong><br>
+            <button class="sample-btn" onclick="setUrl('https://v.douyin.com/o993PTzBZK4/')">
+                🎬 测试视频1
+            </button>
+            <button class="sample-btn" onclick="setUrl('https://v.douyin.com/Yq4HqFNgThU/')">
+                🎬 测试视频2
+            </button>
+            <button class="sample-btn" onclick="setUrl('https://v.douyin.com/UT2LtNn/')">
+                🎬 测试视频3
+            </button>
+        </div>
+
+        <button onclick="testTencentASR()" id="testBtn">🚀 开始测试</button>
+        <button onclick="testAPI()" id="apiBtn">🔧 测试API状态</button>
+        <button onclick="clearResult()">🗑️ 清空结果</button>
+
+        <div id="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        
+        function setUrl(url) {
+            document.getElementById('douyinUrl').value = url;
+        }
+        
+        function clearResult() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'none';
+            resultDiv.innerHTML = '';
+        }
+        
+        function showStep(number, text, status = 'processing') {
+            const statusEmoji = {
+                'processing': '⏳',
+                'success': '✅',
+                'error': '❌'
+            };
+            return `<div class="step">
+                <span class="step-number">${statusEmoji[status]} 步骤${number}：</span>${text}
+            </div>`;
+        }
+        
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            const apiBtn = document.getElementById('apiBtn');
+            
+            apiBtn.disabled = true;
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading">🔄 测试API状态...</div>';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/test`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <h3>API状态：</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ 测试失败：</strong>${error.message}
+                    </div>
+                `;
+            } finally {
+                apiBtn.disabled = false;
+            }
+        }
+        
+        async function testTencentASR() {
+            const douyinUrl = document.getElementById('douyinUrl').value;
+            const resultDiv = document.getElementById('result');
+            const testBtn = document.getElementById('testBtn');
+            
+            if (!douyinUrl) {
+                alert('请输入抖音链接');
+                return;
+            }
+            
+            testBtn.disabled = true;
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading">🔄 正在处理，请稍候...</div>';
+            
+            let steps = '';
+            
+            try {
+                // 显示处理步骤
+                steps += showStep(1, '清洗抖音链接', 'processing');
+                resultDiv.innerHTML = steps;
+                
+                steps = steps.replace('⏳ 步骤1', '✅ 步骤1');
+                steps += showStep(2, '调用TikHub获取视频信息', 'processing');
+                resultDiv.innerHTML = steps;
+                
+                steps = steps.replace('⏳ 步骤2', '✅ 步骤2');
+                steps += showStep(3, '创建腾讯云ASR任务（URL直传）', 'processing');
+                resultDiv.innerHTML = steps;
+                
+                steps = steps.replace('⏳ 步骤3', '✅ 步骤3');
+                steps += showStep(4, '轮询ASR识别结果（最多30秒）', 'processing');
+                resultDiv.innerHTML = steps + '<div class="loading">⏳ 正在等待ASR结果，请耐心等待...</div>';
+                
+                // 调用API
+                const response = await fetch(`${API_URL}/api/process`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ douyinUrl })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    steps = steps.replace('⏳ 步骤4', '✅ 步骤4');
+                    steps += showStep(5, '生成分镜脚本', 'success');
+                    
+                    resultDiv.innerHTML = steps + `
+                        <div class="success">
+                            <h3>✅ ${data.message}</h3>
+                            <p><strong>视频标题：</strong>${data.videoInfo.title}</p>
+                            <p><strong>作者：</strong>${data.videoInfo.author}</p>
+                            <p><strong>时长：</strong>${data.videoInfo.duration}</p>
+                            <p><strong>音频URL：</strong>${data.audioUrl ? '已获取' : '未获取'}</p>
+                            <p><strong>ASR任务ID：</strong>${data.asrTaskId || '无'}</p>
+                        </div>
+                        
+                        <h3>📝 转写内容：</h3>
+                        <pre>${data.transcript}</pre>
+                        
+                        <h3>🎬 分镜脚本：</h3>
+                        <pre>${JSON.stringify(data.script, null, 2)}</pre>
+                    `;
+                } else {
+                    steps = steps.replace(/⏳ 步骤\d/g, (match) => match.replace('⏳', '❌'));
+                    
+                    resultDiv.innerHTML = steps + `
+                        <div class="error">
+                            <strong>❌ 处理失败：</strong>${data.error}
+                            ${data.details ? `<pre>${JSON.stringify(data.details, null, 2)}</pre>` : ''}
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ 发生错误：</strong>${error.message}
+                    </div>
+                `;
+            } finally {
+                testBtn.disabled = false;
+            }
+        }
+        
+        // 页面加载时自动聚焦
+        window.onload = function() {
+            document.getElementById('douyinUrl').focus();
+            console.log('腾讯云ASR测试页面已加载');
+            console.log('API端点:', API_URL);
+        };
+        
+        // 支持回车键触发测试
+        document.getElementById('douyinUrl').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                testTencentASR();
+            }
+        });
+    </script>
+</body>
+</html>

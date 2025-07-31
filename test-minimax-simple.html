@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiniMax 简化测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 MiniMax API 简化测试</h1>
+        
+        <div class="test-section">
+            <h3>1. 测试 Worker 状态</h3>
+            <button onclick="testWorkerStatus()">测试 Worker</button>
+            <div id="workerResult" class="result" style="display:none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>2. 测试文本生成（跳过语音识别）</h3>
+            <button onclick="testTextGeneration()">测试文本生成</button>
+            <div id="textResult" class="result" style="display:none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>3. 完整流程（使用模拟数据）</h3>
+            <input type="text" id="douyinUrl" placeholder="输入抖音链接" value="https://v.douyin.com/67CMClLwb1c/" style="width: 60%; padding: 8px;">
+            <button onclick="testFullProcess()">测试完整流程</button>
+            <div id="fullResult" class="result" style="display:none;"></div>
+        </div>
+    </div>
+    
+    <script>
+        const WORKER_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        
+        async function testWorkerStatus() {
+            const resultDiv = document.getElementById('workerResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = '测试中...';
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/test`);
+                const data = await response.json();
+                resultDiv.className = 'result';
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '错误: ' + error.message;
+            }
+        }
+        
+        async function testTextGeneration() {
+            const resultDiv = document.getElementById('textResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = '测试 MiniMax 文本生成...';
+            
+            try {
+                // 直接调用 MiniMax 文本生成 API
+                const response = await fetch(`${WORKER_URL}/api/test-minimax-text`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt: '请为一个关于美食制作的抖音视频生成分镜脚本'
+                    })
+                });
+                
+                const data = await response.json();
+                resultDiv.className = 'result';
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '错误: ' + error.message;
+            }
+        }
+        
+        async function testFullProcess() {
+            const resultDiv = document.getElementById('fullResult');
+            const douyinUrl = document.getElementById('douyinUrl').value;
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = '处理中...\n1. 获取视频信息...\n2. 提取音频...\n3. 语音识别...\n4. 生成脚本...';
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/process-with-minimax`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ douyinUrl })
+                });
+                
+                const data = await response.json();
+                resultDiv.className = 'result';
+                
+                if (data.success) {
+                    let output = '✅ 处理成功！\n\n';
+                    output += '📹 视频信息:\n';
+                    output += JSON.stringify(data.videoInfo, null, 2) + '\n\n';
+                    output += '🎵 音频URL:\n' + data.audioUrl + '\n\n';
+                    output += '📝 语音识别结果:\n' + data.transcript + '\n\n';
+                    output += '🎬 分镜脚本:\n';
+                    output += JSON.stringify(data.script, null, 2);
+                    resultDiv.textContent = output;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '❌ 处理失败:\n' + JSON.stringify(data, null, 2);
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '错误: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

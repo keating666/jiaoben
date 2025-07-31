@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS调试工具</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            background: #e8f5e9;
+            border: 1px solid #4caf50;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #f44336;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .endpoints {
+            margin: 10px 0;
+        }
+        .endpoint-item {
+            margin: 5px 0;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 CORS 调试工具</h1>
+        
+        <div class="test-section">
+            <h3>Worker URL 配置</h3>
+            <input type="text" id="workerUrl" value="https://jiaoben-api.keating8500.workers.dev" placeholder="输入Worker URL">
+            <div class="endpoints">
+                <p><strong>可用端点：</strong></p>
+                <div class="endpoint-item">GET /api/test - 测试连接</div>
+                <div class="endpoint-item">POST /api/process - 处理抖音链接（使用阿里云）</div>
+                <div class="endpoint-item">POST /api/process-simple - 简化处理（使用通义千问）</div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>1. 测试基本连接</h3>
+            <button onclick="testConnection()">测试 GET /api/test</button>
+            <div id="connectionResult" class="result" style="display:none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>2. 测试 OPTIONS 请求（CORS预检）</h3>
+            <button onclick="testOptions()">测试 OPTIONS</button>
+            <div id="optionsResult" class="result" style="display:none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>3. 测试完整流程</h3>
+            <input type="text" id="douyinUrl" placeholder="输入抖音链接" value="https://v.douyin.com/o993PTzBZK4/">
+            <button onclick="testFullProcess()">测试 POST /api/process</button>
+            <button onclick="testSimpleProcess()">测试 POST /api/process-simple</button>
+            <div id="processResult" class="result" style="display:none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>4. 网络诊断</h3>
+            <button onclick="runDiagnostics()">运行完整诊断</button>
+            <div id="diagnosticsResult" class="result" style="display:none;"></div>
+        </div>
+    </div>
+    
+    <script>
+        function getWorkerUrl() {
+            return document.getElementById('workerUrl').value;
+        }
+        
+        async function testConnection() {
+            const resultDiv = document.getElementById('connectionResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '测试中...';
+            resultDiv.className = 'result';
+            
+            try {
+                const url = getWorkerUrl() + '/api/test';
+                console.log('Testing:', url);
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = '✅ 连接成功！\n\n' + JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ 连接失败！\n\n错误信息：' + error.message + '\n\n可能的原因：\n1. Worker URL 不正确\n2. Worker 未部署\n3. 网络问题';
+                console.error('Connection error:', error);
+            }
+        }
+        
+        async function testOptions() {
+            const resultDiv = document.getElementById('optionsResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '测试中...';
+            resultDiv.className = 'result';
+            
+            try {
+                const url = getWorkerUrl() + '/api/process';
+                console.log('Testing OPTIONS:', url);
+                
+                const response = await fetch(url, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type'
+                    }
+                });
+                
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                resultDiv.className = response.ok ? 'result success' : 'result error';
+                resultDiv.textContent = `${response.ok ? '✅' : '❌'} OPTIONS 响应：${response.status}\n\nCORS Headers:\n${JSON.stringify(headers, null, 2)}`;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ OPTIONS 请求失败！\n\n' + error.message;
+            }
+        }
+        
+        async function testFullProcess() {
+            const resultDiv = document.getElementById('processResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '处理中...';
+            resultDiv.className = 'result';
+            
+            const douyinUrl = document.getElementById('douyinUrl').value;
+            
+            try {
+                const url = getWorkerUrl() + '/api/process';
+                console.log('Testing:', url);
+                console.log('Payload:', { douyinUrl });
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ douyinUrl })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = '✅ 处理成功！\n\n' + JSON.stringify(data, null, 2);
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '❌ 处理失败！\n\n' + JSON.stringify(data, null, 2);
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ 请求失败！\n\n' + error.message + '\n\n' + error.stack;
+            }
+        }
+        
+        async function testSimpleProcess() {
+            const resultDiv = document.getElementById('processResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '处理中（简化版）...';
+            resultDiv.className = 'result';
+            
+            const douyinUrl = document.getElementById('douyinUrl').value;
+            
+            try {
+                const url = getWorkerUrl() + '/api/process-simple';
+                console.log('Testing:', url);
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ douyinUrl })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = '✅ 处理成功（简化版）！\n\n' + JSON.stringify(data, null, 2);
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '❌ 处理失败！\n\n' + JSON.stringify(data, null, 2);
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ 请求失败！\n\n' + error.message;
+            }
+        }
+        
+        async function runDiagnostics() {
+            const resultDiv = document.getElementById('diagnosticsResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            
+            let report = '🔍 运行诊断...\n\n';
+            
+            // 1. 检查 Worker URL
+            const workerUrl = getWorkerUrl();
+            report += `1. Worker URL: ${workerUrl}\n`;
+            
+            // 2. 尝试直接访问
+            try {
+                const response = await fetch(workerUrl + '/api/test');
+                const data = await response.json();
+                report += `2. 直接访问测试: ✅ 成功\n`;
+                report += `   - 配置状态: ${JSON.stringify(data.aliyun || data.qwen || {})}\n`;
+            } catch (error) {
+                report += `2. 直接访问测试: ❌ 失败 (${error.message})\n`;
+            }
+            
+            // 3. 检查 CORS
+            try {
+                const response = await fetch(workerUrl + '/api/test', {
+                    mode: 'cors',
+                    credentials: 'omit'
+                });
+                report += `3. CORS 测试: ✅ 通过\n`;
+            } catch (error) {
+                report += `3. CORS 测试: ❌ 失败\n`;
+            }
+            
+            // 4. 检查网络
+            report += `4. 当前页面协议: ${window.location.protocol}\n`;
+            report += `5. 当前页面域名: ${window.location.hostname}\n`;
+            
+            // 5. 建议
+            report += '\n📝 建议：\n';
+            if (window.location.protocol === 'file:') {
+                report += '- 您正在使用 file:// 协议，某些浏览器可能限制 CORS\n';
+                report += '- 建议使用本地服务器运行（如 python -m http.server）\n';
+            }
+            if (!workerUrl.startsWith('https://')) {
+                report += '- Worker URL 应该使用 HTTPS\n';
+            }
+            
+            resultDiv.textContent = report;
+        }
+        
+        // 页面加载时自动测试连接
+        window.addEventListener('load', () => {
+            testConnection();
+        });
+    </script>
+</body>
+</html>

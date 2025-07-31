@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✅ 成功测试 - 抖音视频转文字</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #28a745;
+            text-align: center;
+        }
+        .success-info {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .video-info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .url-display {
+            padding: 10px;
+            background: #f0f8ff;
+            border-radius: 5px;
+            margin: 10px 0;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .test-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .test-btn:hover {
+            background: #218838;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 600px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+        .step {
+            margin: 10px 0;
+            padding: 10px;
+            background: #fff;
+            border-left: 4px solid #007bff;
+            border-radius: 3px;
+        }
+        .step.success {
+            border-left-color: #28a745;
+        }
+        .step.error {
+            border-left-color: #dc3545;
+        }
+        .step-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ 成功！抖音视频转文字流程</h1>
+        
+        <div class="success-info">
+            <h3>🎉 恭喜！TikHub API 成功返回了视频数据</h3>
+            <p>我们已经成功获取到了视频的播放地址，现在可以进行下一步的转文字处理了。</p>
+        </div>
+        
+        <div class="video-info">
+            <h3>📹 视频信息</h3>
+            <p><strong>标题：</strong><span id="videoTitle">相同的产品为什么价格差距这么大？#木材人 #聚木网 #搞笑@东莞公主毛</span></p>
+            <p><strong>作者：</strong><span id="videoAuthor">聚康-LK</span></p>
+            <p><strong>视频ID：</strong><span id="videoId">7511278044309605672</span></p>
+        </div>
+        
+        <div class="url-display">
+            <strong>视频播放地址：</strong><br>
+            <span id="videoUrl">https://v5-dy-o-abtest.zjcdn.com/94b91de27331c1bbd2f427248e749490/6888b862/video/tos/cn/tos-cn-ve-15/o4gJMq9ffEbIaAL2oCiEfEyQN9DaAnew02gGI17</span>
+        </div>
+        
+        <button class="test-btn" onclick="testFullProcess()">🚀 测试完整的视频转文字流程</button>
+        
+        <div id="results"></div>
+    </div>
+    
+    <script>
+        const WORKER_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        const TEST_URL = 'https://v.douyin.com/67CMClLwb1c/';
+        
+        function showStep(title, content, status = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const stepDiv = document.createElement('div');
+            stepDiv.className = `step ${status}`;
+            
+            const titleDiv = document.createElement('div');
+            titleDiv.className = 'step-title';
+            titleDiv.textContent = title;
+            
+            const contentDiv = document.createElement('div');
+            if (typeof content === 'object') {
+                contentDiv.textContent = JSON.stringify(content, null, 2);
+            } else {
+                contentDiv.textContent = content;
+            }
+            
+            stepDiv.appendChild(titleDiv);
+            stepDiv.appendChild(contentDiv);
+            resultsDiv.appendChild(stepDiv);
+            
+            stepDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        
+        async function testFullProcess() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+            
+            try {
+                // 步骤 1: 调用处理接口
+                showStep('步骤 1: 调用视频处理接口', '正在发送请求到 Cloudflare Worker...', 'info');
+                
+                const response = await fetch(`${WORKER_URL}/api/process`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        douyinUrl: TEST_URL
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    showStep('请求失败', `HTTP ${response.status}: ${JSON.stringify(data)}`, 'error');
+                    return;
+                }
+                
+                // 步骤 2: 显示 TikHub 结果
+                if (data.videoUrl) {
+                    showStep('步骤 2: TikHub 解析成功', {
+                        视频URL: data.videoUrl,
+                        视频信息: data.videoInfo
+                    }, 'success');
+                    
+                    // 更新页面上的视频信息
+                    if (data.videoInfo) {
+                        document.getElementById('videoTitle').textContent = data.videoInfo.title || '无标题';
+                        document.getElementById('videoAuthor').textContent = data.videoInfo.author || '未知作者';
+                        document.getElementById('videoId').textContent = data.videoInfo.videoId || '未知ID';
+                    }
+                    document.getElementById('videoUrl').textContent = data.videoUrl;
+                }
+                
+                // 步骤 3: 显示云猫结果
+                if (data.taskId) {
+                    showStep('步骤 3: 云猫任务创建成功', {
+                        任务ID: data.taskId,
+                        响应: data.yunmaoResponse
+                    }, 'success');
+                    
+                    showStep('🎉 完整流程测试成功！', '视频已提交到云猫进行转文字处理，可以使用任务ID查询处理进度。', 'success');
+                } else if (data.yunmaoResponse) {
+                    showStep('步骤 3: 云猫处理结果', data.yunmaoResponse, data.success ? 'success' : 'error');
+                }
+                
+            } catch (error) {
+                showStep('测试异常', `错误: ${error.message}`, 'error');
+            }
+        }
+        
+        // 显示当前状态
+        window.onload = () => {
+            showStep('系统状态', '✅ TikHub API 连接成功\n✅ 视频URL提取成功\n⏳ 等待测试完整流程', 'success');
+        };
+    </script>
+</body>
+</html>

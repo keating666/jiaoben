@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎵 分析媒体文件</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; text-align: center; }
+        h2 { color: #007bff; margin-top: 30px; }
+        input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+        .btn {
+            padding: 12px 24px;
+            font-size: 16;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .btn:hover { background: #0056b3; }
+        .stats {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .url-item {
+            margin: 10px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        .url-item.audio {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+        }
+        .url-item.short {
+            background: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .url-text {
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            margin: 5px 0;
+            color: #495057;
+        }
+        .length { font-weight: bold; }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .loading { color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 分析媒体文件</h1>
+        
+        <input type="text" 
+               id="douyinUrl" 
+               placeholder="粘贴抖音分享链接..." 
+               value="https://v.douyin.com/67CMClLwb1c/">
+        
+        <button class="btn" onclick="analyzeMedia()">分析所有媒体URL</button>
+        <button class="btn" onclick="processWithAudio()">使用音频处理</button>
+        
+        <div id="results"></div>
+    </div>
+    
+    <script>
+        const WORKER_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        
+        function showLoading(message) {
+            document.getElementById('results').innerHTML = `<p class="loading">${message}</p>`;
+        }
+        
+        async function analyzeMedia() {
+            const douyinUrl = document.getElementById('douyinUrl').value.trim();
+            if (!douyinUrl) {
+                alert('请输入抖音链接');
+                return;
+            }
+            
+            showLoading('正在分析媒体文件...');
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/analyze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ douyinUrl })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    let html = `
+                        <div class="stats">
+                            <h3>📊 统计信息</h3>
+                            <p>总URL数：${data.stats.totalUrls}</p>
+                            <p>音频文件：${data.stats.audioUrls} 个（短链接：${data.stats.shortAudioUrls} 个）</p>
+                            <p>视频文件：${data.stats.videoUrls} 个（短链接：${data.stats.shortVideoUrls} 个）</p>
+                            <p><strong>建议：</strong>${data.recommendation}</p>
+                        </div>
+                    `;
+                    
+                    if (data.audioUrls.length > 0) {
+                        html += '<h2>🎵 音频文件</h2>';
+                        data.audioUrls.forEach((item, index) => {
+                            const isShort = item.length <= 200;
+                            html += `
+                                <div class="url-item audio ${isShort ? 'short' : ''}">
+                                    <strong>${index + 1}. ${item.path}</strong>
+                                    <span class="length ${isShort ? 'success' : 'error'}">
+                                        (${item.length} 字符) ${isShort ? '✅' : '❌'}
+                                    </span>
+                                    <div class="url-text">${item.url}</div>
+                                </div>
+                            `;
+                        });
+                    }
+                    
+                    if (data.videoUrls.length > 0) {
+                        html += '<h2>📹 视频文件</h2>';
+                        data.videoUrls.slice(0, 5).forEach((item, index) => {
+                            const isShort = item.length <= 200;
+                            html += `
+                                <div class="url-item ${isShort ? 'short' : ''}">
+                                    <strong>${index + 1}. ${item.path}</strong>
+                                    <span class="length ${isShort ? 'success' : 'error'}">
+                                        (${item.length} 字符) ${isShort ? '✅' : '❌'}
+                                    </span>
+                                    <div class="url-text">${item.url}</div>
+                                </div>
+                            `;
+                        });
+                        if (data.videoUrls.length > 5) {
+                            html += `<p>...还有 ${data.videoUrls.length - 5} 个视频URL</p>`;
+                        }
+                    }
+                    
+                    document.getElementById('results').innerHTML = html;
+                } else {
+                    document.getElementById('results').innerHTML = `
+                        <div class="url-item error">
+                            <strong>❌ 分析失败</strong>
+                            <p>${data.error || '未知错误'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('results').innerHTML = `
+                    <div class="url-item error">
+                        <strong>❌ 网络错误</strong>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        async function processWithAudio() {
+            const douyinUrl = document.getElementById('douyinUrl').value.trim();
+            if (!douyinUrl) {
+                alert('请输入抖音链接');
+                return;
+            }
+            
+            showLoading('正在处理（优先使用音频）...');
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/process`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ douyinUrl })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('results').innerHTML = `
+                        <div class="url-item short">
+                            <h3>✅ 处理成功！</h3>
+                            <p><strong>使用的文件类型：</strong>${data.selectedUrl.type === 'music' ? '🎵 音频文件' : '📹 视频文件'}</p>
+                            <p><strong>URL长度：</strong>${data.selectedUrl.length} 字符</p>
+                            <p><strong>任务ID：</strong>${data.taskId}</p>
+                            ${data.note ? `<p><strong>注意：</strong>${data.note}</p>` : ''}
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('results').innerHTML = `
+                        <div class="url-item error">
+                            <h3>❌ 处理失败</h3>
+                            <p>${data.error}</p>
+                            ${data.suggestion ? `<p><strong>建议：</strong>${data.suggestion}</p>` : ''}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('results').innerHTML = `
+                    <div class="url-item error">
+                        <strong>❌ 网络错误</strong>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // 回车键触发分析
+        document.getElementById('douyinUrl').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                analyzeMedia();
+            }
+        });
+    </script>
+</body>
+</html>

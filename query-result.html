@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📝 查询转文字结果</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        input {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+        input:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        .btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: left;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .processing {
+            background: #cce5ff;
+            color: #004085;
+            border: 1px solid #b8daff;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0,123,255,.3);
+            border-radius: 50%;
+            border-top-color: #007bff;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .text-content {
+            white-space: pre-wrap;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .copy-btn {
+            float: right;
+            padding: 8px 16px;
+            font-size: 14px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .copy-btn:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📝 查询转文字结果</h1>
+        
+        <input type="text" 
+               id="taskId" 
+               placeholder="输入任务ID（例如：SFAKYxVOgkUw2otF）" 
+               value="SFAKYxVOgkUw2otF">
+        
+        <button class="btn" onclick="queryResult()" id="queryBtn">
+            查询结果
+        </button>
+        
+        <div id="result" class="result"></div>
+    </div>
+    
+    <script>
+        const WORKER_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        let queryTimer = null;
+        
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = message;
+        }
+        
+        async function queryResult() {
+            const taskId = document.getElementById('taskId').value.trim();
+            const btn = document.getElementById('queryBtn');
+            
+            if (!taskId) {
+                showResult('❌ 请输入任务ID', 'error');
+                return;
+            }
+            
+            // 禁用按钮，显示加载状态
+            btn.disabled = true;
+            btn.innerHTML = '查询中<span class="loading"></span>';
+            showResult('⏳ 正在查询任务状态...', 'info');
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/task/query`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ taskId })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.status === 'completed') {
+                        // 任务完成
+                        // 提取实际的文字内容
+                        let textContent = '';
+                        if (typeof data.result === 'string') {
+                            textContent = data.result;
+                        } else if (data.result && data.result.text) {
+                            textContent = data.result.text;
+                        } else if (data.result && data.result.result) {
+                            textContent = data.result.result;
+                        } else {
+                            textContent = JSON.stringify(data.result, null, 2);
+                        }
+                        
+                        showResult(`
+                            <h3>✅ 转换完成！</h3>
+                            <button class="copy-btn" onclick="copyText()">复制文字</button>
+                            <div class="text-content" id="textContent">${escapeHtml(textContent)}</div>
+                        `, 'success');
+                        
+                        // 清除定时器
+                        if (queryTimer) {
+                            clearTimeout(queryTimer);
+                            queryTimer = null;
+                        }
+                    } else if (data.status === 'processing') {
+                        // 任务处理中
+                        showResult(`
+                            <h3>⏳ 处理中...</h3>
+                            <p>${data.message}</p>
+                            <p>将在5秒后自动重新查询</p>
+                        `, 'processing');
+                        
+                        // 5秒后自动重新查询
+                        if (queryTimer) clearTimeout(queryTimer);
+                        queryTimer = setTimeout(() => {
+                            queryResult();
+                        }, 5000);
+                    } else {
+                        // 未知状态
+                        showResult(`
+                            <h3>❓ 未知状态</h3>
+                            <p>状态：${data.status}</p>
+                            <pre>${JSON.stringify(data.data, null, 2)}</pre>
+                        `, 'info');
+                    }
+                } else {
+                    // 查询失败
+                    let errorMessage = `<h3>❌ 查询失败</h3>`;
+                    errorMessage += `<p>${data.error}</p>`;
+                    if (data.code) {
+                        errorMessage += `<p>错误代码：${data.code}</p>`;
+                    }
+                    showResult(errorMessage, 'error');
+                }
+                
+            } catch (error) {
+                showResult(`<h3>❌ 网络错误</h3><p>${error.message}</p>`, 'error');
+            } finally {
+                // 恢复按钮
+                btn.disabled = false;
+                btn.innerHTML = '查询结果';
+            }
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function copyText() {
+            const textContent = document.getElementById('textContent').textContent;
+            navigator.clipboard.writeText(textContent).then(() => {
+                // 改变按钮文字提示复制成功
+                const copyBtn = document.querySelector('.copy-btn');
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = '✓ 已复制';
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                }, 2000);
+            }).catch(err => {
+                alert('复制失败：' + err);
+            });
+        }
+        
+        // 回车键查询
+        document.getElementById('taskId').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                queryResult();
+            }
+        });
+        
+        // 页面加载时自动查询（如果有默认值）
+        window.addEventListener('load', function() {
+            const taskId = document.getElementById('taskId').value;
+            if (taskId) {
+                queryResult();
+            }
+        });
+    </script>
+</body>
+</html>

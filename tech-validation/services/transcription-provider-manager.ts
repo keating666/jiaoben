@@ -1,5 +1,6 @@
 import { YunmaoClient } from '../clients/yunmao-client';
 import { MiniMaxClientV2 } from '../clients/minimax-client-v2';
+import { IflytekClient } from '../clients/iflytek-client';
 import { logger } from '../utils/logger';
 
 /**
@@ -99,14 +100,15 @@ export class TranscriptionProviderManager {
       });
     }
 
-    // 讯飞配置（预留）
+    // 讯飞配置
     if (process.env.IFLYTEK_APP_ID) {
       this.providers.set('iflytek', {
-        enabled: false, // 暂未实现
+        enabled: true, // 已实现
         priority: 4,
         config: {
           appId: process.env.IFLYTEK_APP_ID,
-          apiSecret: process.env.IFLYTEK_API_SECRET
+          apiSecret: process.env.IFLYTEK_API_SECRET,
+          apiKey: process.env.IFLYTEK_API_KEY
         }
       });
     }
@@ -136,6 +138,9 @@ export class TranscriptionProviderManager {
           break;
         case 'yunmao':
           this.clients.set(provider, new YunmaoClient(config.config));
+          break;
+        case 'iflytek':
+          this.clients.set(provider, new IflytekClient());
           break;
         default:
           throw new Error(`服务提供商 ${provider} 尚未实现`);
@@ -255,6 +260,27 @@ export class TranscriptionProviderManager {
         };
       }
 
+      case 'iflytek': {
+        if (!request.audioPath && !request.audioUrl) {
+          throw new Error('讯飞需要音频文件路径或URL');
+        }
+
+        const iflytekRequest = request.audioUrl ? 
+          { audioUrl: request.audioUrl, language: request.language } :
+          { audioFile: require('fs').readFileSync(request.audioPath!), language: request.language };
+
+        const result = await client.speechToText(iflytekRequest);
+
+        return {
+          text: result.text,
+          provider: 'iflytek',
+          metadata: {
+            processingTime: Date.now() - startTime,
+            language: result.language
+          }
+        };
+      }
+
       default:
         throw new Error(`服务提供商 ${provider} 尚未实现`);
     }
@@ -273,8 +299,8 @@ export class TranscriptionProviderManager {
       // 云猫转码只支持视频URL
       if (name === 'yunmao' && !request.videoUrl) continue;
       
-      // MiniMax只支持音频文件
-      if (name === 'minimax' && !request.audioPath) continue;
+      // MiniMax和讯飞只支持音频文件
+      if ((name === 'minimax' || name === 'iflytek') && !request.audioPath && !request.audioUrl) continue;
 
       providers.push([name, config]);
     }

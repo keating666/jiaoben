@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抖音视频智能分镜脚本生成器 - AI驱动的创作助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* 头部 */
+        .header {
+            text-align: center;
+            color: white;
+            padding: 40px 0;
+        }
+        
+        .header h1 {
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            font-size: 20px;
+            opacity: 0.95;
+        }
+        
+        .tech-badges {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .tech-badge {
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        
+        /* 主卡片 */
+        .main-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .input-section {
+            padding: 40px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            font-size: 20px;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 18px 20px 18px 50px;
+            font-size: 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            transition: all 0.3s;
+            background: white;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn-primary {
+            padding: 18px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* 进度条 */
+        .progress-container {
+            padding: 0 40px 40px;
+            display: none;
+        }
+        
+        .progress-container.active {
+            display: block;
+        }
+        
+        .progress-bar {
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        .progress-text {
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        /* 结果展示 */
+        .results-container {
+            display: none;
+            padding: 40px;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .video-info {
+            background: linear-gradient(135deg, #f5f3ff 0%, #faf8ff 100%);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid #e8e5ff;
+        }
+        
+        .video-info h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .info-icon {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .info-content {
+            flex: 1;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .info-value {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        /* 标签页 */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 500;
+            color: #6c757d;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s;
+        }
+        
+        .tab:hover {
+            color: #667eea;
+        }
+        
+        .tab.active {
+            color: #667eea;
+        }
+        
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        /* 音频播放器 */
+        .audio-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .audio-player {
+            width: 100%;
+            margin-top: 15px;
+        }
+        
+        /* 转写结果 */
+        .transcript-box {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 16px;
+            line-height: 1.8;
+        }
+        
+        /* 分镜脚本 */
+        .script-container {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .scene-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 25px;
+            transition: all 0.3s;
+        }
+        
+        .scene-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.1);
+        }
+        
+        .scene-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .scene-number {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .scene-title {
+            flex: 1;
+            margin: 0 15px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .scene-time {
+            background: #e9ecef;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #6c757d;
+        }
+        
+        .scene-content {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .scene-item {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 15px;
+        }
+        
+        .scene-label {
+            font-weight: 600;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .scene-value {
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        /* 操作按钮 */
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 40px;
+        }
+        
+        .btn-secondary {
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: 500;
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        /* 错误提示 */
+        .error-message {
+            background: #fee;
+            color: #c62828;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* 加载动画 */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 28px;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .btn-secondary {
+                width: 100%;
+            }
+        }
+        
+        /* 页脚 */
+        .footer {
+            text-align: center;
+            color: white;
+            padding: 40px 0;
+            opacity: 0.8;
+        }
+        
+        .footer a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🎬 抖音视频智能分镜脚本生成器</h1>
+            <p>AI驱动的专业视频脚本创作工具</p>
+            <div class="tech-badges">
+                <span class="tech-badge">🔊 阿里云ASR语音识别</span>
+                <span class="tech-badge">🤖 通义千问智能生成</span>
+                <span class="tech-badge">⚡ 实时处理</span>
+                <span class="tech-badge">☁️ 云端部署</span>
+            </div>
+        </header>
+        
+        <div class="main-card">
+            <div class="input-section">
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <span class="input-icon">🔗</span>
+                        <input type="text" 
+                               id="douyinUrl" 
+                               placeholder="请粘贴抖音分享链接，例如：https://v.douyin.com/..." 
+                               value="">
+                    </div>
+                    <button class="btn-primary" onclick="processVideo()" id="processBtn">
+                        生成分镜脚本
+                    </button>
+                </div>
+                
+                <div class="error-message" id="errorMessage">
+                    <span>❌</span>
+                    <span id="errorText"></span>
+                </div>
+            </div>
+            
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">准备处理...</div>
+            </div>
+            
+            <div class="results-container" id="resultsContainer">
+                <div class="video-info" id="videoInfo"></div>
+                
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('audio')">🎵 音频信息</button>
+                    <button class="tab" onclick="switchTab('transcript')">📝 语音转写</button>
+                    <button class="tab" onclick="switchTab('script')">🎬 分镜脚本</button>
+                </div>
+                
+                <div class="tab-content active" id="audioTab">
+                    <div class="audio-section">
+                        <h4>原始音频</h4>
+                        <p style="color: #6c757d; margin-top: 10px;">包含背景音乐和人声对话的混合音频</p>
+                        <audio id="audioPlayer" class="audio-player" controls></audio>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="transcriptTab">
+                    <div class="transcript-box" id="transcriptBox"></div>
+                    <div class="action-buttons">
+                        <button class="btn-secondary" onclick="copyTranscript()">📋 复制文字</button>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="scriptTab">
+                    <div class="script-container" id="scriptContainer"></div>
+                    <div class="action-buttons">
+                        <button class="btn-secondary" onclick="copyScript()">📋 复制脚本</button>
+                        <button class="btn-secondary" onclick="exportScript()">📄 导出文档</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer class="footer">
+            <p>Powered by <a href="https://www.aliyun.com" target="_blank">阿里云</a> | 
+               Built with ❤️ by AI Assistant</p>
+        </footer>
+    </div>
+    
+    <script>
+        const WORKER_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        let currentTranscript = '';
+        let currentScript = [];
+        let currentVideoInfo = {};
+        
+        // 处理视频
+        async function processVideo() {
+            const douyinUrl = document.getElementById('douyinUrl').value.trim();
+            
+            if (!douyinUrl) {
+                showError('请输入抖音分享链接');
+                return;
+            }
+            
+            if (!douyinUrl.includes('douyin.com')) {
+                showError('请输入有效的抖音链接');
+                return;
+            }
+            
+            hideError();
+            const btn = document.getElementById('processBtn');
+            btn.disabled = true;
+            btn.innerHTML = '处理中<span class="loading-spinner"></span>';
+            
+            // 显示进度
+            const progressContainer = document.getElementById('progressContainer');
+            const resultsContainer = document.getElementById('resultsContainer');
+            progressContainer.classList.add('active');
+            resultsContainer.style.display = 'none';
+            
+            try {
+                updateProgress(10, '正在获取视频信息...');
+                
+                const response = await fetch(`${WORKER_URL}/api/process`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ douyinUrl })
+                });
+                
+                updateProgress(30, '正在提取音频...');
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || '处理失败');
+                }
+                
+                updateProgress(50, '正在进行语音识别...');
+                
+                // 模拟进度更新
+                setTimeout(() => updateProgress(70, '正在生成分镜脚本...'), 1000);
+                setTimeout(() => updateProgress(90, '即将完成...'), 2000);
+                
+                // 保存数据
+                currentVideoInfo = data.videoInfo;
+                currentTranscript = data.transcript;
+                currentScript = data.script;
+                
+                // 显示结果
+                setTimeout(() => {
+                    updateProgress(100, '处理完成！');
+                    showResults(data);
+                    progressContainer.classList.remove('active');
+                }, 3000);
+                
+            } catch (error) {
+                showError('处理失败: ' + error.message);
+                progressContainer.classList.remove('active');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '生成分镜脚本';
+            }
+        }
+        
+        // 更新进度
+        function updateProgress(percent, text) {
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressText').textContent = text;
+        }
+        
+        // 显示错误
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            document.getElementById('errorText').textContent = message;
+            errorDiv.style.display = 'flex';
+        }
+        
+        // 隐藏错误
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+        
+        // 显示结果
+        function showResults(data) {
+            // 显示视频信息
+            const videoInfoHtml = `
+                <h3>📹 视频信息</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-icon">🎬</div>
+                        <div class="info-content">
+                            <div class="info-label">视频标题</div>
+                            <div class="info-value">${data.videoInfo.title || '无标题'}</div>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-icon">👤</div>
+                        <div class="info-content">
+                            <div class="info-label">作者</div>
+                            <div class="info-value">${data.videoInfo.author || '未知'}</div>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-icon">🎵</div>
+                        <div class="info-content">
+                            <div class="info-label">背景音乐</div>
+                            <div class="info-value">${data.videoInfo.musicTitle || '未知'}</div>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-icon">🆔</div>
+                        <div class="info-content">
+                            <div class="info-label">视频ID</div>
+                            <div class="info-value">${data.videoInfo.videoId || '未知'}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('videoInfo').innerHTML = videoInfoHtml;
+            
+            // 设置音频
+            if (data.audioUrl) {
+                document.getElementById('audioPlayer').src = data.audioUrl;
+            }
+            
+            // 设置转写结果
+            document.getElementById('transcriptBox').textContent = data.transcript;
+            
+            // 设置分镜脚本
+            let scriptHtml = '';
+            data.script.forEach((scene, index) => {
+                scriptHtml += `
+                    <div class="scene-card">
+                        <div class="scene-header">
+                            <div class="scene-number">${index + 1}</div>
+                            <h4 class="scene-title">${scene.scene}</h4>
+                            <span class="scene-time">${scene.time}</span>
+                        </div>
+                        <div class="scene-content">
+                            <div class="scene-item">
+                                <span class="scene-label">画面描述</span>
+                                <span class="scene-value">${scene.visual}</span>
+                            </div>
+                            <div class="scene-item">
+                                <span class="scene-label">镜头运动</span>
+                                <span class="scene-value">${scene.camera}</span>
+                            </div>
+                            <div class="scene-item">
+                                <span class="scene-label">对话/旁白</span>
+                                <span class="scene-value">${scene.dialogue}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('scriptContainer').innerHTML = scriptHtml;
+            
+            // 显示结果容器
+            document.getElementById('resultsContainer').style.display = 'block';
+        }
+        
+        // 切换标签
+        function switchTab(tabName) {
+            // 更新标签状态
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // 更新内容显示
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName + 'Tab').classList.add('active');
+        }
+        
+        // 复制转写文本
+        function copyTranscript() {
+            navigator.clipboard.writeText(currentTranscript).then(() => {
+                alert('转写文本已复制到剪贴板！');
+            });
+        }
+        
+        // 复制脚本
+        function copyScript() {
+            const scriptText = currentScript.map(scene => 
+                `${scene.scene}\n时间：${scene.time}\n画面：${scene.visual}\n镜头：${scene.camera}\n对话：${scene.dialogue}\n`
+            ).join('\n---\n\n');
+            
+            navigator.clipboard.writeText(scriptText).then(() => {
+                alert('分镜脚本已复制到剪贴板！');
+            });
+        }
+        
+        // 导出脚本
+        function exportScript() {
+            const content = `# 抖音视频分镜脚本\n\n` +
+                `## 视频信息\n` +
+                `- 标题：${currentVideoInfo.title || '无标题'}\n` +
+                `- 作者：${currentVideoInfo.author || '未知'}\n` +
+                `- 背景音乐：${currentVideoInfo.musicTitle || '未知'}\n` +
+                `- 视频ID：${currentVideoInfo.videoId || '未知'}\n\n` +
+                `## 语音转写\n${currentTranscript}\n\n` +
+                `## 分镜脚本\n` +
+                currentScript.map((scene, index) => 
+                    `### ${index + 1}. ${scene.scene}\n` +
+                    `- **时间**：${scene.time}\n` +
+                    `- **画面**：${scene.visual}\n` +
+                    `- **镜头**：${scene.camera}\n` +
+                    `- **对话**：${scene.dialogue}\n`
+                ).join('\n');
+            
+            // 创建下载
+            const blob = new Blob([content], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `分镜脚本_${currentVideoInfo.title || '未命名'}_${new Date().toISOString().split('T')[0]}.md`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        // 回车键提交
+        document.getElementById('douyinUrl').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                processVideo();
+            }
+        });
+        
+        // 自动聚焦输入框
+        window.addEventListener('load', () => {
+            document.getElementById('douyinUrl').focus();
+        });
+    </script>
+</body>
+</html>

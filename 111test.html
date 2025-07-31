@@ -1,0 +1,24 @@
+html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>KV 测试</title>
+</head>
+<body>
+    <h1>测试 KV 存储</h1>
+    <button onclick="testKV()">测试 KV</button>
+    <pre id="result"></pre>
+    
+    <script>
+        async function testKV() {
+            try {
+                const response = await fetch('https://jiaoben-api.keating8500.workers.dev/api/kv/test');
+                const data = await response.json();
+                document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('result').textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

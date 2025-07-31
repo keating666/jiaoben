@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 自动处理抖音视频转文字</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .input-group {
+            margin: 20px 0;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 15px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+            margin: 20px 0;
+        }
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .process-steps {
+            margin: 30px 0;
+        }
+        .step {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #ddd;
+            background: #f8f9fa;
+        }
+        .step.active {
+            border-left-color: #007bff;
+            background: #e7f3ff;
+        }
+        .step.success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .step.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .step-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .step-content {
+            color: #666;
+            font-size: 14px;
+        }
+        .result-box {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            display: none;
+        }
+        .result-box.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0,0,0,.1);
+            border-radius: 50%;
+            border-top-color: #007bff;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .audio-preview {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f0f8ff;
+            border-radius: 5px;
+        }
+        audio {
+            width: 100%;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 自动处理抖音视频转文字</h1>
+        
+        <div class="input-group">
+            <label for="douyinUrl">抖音分享链接</label>
+            <input type="text" id="douyinUrl" placeholder="粘贴抖音分享链接，如：https://v.douyin.com/..." value="https://v.douyin.com/67CMClLwb1c/">
+        </div>
+        
+        <button class="btn-primary" onclick="startProcess()" id="processBtn">
+            开始智能处理
+        </button>
+        
+        <div class="process-steps" id="processSteps" style="display: none;">
+            <div class="step" id="step1">
+                <div class="step-title">步骤 1：解析抖音链接</div>
+                <div class="step-content">正在通过 TikHub API 解析视频信息...</div>
+            </div>
+            
+            <div class="step" id="step2">
+                <div class="step-title">步骤 2：智能分析音频源</div>
+                <div class="step-content">正在查找最佳音频源（人声音频优先）...</div>
+            </div>
+            
+            <div class="step" id="step3">
+                <div class="step-title">步骤 3：语音识别处理</div>
+                <div class="step-content">正在提交到云猫进行语音转文字...</div>
+            </div>
+            
+            <div class="step" id="step4">
+                <div class="step-title">步骤 4：获取识别结果</div>
+                <div class="step-content">等待处理完成...</div>
+            </div>
+        </div>
+        
+        <div class="result-box" id="resultBox"></div>
+    </div>
+    
+    <script>
+        const WORKER_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        
+        function updateStep(stepId, status, content) {
+            const step = document.getElementById(stepId);
+            step.className = `step ${status}`;
+            if (content) {
+                step.querySelector('.step-content').innerHTML = content;
+            }
+        }
+        
+        function showResult(content, isSuccess = true) {
+            const resultBox = document.getElementById('resultBox');
+            resultBox.style.display = 'block';
+            resultBox.className = `result-box ${isSuccess ? 'success' : 'error'}`;
+            resultBox.innerHTML = content;
+        }
+        
+        async function startProcess() {
+            const douyinUrl = document.getElementById('douyinUrl').value.trim();
+            if (!douyinUrl) {
+                alert('请输入抖音链接');
+                return;
+            }
+            
+            const processBtn = document.getElementById('processBtn');
+            processBtn.disabled = true;
+            processBtn.innerHTML = '处理中... <span class="loading"></span>';
+            
+            document.getElementById('processSteps').style.display = 'block';
+            document.getElementById('resultBox').style.display = 'none';
+            
+            // 重置所有步骤
+            ['step1', 'step2', 'step3', 'step4'].forEach(id => {
+                document.getElementById(id).className = 'step';
+            });
+            
+            try {
+                // 步骤 1：解析抖音链接
+                updateStep('step1', 'active');
+                
+                const response = await fetch(`${WORKER_URL}/api/process/smart`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ douyinUrl })
+                });
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    updateStep('step1', 'error', '解析失败：' + (data.error || '未知错误'));
+                    showResult('处理失败，请检查链接是否正确', false);
+                    return;
+                }
+                
+                // 步骤 1 成功
+                updateStep('step1', 'success', `✓ 成功解析视频信息<br>标题：${data.videoInfo?.title || '无标题'}`);
+                
+                // 步骤 2：分析音频源
+                updateStep('step2', 'active');
+                const sourceTypeText = data.sourceType === 'video' ? 
+                    '使用视频文件（包含完整人声）' : 
+                    '找到独立音频文件';
+                updateStep('step2', 'success', `✓ ${sourceTypeText}`);
+                
+                // 步骤 3：语音识别
+                updateStep('step3', 'active');
+                if (data.taskId) {
+                    updateStep('step3', 'success', `✓ 任务已创建<br>任务ID：${data.taskId}`);
+                    
+                    // 步骤 4：等待结果
+                    updateStep('step4', 'active', '正在处理中，请稍候...');
+                    
+                    // 显示成功信息
+                    showResult(`
+                        <h3>✅ 处理成功！</h3>
+                        <p><strong>视频标题：</strong>${data.videoInfo?.title || '无标题'}</p>
+                        <p><strong>作者：</strong>${data.videoInfo?.author || '未知'}</p>
+                        <p><strong>音频源：</strong>${data.sourceType === 'video' ? '视频文件' : '音频文件'}</p>
+                        <p><strong>任务ID：</strong>${data.taskId}</p>
+                        <hr>
+                        <p>语音识别正在处理中，您可以：</p>
+                        <ol>
+                            <li>使用任务ID查询处理进度</li>
+                            <li>等待处理完成（通常需要1-3分钟）</li>
+                        </ol>
+                        ${data.selectedUrl ? `
+                        <div class="audio-preview">
+                            <strong>处理的媒体文件：</strong>
+                            <div style="word-break: break-all; font-size: 12px; color: #666;">
+                                ${data.selectedUrl}
+                            </div>
+                        </div>
+                        ` : ''}
+                    `);
+                    
+                    updateStep('step4', 'success', '✓ 任务提交成功，正在后台处理');
+                } else {
+                    updateStep('step3', 'error', '语音识别失败：' + (data.yunmaoResponse?.msg || '未知错误'));
+                    showResult('语音识别失败，请稍后重试', false);
+                }
+                
+            } catch (error) {
+                updateStep('step1', 'error', '网络错误：' + error.message);
+                showResult('处理出错：' + error.message, false);
+            } finally {
+                processBtn.disabled = false;
+                processBtn.innerHTML = '开始智能处理';
+            }
+        }
+        
+        // 回车键提交
+        document.getElementById('douyinUrl').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                startProcess();
+            }
+        });
+    </script>
+</body>
+</html>

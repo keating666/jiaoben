@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 抖音视频转文字 - 简化版</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input {
+            flex: 1;
+            padding: 15px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        input:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        .btn {
+            padding: 15px 30px;
+            font-size: 16px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn:hover {
+            background: #218838;
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status-box {
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        .status-box.info {
+            background: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        .status-box.success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .status-box.error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .status-box.processing {
+            background: #cce5ff;
+            border-color: #b8daff;
+            color: #004085;
+        }
+        .video-info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .video-info h4 {
+            margin: 0 0 10px 0;
+            color: #0056b3;
+        }
+        .video-info p {
+            margin: 5px 0;
+            color: #333;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(40,167,69,.3);
+            border-radius: 50%;
+            border-top-color: #28a745;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .notice {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #856404;
+        }
+        .notice h4 {
+            margin: 0 0 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 抖音视频转文字 - 简化版</h1>
+        <div class="subtitle">提交任务后，云猫会在1-3分钟内完成转换</div>
+        
+        <div class="input-group">
+            <input type="text" 
+                   id="douyinUrl" 
+                   placeholder="粘贴抖音分享链接..." 
+                   value="https://v.douyin.com/67CMClLwb1c/">
+            <button class="btn" onclick="startProcess()" id="processBtn">
+                开始处理
+            </button>
+        </div>
+        
+        <!-- 状态信息 -->
+        <div id="statusBox" class="status-box" style="display:none;"></div>
+        
+        <!-- 视频信息 -->
+        <div id="videoInfo" class="video-info" style="display:none;"></div>
+        
+        <!-- 重要说明 -->
+        <div class="notice">
+            <h4>⚠️ 重要说明</h4>
+            <p>1. 云猫API采用异步处理模式，不支持实时查询</p>
+            <p>2. 提交成功后，请等待1-3分钟让云猫完成处理</p>
+            <p>3. 您会获得一个任务ID，可以记录下来</p>
+            <p>4. 由于技术限制，目前无法实时显示转换结果</p>
+        </div>
+    </div>
+    
+    <script>
+        const WORKER_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        
+        function showStatus(message, type = 'info') {
+            const statusBox = document.getElementById('statusBox');
+            statusBox.style.display = 'block';
+            statusBox.className = `status-box ${type}`;
+            statusBox.innerHTML = message;
+        }
+        
+        function showVideoInfo(data) {
+            const videoInfoDiv = document.getElementById('videoInfo');
+            videoInfoDiv.style.display = 'block';
+            videoInfoDiv.innerHTML = `
+                <h4>📹 视频信息</h4>
+                <p><strong>标题：</strong>${data.videoInfo.title}</p>
+                <p><strong>作者：</strong>${data.videoInfo.author}</p>
+                <p><strong>音乐：</strong>${data.videoInfo.musicTitle || '未知'}</p>
+                <p><strong>使用的文件：</strong>${data.selectedUrl.type === 'music' ? '🎵 音频文件' : '📹 视频文件'} (${data.selectedUrl.length}字符)</p>
+            `;
+        }
+        
+        async function startProcess() {
+            const douyinUrl = document.getElementById('douyinUrl').value.trim();
+            const btn = document.getElementById('processBtn');
+            
+            if (!douyinUrl) {
+                showStatus('❌ 请输入抖音链接', 'error');
+                return;
+            }
+            
+            // 重置状态
+            document.getElementById('videoInfo').style.display = 'none';
+            
+            // 禁用按钮
+            btn.disabled = true;
+            btn.innerHTML = '处理中<span class="loading"></span>';
+            showStatus('🔍 正在解析抖音链接...', 'info');
+            
+            try {
+                const response = await fetch(`${WORKER_URL}/api/process`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ douyinUrl })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 显示视频信息
+                    showVideoInfo(data);
+                    
+                    // 显示成功信息
+                    showStatus(`
+                        <h3>✅ 任务提交成功！</h3>
+                        <p><strong>任务ID：</strong><code>${data.taskId}</code></p>
+                        <p><strong>回调地址：</strong>${data.callbackUrl || '已配置'}</p>
+                        <hr>
+                        <p>📝 云猫正在处理您的音频文件...</p>
+                        <p>⏱️ 预计需要1-3分钟完成转换</p>
+                        <p>💡 提示：${data.hint || '云猫处理完成后会推送结果'}</p>
+                    `, 'success');
+                    
+                } else {
+                    let errorMessage = '❌ 处理失败：';
+                    
+                    if (data.error === 'URL太长，超过云猫限制') {
+                        errorMessage += `URL长度${data.urlLength}字符，超过限制${data.limit}字符`;
+                    } else {
+                        errorMessage += data.error || data.message || '未知错误';
+                    }
+                    
+                    showStatus(errorMessage, 'error');
+                }
+                
+            } catch (error) {
+                showStatus(`❌ 网络错误：${error.message}`, 'error');
+            } finally {
+                // 恢复按钮
+                btn.disabled = false;
+                btn.innerHTML = '开始处理';
+            }
+        }
+        
+        // 回车键提交
+        document.getElementById('douyinUrl').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                startProcess();
+            }
+        });
+    </script>
+</body>
+</html>

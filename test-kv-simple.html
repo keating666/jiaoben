@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>KV 测试 - 简化版</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        pre {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Worker 和 KV 测试</h1>
+    
+    <h2>步骤 1：测试 Worker 是否在线</h2>
+    <button onclick="testWorker()">测试 Worker</button>
+    
+    <h2>步骤 2：测试 KV 功能</h2>
+    <button onclick="testKV()">测试 KV</button>
+    
+    <h2>步骤 3：测试现有功能</h2>
+    <button onclick="testProcess()">测试视频处理</button>
+    
+    <h2>结果：</h2>
+    <pre id="result">等待测试...</pre>
+    
+    <script>
+        const WORKER_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        
+        function showResult(message, isError = false) {
+            const resultEl = document.getElementById('result');
+            resultEl.className = isError ? 'error' : 'success';
+            resultEl.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        }
+        
+        async function testWorker() {
+            showResult('测试 Worker 基础连接...');
+            try {
+                const response = await fetch(`${WORKER_URL}/api/test`);
+                const data = await response.json();
+                showResult('Worker 连接成功！\n' + JSON.stringify(data, null, 2));
+            } catch (error) {
+                showResult('Worker 连接失败：' + error.message, true);
+            }
+        }
+        
+        async function testKV() {
+            showResult('测试 KV 存储...');
+            try {
+                const response = await fetch(`${WORKER_URL}/api/kv/test`);
+                if (response.status === 404) {
+                    showResult('KV 测试端点不存在，请先部署包含 KV 测试的 Worker 代码', true);
+                    return;
+                }
+                const data = await response.json();
+                showResult('KV 测试结果：\n' + JSON.stringify(data, null, 2));
+            } catch (error) {
+                showResult('KV 测试失败：' + error.message, true);
+            }
+        }
+        
+        async function testProcess() {
+            showResult('测试视频处理功能...');
+            try {
+                const response = await fetch(`${WORKER_URL}/api/process`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        douyinUrl: 'https://v.douyin.com/67CMClLwb1c/' 
+                    })
+                });
+                const data = await response.json();
+                showResult('视频处理响应：\n' + JSON.stringify(data, null, 2));
+            } catch (error) {
+                showResult('视频处理测试失败：' + error.message, true);
+            }
+        }
+        
+        // 页面加载时先测试基础连接
+        window.onload = () => {
+            showResult('准备就绪，请点击按钮开始测试');
+        };
+    </script>
+</body>
+</html>
