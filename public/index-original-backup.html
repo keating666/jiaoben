@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI驱动的抖音视频分镜脚本生成器 - Story 0.2 Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            padding: 40px 0;
+        }
+        
+        .header h1 {
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            font-size: 20px;
+            opacity: 0.95;
+        }
+        
+        .main-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .input-section {
+            padding: 40px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 18px 20px 18px 50px;
+            font-size: 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            transition: all 0.3s;
+            background: white;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn-primary {
+            padding: 18px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .progress-container {
+            padding: 0 40px 40px;
+            display: none;
+        }
+        
+        .progress-container.active {
+            display: block;
+        }
+        
+        .progress-bar {
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        .results-container {
+            display: none;
+            padding: 40px;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .error-message {
+            background: #fee;
+            color: #c62828;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .script-container {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .scene-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 25px;
+            transition: all 0.3s;
+        }
+        
+        .scene-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.1);
+        }
+        
+        .demo-badge {
+            background: #ff6b6b;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        
+        
+        .footer {
+            text-align: center;
+            color: white;
+            padding: 40px 0;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-badge">Story 0.2 Demo</div>
+    
+    <div class="container">
+        <header class="header">
+            <h1>🎬 抖音视频智能分镜脚本生成器</h1>
+            <p>AI驱动的专业视频脚本创作工具</p>
+        </header>
+        
+        <div class="main-card">
+            <div class="input-section">
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <span style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%); font-size: 20px;">🔗</span>
+                        <input type="text" 
+                               id="douyinUrl" 
+                               placeholder="请粘贴抖音分享链接，例如：https://v.douyin.com/..." 
+                               value="">
+                    </div>
+                    <button class="btn-primary" onclick="processVideo()" id="processBtn">
+                        生成分镜脚本
+                    </button>
+                </div>
+                
+                <div class="error-message" id="errorMessage"></div>
+            </div>
+            
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText" style="text-align: center; color: #666;">准备处理...</div>
+            </div>
+            
+            <div class="results-container" id="resultsContainer">
+                <h3 style="margin-bottom: 20px;">🎬 生成的分镜脚本</h3>
+                <div class="script-container" id="scriptContainer"></div>
+            </div>
+        </div>
+        
+        <footer class="footer">
+            <p>Powered by AI</p>
+        </footer>
+    </div>
+    
+    <script>
+        const WORKER_URL = 'https://jiaoben-api.keating8500.workers.dev';
+        
+        async function processVideo() {
+            const douyinUrl = document.getElementById('douyinUrl').value.trim();
+            
+            if (!douyinUrl) {
+                showError('请输入抖音分享链接');
+                return;
+            }
+            
+            if (!douyinUrl.includes('douyin.com')) {
+                showError('请输入有效的抖音链接');
+                return;
+            }
+            
+            hideError();
+            const btn = document.getElementById('processBtn');
+            btn.disabled = true;
+            btn.textContent = '处理中...';
+            
+            // 显示进度
+            const progressContainer = document.getElementById('progressContainer');
+            const resultsContainer = document.getElementById('resultsContainer');
+            progressContainer.classList.add('active');
+            resultsContainer.style.display = 'none';
+            
+            try {
+                updateProgress(10, '正在获取视频信息...');
+                
+                const response = await fetch(`${WORKER_URL}/api/process`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ douyinUrl })
+                });
+                
+                updateProgress(30, '正在分析视频内容...');
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || '处理失败');
+                }
+                
+                updateProgress(60, '正在生成分镜脚本...');
+                
+                // 模拟进度
+                setTimeout(() => updateProgress(90, '即将完成...'), 1000);
+                
+                setTimeout(() => {
+                    updateProgress(100, '处理完成！');
+                    showResults(data);
+                    progressContainer.classList.remove('active');
+                }, 2000);
+                
+            } catch (error) {
+                showError('处理失败: ' + error.message);
+                progressContainer.classList.remove('active');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '生成分镜脚本';
+            }
+        }
+        
+        function updateProgress(percent, text) {
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressText').textContent = text;
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = '❌ ' + message;
+            errorDiv.style.display = 'block';
+        }
+        
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+        
+        function showResults(data) {
+            let scriptHtml = '';
+            
+            if (data.script && Array.isArray(data.script)) {
+                data.script.forEach((scene, index) => {
+                    scriptHtml += `
+                        <div class="scene-card">
+                            <h4 style="color: #667eea; margin-bottom: 15px;">${scene.scene}</h4>
+                            <p><strong>时间：</strong>${scene.time}</p>
+                            <p><strong>画面：</strong>${scene.visual}</p>
+                            <p><strong>镜头：</strong>${scene.camera}</p>
+                            <p><strong>对话：</strong>${scene.dialogue}</p>
+                        </div>
+                    `;
+                });
+            } else {
+                scriptHtml = '<p>生成脚本失败</p>';
+            }
+            
+            document.getElementById('scriptContainer').innerHTML = scriptHtml;
+            document.getElementById('resultsContainer').style.display = 'block';
+        }
+        
+        // 回车提交
+        document.getElementById('douyinUrl').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                processVideo();
+            }
+        });
+    </script>
+</body>
+</html>
