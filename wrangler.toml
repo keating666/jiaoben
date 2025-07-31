@@ -1,5 +1,5 @@
 name = "jiaoben-api"
-main = "cloudflare-worker-tencent-asr.js"
+main = "src/cloudflare-worker-tencent-asr.js"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 

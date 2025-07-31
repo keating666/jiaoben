@@ -1,4 +1,4 @@
-import { EnhancedApiClient } from '../utils/enhanced-api-client';
+import { EnhancedApiClient } from '../utils/api-client';
 import { logger } from '../utils/logger';
 import { SecurityValidator } from '../utils/security-validator';
 
@@ -100,9 +100,9 @@ export class YunmaoClient {
 
     try {
       // 验证输入参数
-      this.validator.validateUrl(params.videoUrl);
+      SecurityValidator.validateVideoUrl(params.videoUrl);
       if (params.webhookUrl) {
-        this.validator.validateUrl(params.webhookUrl);
+        SecurityValidator.validateVideoUrl(params.webhookUrl);
       }
 
       // 构建请求

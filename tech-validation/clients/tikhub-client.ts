@@ -1,4 +1,4 @@
-import { EnhancedApiClient } from '../utils/enhanced-api-client';
+import { EnhancedApiClient } from '../utils/api-client';
 import { logger } from '../utils/logger';
 import { SecurityValidator } from '../utils/security-validator';
 import { 
@@ -85,7 +85,7 @@ export class TikHubClient {
 
     try {
       // 1. 验证输入URL
-      this.validator.validateUrl(request.url);
+      SecurityValidator.validateVideoUrl(request.url);
 
       // 2. 提取视频ID
       const videoId = this.extractVideoId(request.url);
