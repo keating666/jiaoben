@@ -8,6 +8,7 @@ const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 describe('YunmaoClient', () => {
   let client: YunmaoClient;
+  let mockAxiosInstance: any;
   const mockConfig = {
     apiKey: 'test-api-key',
     apiSecret: 'test-api-secret',
@@ -15,12 +16,38 @@ describe('YunmaoClient', () => {
   };
 
   beforeEach(() => {
+    // Mock axios.create to return a mock axios instance
+    mockAxiosInstance = {
+      request: jest.fn(),
+      get: jest.fn(),
+      post: jest.fn(),
+      put: jest.fn(),
+      delete: jest.fn(),
+      patch: jest.fn(),
+      interceptors: {
+        request: {
+          use: jest.fn(),
+          eject: jest.fn(),
+          clear: jest.fn()
+        },
+        response: {
+          use: jest.fn(),
+          eject: jest.fn(),
+          clear: jest.fn()
+        }
+      }
+    };
+    
+    (mockedAxios.create as jest.Mock).mockReturnValue(mockAxiosInstance);
+    
     client = new YunmaoClient(mockConfig);
     jest.clearAllMocks();
   });
 
   afterEach(() => {
-    client.dispose();
+    if (client && client.dispose) {
+      client.dispose();
+    }
   });
 
   describe('createExtractTextTask', () => {
@@ -33,7 +60,7 @@ describe('YunmaoClient', () => {
         }
       };
 
-      mockedAxios.request.mockResolvedValueOnce(mockResponse);
+      mockAxiosInstance.post.mockResolvedValueOnce(mockResponse);
 
       const result = await client.createExtractTextTask({
         videoUrl: 'https://example.com/video.mp4',
@@ -68,7 +95,7 @@ describe('YunmaoClient', () => {
         }
       };
 
-      mockedAxios.request.mockResolvedValueOnce(mockResponse);
+      mockAxiosInstance.post.mockResolvedValueOnce(mockResponse);
 
       await client.createExtractTextTask({
         videoUrl: 'https://example.com/interview.mp4',
@@ -97,7 +124,7 @@ describe('YunmaoClient', () => {
     });
 
     it('应该处理API错误', async () => {
-      mockedAxios.request.mockRejectedValueOnce({
+      mockAxiosInstance.post.mockRejectedValueOnce({
         response: {
           status: 401,
           data: { message: 'Invalid API key' }
@@ -129,7 +156,7 @@ describe('YunmaoClient', () => {
         }
       };
 
-      mockedAxios.request.mockResolvedValueOnce(mockResponse);
+      mockAxiosInstance.post.mockResolvedValueOnce(mockResponse);
 
       const result = await client.getTaskStatus('task-123');
 
@@ -162,7 +189,7 @@ describe('YunmaoClient', () => {
         }
       };
 
-      mockedAxios.request.mockResolvedValueOnce(mockResponse);
+      mockAxiosInstance.post.mockResolvedValueOnce(mockResponse);
 
       const result = await client.getTaskStatus('task-123');
 
@@ -210,7 +237,7 @@ describe('YunmaoClient', () => {
       ];
 
       let callCount = 0;
-      mockedAxios.request.mockImplementation(() => {
+      mockAxiosInstance.get.mockImplementation(() => {
         return Promise.resolve(mockResponses[callCount++]) as any;
       });
 
@@ -226,7 +253,7 @@ describe('YunmaoClient', () => {
     });
 
     it('应该处理任务失败', async () => {
-      mockedAxios.request.mockResolvedValueOnce({
+      mockAxiosInstance.get.mockResolvedValueOnce({
         data: {
           task_id: 'task-123',
           status: 'failed',
@@ -242,7 +269,7 @@ describe('YunmaoClient', () => {
     });
 
     it('应该处理超时', async () => {
-      mockedAxios.request.mockResolvedValue({
+      mockAxiosInstance.get.mockResolvedValue({
         data: {
           task_id: 'task-123',
           status: 'processing',
@@ -268,7 +295,7 @@ describe('YunmaoClient', () => {
         }
       };
 
-      mockedAxios.request.mockResolvedValueOnce(mockResponse);
+      mockAxiosInstance.post.mockResolvedValueOnce(mockResponse);
 
       const result = await client.extractText('https://example.com/video.mp4', {
         waitForResult: false
@@ -299,7 +326,7 @@ describe('YunmaoClient', () => {
       ];
 
       let callCount = 0;
-      mockedAxios.request.mockImplementation(() => {
+      mockAxiosInstance.get.mockImplementation(() => {
         return Promise.resolve(mockResponses[callCount++]) as any;
       });
 
@@ -333,7 +360,7 @@ describe('YunmaoClient', () => {
 
   describe('错误处理', () => {
     it('应该处理401错误', async () => {
-      mockedAxios.request.mockRejectedValueOnce({
+      mockAxiosInstance.post.mockRejectedValueOnce({
         response: {
           status: 401,
           data: {}
@@ -348,7 +375,7 @@ describe('YunmaoClient', () => {
     });
 
     it('应该处理403错误', async () => {
-      mockedAxios.request.mockRejectedValueOnce({
+      mockAxiosInstance.post.mockRejectedValueOnce({
         response: {
           status: 403,
           data: { message: 'Quota exceeded' }
@@ -363,7 +390,7 @@ describe('YunmaoClient', () => {
     });
 
     it('应该处理429错误', async () => {
-      mockedAxios.request.mockRejectedValueOnce({
+      mockAxiosInstance.post.mockRejectedValueOnce({
         response: {
           status: 429,
           data: {}
@@ -378,7 +405,7 @@ describe('YunmaoClient', () => {
     });
 
     it('应该处理网络错误', async () => {
-      mockedAxios.request.mockRejectedValueOnce(new Error('Network error'));
+      mockAxiosInstance.post.mockRejectedValueOnce(new Error('Network error'));
 
       await expect(
         client.createExtractTextTask({

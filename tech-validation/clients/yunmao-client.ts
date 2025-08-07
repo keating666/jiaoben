@@ -73,13 +73,12 @@ export class YunmaoClient {
 
     // 创建增强的API客户端
     this.client = new ApiClient({
-        apiKey: this.config.apiKey,
-        baseUrl: this.config.baseUrl,
-        timeout: 30000,
-        maxRetries: 3,
-        retryDelayBase: 1000
-      }
-    );
+      apiKey: this.config.apiKey,
+      baseUrl: this.config.baseUrl,
+      timeout: 30000,
+      maxRetries: 3,
+      retryDelayBase: 1000
+    });
   }
 
   /**
@@ -142,7 +141,7 @@ export class YunmaoClient {
       }
 
       // 调用API
-      const response = await this.client.get<any>(
+      const data = await this.client.get<any>(
         `${this.config.baseUrl}/tasks/${taskId}`,
         {
           headers: {
@@ -153,7 +152,7 @@ export class YunmaoClient {
       );
 
       // 解析响应
-      return this.parseTaskStatusResponse(response.data);
+      return this.parseTaskStatusResponse(data);
     } catch (error) {
       logger.error('YunmaoClient', 'getTaskStatus', '查询状态失败', error as Error);
       throw this.handleError(error);
