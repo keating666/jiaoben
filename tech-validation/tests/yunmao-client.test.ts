@@ -211,7 +211,7 @@ describe('YunmaoClient', () => {
 
       let callCount = 0;
       mockedAxios.request.mockImplementation(() => {
-        return Promise.resolve(mockResponses[callCount++]);
+        return Promise.resolve(mockResponses[callCount++]) as any;
       });
 
       const progressValues: number[] = [];
@@ -300,12 +300,12 @@ describe('YunmaoClient', () => {
 
       let callCount = 0;
       mockedAxios.request.mockImplementation(() => {
-        return Promise.resolve(mockResponses[callCount++]);
+        return Promise.resolve(mockResponses[callCount++]) as any;
       });
 
       const result = await client.extractText('https://example.com/video.mp4', {
         waitForResult: true,
-        pollInterval: 10
+        maxWaitTime: 10000
       });
 
       expect(result.status).toBe('completed');

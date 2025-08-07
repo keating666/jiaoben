@@ -69,22 +69,15 @@ export class YunmaoClient {
     };
 
     // 初始化安全验证器
-    this.validator = new SecurityValidator({
-      allowedDomains: ['yunmaovideo.com'],
-      maxPayloadSize: 10 * 1024 * 1024, // 10MB
-      enableUrlValidation: true,
-      enableSqlInjectionCheck: false
-    });
+    this.validator = SecurityValidator;
 
     // 创建增强的API客户端
-    this.client = new ApiClient(
-      'YunmaoClient',
-      {
+    this.client = new ApiClient({
+        apiKey: this.config.apiKey,
+        baseUrl: this.config.baseUrl,
         timeout: 30000,
         maxRetries: 3,
-        retryDelay: 1000,
-        circuitBreakerThreshold: 0.5,
-        circuitBreakerTimeout: 60000
+        retryDelayBase: 1000
       }
     );
   }
@@ -218,7 +211,7 @@ export class YunmaoClient {
    */
   async extractText(
     videoUrl: string,
-    options: ExtractTextRequest & {
+    options: Partial<ExtractTextRequest> & {
       waitForResult?: boolean;
       maxWaitTime?: number;
       onProgress?: (progress: number) => void;

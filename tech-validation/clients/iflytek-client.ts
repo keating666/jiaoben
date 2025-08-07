@@ -18,7 +18,7 @@ import { Config } from '../utils/config';
 
 // Node.js 环境导入
 let crypto: typeof import('crypto');
-let WebSocket: typeof import('ws').default;
+let WebSocket: typeof import('ws');
 
 if (!isCloudflareWorkers) {
   crypto = require('crypto');
@@ -59,9 +59,9 @@ export class IflytekClient implements AIServiceClient {
     // 从环境变量加载讯飞特定配置
     this.config = {
       ...config,
-      appId: Config.get('IFLYTEK_APP_ID'),
-      apiSecret: Config.get('IFLYTEK_API_SECRET'),
-      apiKey: Config.get('IFLYTEK_API_KEY'),
+      appId: process.env.IFLYTEK_APP_ID || '',
+      apiSecret: process.env.IFLYTEK_API_SECRET || '',
+      apiKey: process.env.IFLYTEK_API_KEY || '',
     } as IflytekConfig;
     
     if (!this.config.appId || !this.config.apiSecret || !this.config.apiKey) {

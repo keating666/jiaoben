@@ -57,7 +57,7 @@ export class RailwayVideoService {
         return false;
       }
 
-      const data = await response.json();
+      const data = await response.json() as any;
       return data.status === 'healthy' && data.ffmpeg_available;
     } catch (error) {
       logger.error('RailwayVideoService', 'checkHealth', '健康检查失败', error as Error);
@@ -90,7 +90,7 @@ export class RailwayVideoService {
 
       clearTimeout(timeoutId);
 
-      const data: ProcessVideoResponse = await response.json();
+      const data: ProcessVideoResponse = await response.json() as ProcessVideoResponse;
 
       if (!response.ok || !data.success) {
         throw new Error(data.error || '视频处理失败');

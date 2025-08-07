@@ -63,14 +63,15 @@ export class NetworkError extends BaseError {
   }
 }
 
-export class TimeoutError extends NetworkError {
+export class TimeoutError extends BaseError {
   constructor(operation: string, timeoutMs: number, context?: Record<string, any>) {
     super(
+      'TIMEOUT_ERROR',
       `操作超时: ${operation} (${timeoutMs}ms)`,
+      '处理时间过长，请稍后重试',
+      true,
       { ...context, operation, timeoutMs }
     );
-    this.code = 'TIMEOUT_ERROR';
-    this.userMessage = '处理时间过长，请稍后重试';
   }
 }
 
@@ -80,17 +81,19 @@ export class ServiceError extends BaseError {
   public readonly statusCode?: number;
 
   constructor(
+    code: string,
     service: string,
     message: string,
+    userMessage: string,
     statusCode?: number,
     retryable: boolean = true,
     context?: Record<string, any>,
     cause?: Error
   ) {
     super(
-      'SERVICE_ERROR',
+      code,
       message,
-      '服务暂时不可用，正在为您切换备用服务',
+      userMessage,
       retryable,
       { ...context, service, statusCode },
       cause
@@ -103,13 +106,14 @@ export class ServiceError extends BaseError {
 export class ServiceUnavailableError extends ServiceError {
   constructor(service: string, reason?: string, context?: Record<string, any>) {
     super(
+      'SERVICE_UNAVAILABLE',
       service,
       `服务不可用: ${service}${reason ? ` - ${reason}` : ''}`,
+      '服务暂时不可用，正在为您切换备用服务',
       503,
       true,
       context
     );
-    this.code = 'SERVICE_UNAVAILABLE';
   }
 }
 
@@ -118,14 +122,14 @@ export class RateLimitError extends ServiceError {
 
   constructor(service: string, retryAfter?: number, context?: Record<string, any>) {
     super(
+      'RATE_LIMIT_ERROR',
       service,
       `API请求频率超限`,
+      '请求过于频繁，请稍后再试',
       429,
       true,
       { ...context, retryAfter }
     );
-    this.code = 'RATE_LIMIT_ERROR';
-    this.userMessage = '请求过于频繁，请稍后再试';
     this.retryAfter = retryAfter;
   }
 }
@@ -133,14 +137,14 @@ export class RateLimitError extends ServiceError {
 export class QuotaExceededError extends ServiceError {
   constructor(service: string, quotaType: string, context?: Record<string, any>) {
     super(
+      'QUOTA_EXCEEDED',
       service,
       `配额已用完: ${quotaType}`,
+      '今日配额已用完，请明天再试或联系管理员',
       429,
       false,
       { ...context, quotaType }
     );
-    this.code = 'QUOTA_EXCEEDED';
-    this.userMessage = '今日配额已用完，请明天再试或联系管理员';
   }
 }
 
@@ -157,10 +161,15 @@ export class AuthenticationError extends BaseError {
   }
 }
 
-export class ApiKeyInvalidError extends AuthenticationError {
+export class ApiKeyInvalidError extends BaseError {
   constructor(service: string, context?: Record<string, any>) {
-    super(service, 'API密钥无效或已过期', context);
-    this.code = 'INVALID_API_KEY';
+    super(
+      'INVALID_API_KEY',
+      `认证失败: ${service} - API密钥无效或已过期`,
+      'API密钥无效或已过期',
+      false,
+      { ...context, service }
+    );
   }
 }
 
@@ -197,8 +206,8 @@ export class ParseError extends BaseError {
 
 // ============= 业务逻辑错误 =============
 export class BusinessError extends BaseError {
-  constructor(code: string, message: string, userMessage: string, context?: Record<string, any>) {
-    super(code, message, userMessage, false, context);
+  constructor(code: string, message: string, userMessage: string, context?: Record<string, any>, cause?: Error) {
+    super(code, message, userMessage, false, context, cause);
   }
 }
 
@@ -219,9 +228,9 @@ export class VideoProcessingError extends BusinessError {
       'VIDEO_PROCESSING_ERROR',
       `视频处理失败 [${stage}]: ${reason}`,
       '视频处理失败，请稍后重试',
-      { ...context, stage }
+      { ...context, stage },
+      cause
     );
-    this.cause = cause;
   }
 }
 
@@ -231,9 +240,9 @@ export class TranscriptionError extends BusinessError {
       'TRANSCRIPTION_ERROR',
       `转录失败: ${reason}`,
       '音频转文字失败，请检查视频是否包含有效音频',
-      context
+      context,
+      cause
     );
-    this.cause = cause;
   }
 }
 
@@ -251,14 +260,15 @@ export class SystemError extends BaseError {
   }
 }
 
-export class ResourceExhaustedError extends SystemError {
+export class ResourceExhaustedError extends BaseError {
   constructor(resource: string, context?: Record<string, any>) {
     super(
+      'RESOURCE_EXHAUSTED',
       `资源耗尽: ${resource}`,
+      '系统资源不足，请稍后重试',
+      true,
       { ...context, resource }
     );
-    this.code = 'RESOURCE_EXHAUSTED';
-    this.userMessage = '系统资源不足，请稍后重试';
   }
 }
 

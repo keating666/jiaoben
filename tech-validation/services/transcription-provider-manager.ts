@@ -13,6 +13,7 @@ export type TranscriptionProvider = 'minimax' | 'yunmao' | 'aliyun' | 'iflytek';
  */
 export interface TranscriptionRequest {
   videoUrl?: string;           // 视频URL（云猫转码使用）
+  audioUrl?: string;           // 音频URL（直接音频链接）
   audioPath?: string;          // 音频文件路径（MiniMax等使用）
   language?: string;           // 语言代码
   provider?: TranscriptionProvider; // 指定服务提供商
@@ -134,7 +135,7 @@ export class TranscriptionProviderManager {
 
       switch (provider) {
         case 'minimax':
-          this.clients.set(provider, new MiniMaxClientV2(config.config));
+          this.clients.set(provider, new MiniMaxClientV2());
           break;
         case 'yunmao':
           this.clients.set(provider, new YunmaoClient(config.config));
@@ -236,7 +237,7 @@ export class TranscriptionProviderManager {
           outputFormat: request.options?.outputFormat || 'text',
           waitForResult: true,
           maxWaitTime: 600000, // 10分钟
-          onProgress: (progress) => {
+          onProgress: (progress: number) => {
             logger.info('TranscriptionProviderManager', 'transcribe', '转录进度', {
               provider,
               progress

@@ -257,14 +257,13 @@ export class FallbackStrategyManager {
     try {
       const result = await yunmaoClient.extractText(videoUrl, {
         language: 'zh',
-        output: 'txt',
-        subtitle_type: 'srt',
-        is_dialogue: false
+        outputFormat: 'txt',
+        dialogueMode: false
       });
       
       yunmaoClient.dispose();
       return { 
-        text: result.textContent,
+        text: result.result?.text || '',
         confidence: 0.95 // 云猫通常准确度很高
       };
     } catch (error) {
@@ -275,8 +274,10 @@ export class FallbackStrategyManager {
 
   private async minimaxTranscribe(input: string): Promise<{text: string; confidence: number}> {
     // MiniMax 实现
-    const minimaxClient = new (await import('../clients/minimax-client-v2')).MiniMaxClientV2({
-      apiBase: process.env.MINIMAX_API_BASE_URL || '',
+    const minimaxClient = new (await import('../clients/minimax-client-v2')).MiniMaxClientV2();
+    await minimaxClient.initialize({
+      apiKey: process.env.MINIMAX_API_KEY || '',
+      baseUrl: process.env.MINIMAX_API_BASE_URL || '',
       groupId: process.env.MINIMAX_GROUP_ID || ''
     });
     
@@ -284,7 +285,11 @@ export class FallbackStrategyManager {
       // 如果是视频URL，需要先下载音频
       const audioFilePath = input.includes('http') ? await this.downloadAudio(input) : input;
       
-      const result = await minimaxClient.transcribeAudio(audioFilePath);
+      // 读取文件为Buffer
+      const fs = await import('fs/promises');
+      const audioBuffer = await fs.readFile(audioFilePath);
+      
+      const result = await minimaxClient.speechToText({ audioFile: audioBuffer });
       
       // 清理下载的临时文件
       if (input.includes('http')) {
@@ -305,7 +310,7 @@ export class FallbackStrategyManager {
 
   private async aliyunTranscribe(input: string): Promise<{text: string; confidence: number}> {
     // 阿里云实现 - 暂时返回未实现
-    throw new ServiceError('Aliyun', '阿里云语音识别服务暂未集成', 501, false);
+    throw new ServiceError('SERVICE_ERROR', 'Aliyun', '阿里云语音识别服务暂未集成', '阿里云语音识别服务暂未集成', 501, false);
   }
 
   private async mockTranscription(): Promise<{text: string; confidence: number}> {
@@ -319,18 +324,18 @@ export class FallbackStrategyManager {
 
   private async tongyiGenerate(text: string, template: string): Promise<any> {
     // 通义千问实现
-    const tongyiClient = new (await import('../clients/tongyi-client')).TongyiClient({
+    const tongyiClient = new (await import('../clients/tongyi-client')).TongyiClient();
+    await tongyiClient.initialize({
       apiKey: process.env.TONGYI_API_KEY || '',
-      baseUrl: process.env.TONGYI_API_BASE_URL || 'https://dashscope.aliyuncs.com/api/v1',
-      model: process.env.TONGYI_MODEL || 'qwen-plus'
+      baseUrl: process.env.TONGYI_API_BASE_URL || 'https://dashscope.aliyuncs.com/api/v1'
     });
     
     try {
       const prompt = template.replace('{{transcriptText}}', text);
-      const result = await tongyiClient.generateScript(prompt);
+      const result = await tongyiClient.generateText({ prompt, max_tokens: 2000 });
       
       tongyiClient.dispose();
-      return result.data;
+      return result.text;
     } catch (error) {
       tongyiClient.dispose();
       throw error;
@@ -339,7 +344,7 @@ export class FallbackStrategyManager {
 
   private async minimaxGenerate(text: string, template: string): Promise<any> {
     // MiniMax 生成实现 - 暂未实现文本生成功能
-    throw new ServiceError('MiniMax', 'MiniMax文本生成服务暂未集成', 501, false);
+    throw new ServiceError('SERVICE_ERROR', 'MiniMax', 'MiniMax文本生成服务暂未集成', 'MiniMax文本生成服务暂未集成', 501, false);
   }
 
   private async simpleScriptParser(text: string): Promise<any> {
@@ -441,7 +446,7 @@ export class FallbackStrategyManager {
     if (status.failureCount >= this.config.maxFailures || 
         status.errorRate > this.config.errorRateThreshold) {
       status.available = false;
-      logger.error('FallbackStrategy', 'recordFailure', `服务已标记为不可用: ${serviceName}`, {
+      logger.error('FallbackStrategy', 'recordFailure', `服务已标记为不可用: ${serviceName}`, undefined, {
         failureCount: status.failureCount,
         errorRate: status.errorRate
       });
@@ -488,7 +493,7 @@ export class FallbackStrategyManager {
     // 确保临时目录存在
     await fs.mkdir(tempDir, { recursive: true });
     
-    const audioPath = await downloader.downloadAudio(videoUrl, tempDir);
+    const audioPath = await VideoDownloader.download({ url: videoUrl, outputPath: `${tempDir}/audio.mp3` }).then((r: any) => r.filePath || '');
     return audioPath;
   }
 }

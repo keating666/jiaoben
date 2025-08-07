@@ -41,10 +41,10 @@ export class ReplitVideoService {
         signal: AbortSignal.timeout(5000)
       });
       
-      const data = await response.json();
+      const data = await response.json() as any;
       return (data.status === 'healthy' || data.status === 'ok') && (data.ffmpeg_available || data.ffmpeg);
     } catch (error) {
-      console.error('Replit 服务健康检查失败:', error);
+      console.error('Replit 服务健康检查失败:', error as Error);
       return false;
     }
   }
@@ -65,7 +65,7 @@ export class ReplitVideoService {
     if (!response.ok) {
       let errorMessage = '获取视频信息失败';
       try {
-        const error = await response.json();
+        const error = await response.json() as any;
         errorMessage = error.message || errorMessage;
       } catch (e) {
         // 如果响应不是 JSON，尝试读取文本
@@ -77,7 +77,7 @@ export class ReplitVideoService {
     
     // 尝试解析 JSON
     try {
-      return await response.json();
+      return await response.json() as VideoInfo;
     } catch (e) {
       const text = await response.text();
       console.error('Replit 返回无效 JSON:', text.substring(0, 200));
@@ -108,7 +108,7 @@ export class ReplitVideoService {
     });
     
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json() as any;
       throw new Error(error.message || '视频处理失败');
     }
     

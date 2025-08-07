@@ -57,8 +57,8 @@ export class VideoProcessor {
             duration: result.video_info.duration,
             title: result.video_info.title,
             format: 'mp3',
-            url: videoUrl,
-            audioData: result.audio?.data, // 音频数据（hex格式）
+            url: videoUrl
+            // audioData: result.audio?.data, // 音频数据（hex格式）- VideoMetadata接口不包含此字段
           };
         } catch (error) {
           console.error('Railway 服务调用失败:', error);

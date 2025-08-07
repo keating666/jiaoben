@@ -60,17 +60,14 @@ export class TikHubClient {
       preferGuestMode: config.preferGuestMode ?? true // 默认游客模式
     };
 
-    this.validator = new SecurityValidator({
-      allowedDomains: ['douyin.com', 'iesdouyin.com', 'douyinvod.com'],
-      enableUrlValidation: true
-    });
+    this.validator = SecurityValidator;
 
-    this.client = new ApiClient(
-      'TikHubClient',
-      {
+    this.client = new ApiClient({
+        apiKey: this.config.apiToken || '',
+        baseUrl: this.config.baseUrl,
         timeout: 15000,
         maxRetries: 3,
-        retryDelay: 1000
+        retryDelayBase: 1000
       }
     );
   }
@@ -204,7 +201,7 @@ export class TikHubClient {
     const urls = this.selectBestUrls(urlList);
 
     if (urls.length === 0) {
-      throw new ServiceError('TikHub', '未找到可用的视频地址', 404, false);
+      throw new ServiceError('SERVICE_ERROR', 'TikHub', '未找到可用的视频地址', '未找到可用的视频地址', 404, false);
     }
 
     return {
@@ -232,7 +229,7 @@ export class TikHubClient {
     const urls = this.selectBestUrls(urlList);
 
     if (urls.length === 0) {
-      throw new ServiceError('TikHub', '未找到可用的视频地址', 404, false);
+      throw new ServiceError('SERVICE_ERROR', 'TikHub', '未找到可用的视频地址', '未找到可用的视频地址', 404, false);
     }
 
     return {
@@ -326,14 +323,14 @@ export class TikHubClient {
         case 401:
           return new ApiKeyInvalidError('TikHub');
         case 403:
-          return new ServiceError('TikHub', 'API 配额不足或权限受限', 403, false);
+          return new ServiceError('SERVICE_ERROR', 'TikHub', 'API 配额不足或权限受限', 'API 配额不足或权限受限', 403, false);
         case 404:
           return new VideoNotFoundError(this.extractVideoId(error.config?.params?.aweme_id || '') || 'unknown', 'douyin');
         case 429:
           const retryAfter = error.response.headers['retry-after'];
           return new RateLimitError('TikHub', retryAfter ? parseInt(retryAfter) : undefined);
         default:
-          return new ServiceError('TikHub', `API错误: ${data?.message || error.message}`, status, status >= 500);
+          return new ServiceError('SERVICE_ERROR', 'TikHub', `API错误: ${data?.message || error.message}`, 'API错误', status, status >= 500);
       }
     }
 
@@ -342,7 +339,7 @@ export class TikHubClient {
       return new NetworkError('无法连接到TikHub服务', { code: error.code }, error);
     }
     
-    return error instanceof Error ? error : new ServiceError('TikHub', '解析视频失败', undefined, true);
+    return error instanceof Error ? error : new ServiceError('SERVICE_ERROR', 'TikHub', '解析视频失败', '解析视频失败', undefined, true);
   }
 
   /**
@@ -358,7 +355,7 @@ export class TikHubClient {
           }
         }
       );
-      return response.status === 200;
+      return (response as any).status === 200;
     } catch {
       return false;
     }

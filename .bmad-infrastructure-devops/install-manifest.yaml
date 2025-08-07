@@ -1,5 +1,5 @@
-version: 1.10.0
-installed_at: '2025-07-22T13:48:39.934Z'
+version: 1.11.0
+installed_at: '2025-08-03T06:29:14.576Z'
 install_type: expansion-pack
 expansion_pack_id: bmad-infrastructure-devops
 expansion_pack_name: bmad-infrastructure-devops
@@ -8,7 +8,7 @@ ides_setup:
   - gemini
 files:
   - path: .bmad-infrastructure-devops/config.yaml
-    hash: 11b2afdf38da58d9
+    hash: 0686813faa6be9ce
     modified: false
   - path: .bmad-infrastructure-devops/README.md
     hash: bb81a20324b3ffd6
@@ -19,6 +19,18 @@ files:
   - path: .bmad-infrastructure-devops/utils/bmad-doc-template.md
     hash: 4b2f7c4408835b9e
     modified: false
+  - path: .bmad-infrastructure-devops/tasks/validate-infrastructure.md
+    hash: cd9e3e1911ef9c11
+    modified: false
+  - path: .bmad-infrastructure-devops/tasks/review-infrastructure.md
+    hash: d0acdd99eb509a3a
+    modified: false
+  - path: .bmad-infrastructure-devops/tasks/execute-checklist.md
+    hash: 604cf759521f0d82
+    modified: false
+  - path: .bmad-infrastructure-devops/tasks/create-doc.md
+    hash: 395719b8a002f7f9
+    modified: false
   - path: >-
       .bmad-infrastructure-devops/templates/infrastructure-platform-from-arch-tmpl.yaml
     hash: 5b6a3604a7e6912a
@@ -27,21 +39,6 @@ files:
       .bmad-infrastructure-devops/templates/infrastructure-architecture-tmpl.yaml
     hash: a3204be65e3ba95d
     modified: false
-  - path: .bmad-infrastructure-devops/tasks/validate-infrastructure.md
-    hash: 7f809521d26f2ca3
-    modified: false
-  - path: .bmad-infrastructure-devops/tasks/review-infrastructure.md
-    hash: 4e9af9734a519ca1
-    modified: false
-  - path: .bmad-infrastructure-devops/tasks/execute-checklist.md
-    hash: 035b3e0b944d1fca
-    modified: false
-  - path: .bmad-infrastructure-devops/tasks/create-doc.md
-    hash: 395719b8a002f7f9
-    modified: false
-  - path: .bmad-infrastructure-devops/agents/infra-devops-platform.md
-    hash: 7a42f1366af5afa9
-    modified: false
   - path: .bmad-infrastructure-devops/checklists/infrastructure-checklist.md
     hash: 354d52a34c3eb5aa
     modified: false
@@ -49,5 +46,8 @@ files:
     hash: 6530bed845540b0d
     modified: false
   - path: .bmad-infrastructure-devops/data/bmad-kb.md
-    hash: a608321f9b01bc5d
+    hash: 3480e1b6106792a5
+    modified: false
+  - path: .bmad-infrastructure-devops/agents/infra-devops-platform.md
+    hash: 7a42f1366af5afa9
     modified: false

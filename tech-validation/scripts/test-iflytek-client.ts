@@ -20,7 +20,7 @@ async function testIflytekClient() {
     const client = new IflytekClient();
     
     await client.initialize({
-      apiKey: Config.get('IFLYTEK_API_KEY'),
+      apiKey: process.env.IFLYTEK_API_KEY || '',
       baseUrl: 'wss://ws-api.xfyun.cn',
       timeout: 60000,
     });
@@ -62,9 +62,9 @@ async function testIflytekClient() {
     const { generateIflytekAuthHeaders } = await import('../clients/iflytek-client');
     
     const authHeaders = await generateIflytekAuthHeaders(
-      Config.get('IFLYTEK_APP_ID'),
-      Config.get('IFLYTEK_API_KEY'),
-      Config.get('IFLYTEK_API_SECRET')
+      process.env.IFLYTEK_APP_ID || '',
+      process.env.IFLYTEK_API_KEY || '',
+      process.env.IFLYTEK_API_SECRET || ''
     );
     
     logger.info('IflytekTest', 'main', '签名生成成功', {
