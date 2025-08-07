@@ -13,9 +13,19 @@
 
 ## 技术架构
 
+### 生产环境（Cloudflare Worker）
 ```
 抖音链接 → TikHub API → 音频URL → 腾讯云ASR → 转写文本 → 通义千问 → 分镜脚本
 ```
+- 核心实现：`/src/cloudflare-worker-tencent-asr.js`
+- 部署地址：`https://jiaoben-api.keating8500.workers.dev`
+
+### 开发环境（Vercel）
+```
+视频链接 → 视频下载 → MiniMax转写 → 通义千问 → 分镜脚本
+```
+- 核心实现：`/api/video/transcribe.ts`
+- 部署地址：Vercel Serverless Functions
 
 ## 快速开始
 

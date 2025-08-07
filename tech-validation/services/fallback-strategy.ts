@@ -248,28 +248,8 @@ export class FallbackStrategyManager {
   }
 
   private async yunmaoTranscribe(videoUrl: string): Promise<{text: string; confidence: number}> {
-    // 云猫转码实现
-    const yunmaoClient = new (await import('../clients/yunmao-client')).YunmaoClient({
-      apiKey: process.env.YUNMAO_API_KEY || '',
-      apiSecret: process.env.YUNMAO_API_SECRET || ''
-    });
-    
-    try {
-      const result = await yunmaoClient.extractText(videoUrl, {
-        language: 'zh',
-        outputFormat: 'txt',
-        dialogueMode: false
-      });
-      
-      yunmaoClient.dispose();
-      return { 
-        text: result.result?.text || '',
-        confidence: 0.95 // 云猫通常准确度很高
-      };
-    } catch (error) {
-      yunmaoClient.dispose();
-      throw error;
-    }
+    // 云猫转码已废弃，抛出错误提示使用其他服务
+    throw new ServiceError('SERVICE_ERROR', 'Yunmao', '云猫转码服务已废弃', '请使用腾讯云ASR或MiniMax服务', 501, false);
   }
 
   private async minimaxTranscribe(input: string): Promise<{text: string; confidence: number}> {
