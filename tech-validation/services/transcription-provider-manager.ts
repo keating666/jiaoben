@@ -1,6 +1,5 @@
-import { YunmaoClient } from '../clients/yunmao-client';
 import { MiniMaxClientV2 } from '../clients/minimax-client-v2';
-import { IflytekClient } from '../clients/iflytek-client';
+// YunmaoClient 和 IflytekClient 已废弃，移至 archive/deprecated-services
 import { logger } from '../utils/logger';
 
 /**
@@ -138,11 +137,9 @@ export class TranscriptionProviderManager {
           this.clients.set(provider, new MiniMaxClientV2());
           break;
         case 'yunmao':
-          this.clients.set(provider, new YunmaoClient(config.config));
-          break;
+          throw new Error('云猫转码服务已废弃，请使用 minimax 或其他服务');
         case 'iflytek':
-          this.clients.set(provider, new IflytekClient());
-          break;
+          throw new Error('科大讯飞服务已废弃，请使用 minimax 或其他服务');
         default:
           throw new Error(`服务提供商 ${provider} 尚未实现`);
       }
@@ -226,60 +223,11 @@ export class TranscriptionProviderManager {
       }
 
       case 'yunmao': {
-        if (!request.videoUrl) {
-          throw new Error('云猫转码需要视频URL');
-        }
-
-        const result = await client.extractText(request.videoUrl, {
-          language: request.language,
-          dialogueMode: request.options?.dialogueMode,
-          speakerCount: request.options?.speakerCount,
-          outputFormat: request.options?.outputFormat || 'text',
-          waitForResult: true,
-          maxWaitTime: 600000, // 10分钟
-          onProgress: (progress: number) => {
-            logger.info('TranscriptionProviderManager', 'transcribe', '转录进度', {
-              provider,
-              progress
-            });
-          }
-        });
-
-        if (!result.result?.text) {
-          throw new Error('转录结果为空');
-        }
-
-        return {
-          text: result.result.text,
-          provider: 'yunmao',
-          duration: result.result.duration,
-          wordCount: result.result.wordCount,
-          metadata: {
-            taskId: result.taskId,
-            processingTime: Date.now() - startTime
-          }
-        };
+        throw new Error('云猫转码服务已废弃，请使用 minimax 或腾讯云 ASR 服务');
       }
 
       case 'iflytek': {
-        if (!request.audioPath && !request.audioUrl) {
-          throw new Error('讯飞需要音频文件路径或URL');
-        }
-
-        const iflytekRequest = request.audioUrl ? 
-          { audioUrl: request.audioUrl, language: request.language } :
-          { audioFile: require('fs').readFileSync(request.audioPath!), language: request.language };
-
-        const result = await client.speechToText(iflytekRequest);
-
-        return {
-          text: result.text,
-          provider: 'iflytek',
-          metadata: {
-            processingTime: Date.now() - startTime,
-            language: result.language
-          }
-        };
+        throw new Error('科大讯飞服务已废弃，请使用 minimax 或腾讯云 ASR 服务');
       }
 
       default:
