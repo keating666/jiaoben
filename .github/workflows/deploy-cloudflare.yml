@@ -1,0 +1,107 @@
+name: Deploy to Cloudflare Workers
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/cloudflare-worker-*.js'
+      - 'wrangler.toml'
+      - '.github/workflows/deploy-cloudflare.yml'
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '18.x'
+
+jobs:
+  deploy:
+    name: Deploy to Cloudflare Workers
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        
+    - name: Install Wrangler
+      run: npm install -g wrangler
+      
+    - name: Verify Worker Configuration
+      run: |
+        echo "🔍 Checking wrangler.toml configuration..."
+        cat wrangler.toml
+        
+        echo "📁 Checking Worker source file..."
+        if [ -f "src/cloudflare-worker-tencent-asr.js" ]; then
+          echo "✅ Worker source file found"
+        else
+          echo "❌ Worker source file not found!"
+          exit 1
+        fi
+        
+    - name: Deploy to Cloudflare Workers
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      run: |
+        echo "🚀 Deploying to Cloudflare Workers..."
+        wrangler deploy --compatibility-date 2024-01-01
+        
+    - name: Set Environment Variables
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      run: |
+        echo "🔐 Setting Worker secrets..."
+        
+        # Set Tongyi API Key
+        if [ ! -z "${{ secrets.TONGYI_API_KEY }}" ]; then
+          echo "${{ secrets.TONGYI_API_KEY }}" | wrangler secret put TONGYI_API_KEY
+          echo "✅ TONGYI_API_KEY set"
+        fi
+        
+        # Set TikHub API Token
+        if [ ! -z "${{ secrets.TIKHUB_API_TOKEN }}" ]; then
+          echo "${{ secrets.TIKHUB_API_TOKEN }}" | wrangler secret put TIKHUB_API_TOKEN
+          echo "✅ TIKHUB_API_TOKEN set"
+        fi
+        
+        # Set Tencent Cloud Credentials
+        if [ ! -z "${{ secrets.TENCENT_SECRET_ID }}" ]; then
+          echo "${{ secrets.TENCENT_SECRET_ID }}" | wrangler secret put TENCENT_SECRET_ID
+          echo "✅ TENCENT_SECRET_ID set"
+        fi
+        
+        if [ ! -z "${{ secrets.TENCENT_SECRET_KEY }}" ]; then
+          echo "${{ secrets.TENCENT_SECRET_KEY }}" | wrangler secret put TENCENT_SECRET_KEY
+          echo "✅ TENCENT_SECRET_KEY set"
+        fi
+        
+    - name: Test Deployment
+      run: |
+        echo "🧪 Testing deployed Worker..."
+        
+        # Wait for deployment to be ready
+        sleep 10
+        
+        # Test the API endpoint
+        response=$(curl -s -X GET https://jiaoben-api.keating8500.workers.dev/api/test)
+        echo "Response: $response"
+        
+        if echo "$response" | grep -q "Worker正常运行"; then
+          echo "✅ Worker is running successfully!"
+        else
+          echo "❌ Worker test failed!"
+          exit 1
+        fi
+        
+    - name: Report Success
+      if: success()
+      run: |
+        echo "✅ Deployment successful!"
+        echo "🌐 Worker URL: https://jiaoben-api.keating8500.workers.dev"
+        echo "📝 Features:"
+        echo "  - TikHub integration"
+        echo "  - Tencent ASR"
+        echo "  - Tongyi (通义千问) script generation"

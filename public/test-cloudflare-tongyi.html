@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Tongyi API 测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+        }
+        
+        .test-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .test-card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .config-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .config-section h3 {
+            color: #555;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        .input-group input,
+        .input-group select,
+        .input-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .input-group input:focus,
+        .input-group select:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .input-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+        
+        .result-box {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            display: none;
+        }
+        
+        .result-box.show {
+            display: block;
+        }
+        
+        .result-box h4 {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+        
+        .result-content {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin: 0;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .endpoint-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .endpoint-selector label {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .endpoint-selector input[type="radio"] {
+            margin-right: 8px;
+        }
+        
+        .endpoint-selector label:has(input:checked) {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Cloudflare Tongyi API 测试面板</h1>
+        
+        <div class="test-grid">
+            <!-- 配置卡片 -->
+            <div class="test-card">
+                <h2>⚙️ API 配置</h2>
+                
+                <div class="config-section">
+                    <h3>Worker 端点配置</h3>
+                    <div class="endpoint-selector">
+                        <label>
+                            <input type="radio" name="endpoint" value="main" checked>
+                            主 Worker
+                        </label>
+                        <label>
+                            <input type="radio" name="endpoint" value="tongyi">
+                            Tongyi API Worker
+                        </label>
+                    </div>
+                    <div class="input-group">
+                        <label>Worker URL:</label>
+                        <input type="text" id="workerUrl" value="https://jiaoben-api.keating8500.workers.dev" placeholder="https://your-worker.workers.dev">
+                    </div>
+                    <div class="input-group">
+                        <label>API Key (可选):</label>
+                        <input type="password" id="apiKey" placeholder="Bearer token">
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button onclick="testHealth()">测试连接</button>
+                </div>
+                
+                <div id="configStatus" class="status"></div>
+            </div>
+            
+            <!-- 文本生成测试 -->
+            <div class="test-card">
+                <h2>📝 文本生成测试</h2>
+                
+                <div class="input-group">
+                    <label>消息内容:</label>
+                    <textarea id="textPrompt" placeholder="请输入要生成的内容提示...">写一个关于人工智能的简短介绍，100字左右</textarea>
+                </div>
+                
+                <div class="input-group">
+                    <label>模型选择:</label>
+                    <select id="textModel">
+                        <option value="qwen-max">qwen-max (最强)</option>
+                        <option value="qwen-plus">qwen-plus (均衡)</option>
+                        <option value="qwen-turbo">qwen-turbo (快速)</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label>温度 (0-1):</label>
+                    <input type="number" id="temperature" value="0.7" min="0" max="1" step="0.1">
+                </div>
+                
+                <div class="button-group">
+                    <button onclick="testTextGeneration()">生成文本</button>
+                </div>
+                
+                <div id="textStatus" class="status"></div>
+                <div id="textResult" class="result-box">
+                    <h4>生成结果:</h4>
+                    <div class="result-content">
+                        <pre id="textContent"></pre>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 脚本改写测试 -->
+            <div class="test-card">
+                <h2>🎬 脚本改写测试</h2>
+                
+                <div class="input-group">
+                    <label>原始脚本:</label>
+                    <textarea id="originalScript" placeholder="输入要改写的脚本...">今天给大家分享一个生活小技巧。当你的手机充电很慢的时候，可以试试清理充电口的灰尘。使用牙签轻轻清理，你会发现充电速度明显提升。记得要温柔一点，别损坏接口。</textarea>
+                </div>
+                
+                <div class="input-group">
+                    <label>改写风格:</label>
+                    <select id="scriptStyle">
+                        <option value="humorous">幽默风趣</option>
+                        <option value="educational">教育科普</option>
+                        <option value="emotional">情感丰富</option>
+                        <option value="professional">专业正式</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label>目标长度 (可选):</label>
+                    <input type="number" id="targetLength" placeholder="留空则与原文相近" min="50" max="2000">
+                </div>
+                
+                <div class="input-group">
+                    <label>额外要求 (可选):</label>
+                    <input type="text" id="additionalReq" placeholder="例如：加入表情符号">
+                </div>
+                
+                <div class="button-group">
+                    <button onclick="testScriptRewrite()">改写脚本</button>
+                </div>
+                
+                <div id="scriptStatus" class="status"></div>
+                <div id="scriptResult" class="result-box">
+                    <h4>改写结果:</h4>
+                    <div class="result-content">
+                        <pre id="scriptContent"></pre>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 响应日志 -->
+            <div class="test-card">
+                <h2>📊 响应日志</h2>
+                
+                <div class="result-box show">
+                    <div class="result-content">
+                        <pre id="logContent">等待测试...</pre>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button onclick="clearLogs()">清空日志</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 配置管理
+        const endpoints = {
+            main: 'https://jiaoben-api.keating8500.workers.dev',
+            tongyi: 'https://tongyi-api.keating8500.workers.dev'
+        };
+        
+        // 更新 Worker URL
+        document.querySelectorAll('input[name="endpoint"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                document.getElementById('workerUrl').value = endpoints[e.target.value];
+            });
+        });
+        
+        // 日志函数
+        function log(message, type = 'info') {
+            const logContent = document.getElementById('logContent');
+            const timestamp = new Date().toLocaleTimeString('zh-CN');
+            const logEntry = `[${timestamp}] ${message}\n`;
+            
+            if (logContent.textContent === '等待测试...') {
+                logContent.textContent = logEntry;
+            } else {
+                logContent.textContent += logEntry;
+            }
+            
+            // 自动滚动到底部
+            logContent.parentElement.scrollTop = logContent.parentElement.scrollHeight;
+        }
+        
+        // 清空日志
+        function clearLogs() {
+            document.getElementById('logContent').textContent = '等待测试...';
+        }
+        
+        // 显示状态
+        function showStatus(elementId, message, type) {
+            const statusEl = document.getElementById(elementId);
+            statusEl.className = `status ${type}`;
+            statusEl.textContent = message;
+            statusEl.style.display = 'block';
+            
+            if (type !== 'error') {
+                setTimeout(() => {
+                    statusEl.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        // 获取 API 配置
+        function getApiConfig() {
+            const workerUrl = document.getElementById('workerUrl').value.trim();
+            const apiKey = document.getElementById('apiKey').value.trim();
+            
+            return {
+                baseUrl: workerUrl,
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
+                }
+            };
+        }
+        
+        // 测试健康检查
+        async function testHealth() {
+            const config = getApiConfig();
+            const endpoint = document.querySelector('input[name="endpoint"]:checked').value;
+            const healthPath = endpoint === 'tongyi' ? '/health' : '/api/test';
+            
+            log(`测试连接: ${config.baseUrl}${healthPath}`);
+            showStatus('configStatus', '正在测试连接...', 'info');
+            
+            try {
+                const response = await fetch(`${config.baseUrl}${healthPath}`, {
+                    method: 'GET',
+                    headers: config.headers
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showStatus('configStatus', '✅ 连接成功！Worker 正常运行', 'success');
+                    log(`连接成功: ${JSON.stringify(data, null, 2)}`);
+                } else {
+                    showStatus('configStatus', `❌ 连接失败: ${data.error || '未知错误'}`, 'error');
+                    log(`连接失败: ${JSON.stringify(data)}`, 'error');
+                }
+            } catch (error) {
+                showStatus('configStatus', `❌ 网络错误: ${error.message}`, 'error');
+                log(`网络错误: ${error.message}`, 'error');
+            }
+        }
+        
+        // 测试文本生成
+        async function testTextGeneration() {
+            const config = getApiConfig();
+            const endpoint = document.querySelector('input[name="endpoint"]:checked').value;
+            const apiPath = endpoint === 'tongyi' ? '/api/tongyi/text-generation' : '/api/tongyi/text-generation';
+            
+            const prompt = document.getElementById('textPrompt').value.trim();
+            const model = document.getElementById('textModel').value;
+            const temperature = parseFloat(document.getElementById('temperature').value);
+            
+            if (!prompt) {
+                showStatus('textStatus', '请输入提示内容', 'error');
+                return;
+            }
+            
+            log(`开始文本生成: ${prompt.substring(0, 50)}...`);
+            showStatus('textStatus', '正在生成文本...', 'info');
+            
+            const requestBody = {
+                messages: [
+                    {
+                        role: 'user',
+                        content: prompt
+                    }
+                ],
+                model: model,
+                temperature: temperature,
+                max_tokens: 500
+            };
+            
+            try {
+                const response = await fetch(`${config.baseUrl}${apiPath}`, {
+                    method: 'POST',
+                    headers: config.headers,
+                    body: JSON.stringify(requestBody)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showStatus('textStatus', '✅ 生成成功！', 'success');
+                    document.getElementById('textContent').textContent = data.data.content;
+                    document.getElementById('textResult').classList.add('show');
+                    log(`生成成功，使用模型: ${data.data.model}，Token 使用: ${JSON.stringify(data.data.usage)}`);
+                } else {
+                    showStatus('textStatus', `❌ 生成失败: ${data.error || '未知错误'}`, 'error');
+                    log(`生成失败: ${JSON.stringify(data)}`, 'error');
+                }
+            } catch (error) {
+                showStatus('textStatus', `❌ 网络错误: ${error.message}`, 'error');
+                log(`网络错误: ${error.message}`, 'error');
+            }
+        }
+        
+        // 测试脚本改写
+        async function testScriptRewrite() {
+            const config = getApiConfig();
+            const endpoint = document.querySelector('input[name="endpoint"]:checked').value;
+            const apiPath = endpoint === 'tongyi' ? '/api/tongyi/script-rewrite' : '/api/tongyi/script-rewrite';
+            
+            const originalScript = document.getElementById('originalScript').value.trim();
+            const style = document.getElementById('scriptStyle').value;
+            const targetLength = document.getElementById('targetLength').value;
+            const additionalReq = document.getElementById('additionalReq').value.trim();
+            
+            if (!originalScript) {
+                showStatus('scriptStatus', '请输入原始脚本', 'error');
+                return;
+            }
+            
+            log(`开始脚本改写，风格: ${style}`);
+            showStatus('scriptStatus', '正在改写脚本...', 'info');
+            
+            const requestBody = {
+                original_script: originalScript,
+                style: style,
+                ...(targetLength ? { target_length: parseInt(targetLength) } : {}),
+                ...(additionalReq ? { additional_requirements: additionalReq } : {})
+            };
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(`${config.baseUrl}${apiPath}`, {
+                    method: 'POST',
+                    headers: config.headers,
+                    body: JSON.stringify(requestBody)
+                });
+                
+                const data = await response.json();
+                const elapsed = Date.now() - startTime;
+                
+                if (response.ok && data.success) {
+                    showStatus('scriptStatus', `✅ 改写成功！用时 ${elapsed}ms`, 'success');
+                    const result = `改写后的脚本:\n${data.data.rewritten_script}\n\n` +
+                                 `字数: ${data.data.character_count}\n` +
+                                 `风格: ${data.data.style_applied}\n` +
+                                 `改动说明: ${data.data.changes_summary}`;
+                    document.getElementById('scriptContent').textContent = result;
+                    document.getElementById('scriptResult').classList.add('show');
+                    log(`改写成功，处理时间: ${data.data.processing_time}ms`);
+                } else {
+                    showStatus('scriptStatus', `❌ 改写失败: ${data.error || '未知错误'}`, 'error');
+                    log(`改写失败: ${JSON.stringify(data)}`, 'error');
+                }
+            } catch (error) {
+                showStatus('scriptStatus', `❌ 网络错误: ${error.message}`, 'error');
+                log(`网络错误: ${error.message}`, 'error');
+            }
+        }
+        
+        // 页面加载时自动测试连接
+        window.addEventListener('load', () => {
+            setTimeout(testHealth, 500);
+        });
+    </script>
+</body>
+</html>

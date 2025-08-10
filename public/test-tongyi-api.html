@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通义千问 API 测试页面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+        
+        .status-bar {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ccc;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.online {
+            background: #4ade80;
+        }
+        
+        .status-dot.error {
+            background: #f87171;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 968px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            color: #764ba2;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        .input-group input,
+        .input-group select,
+        .input-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .input-group input:focus,
+        .input-group select:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #764ba2;
+        }
+        
+        .input-group textarea {
+            resize: vertical;
+            font-family: inherit;
+            line-height: 1.5;
+        }
+        
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(118, 75, 162, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .result-area {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 10px;
+            border: 2px solid #e5e7eb;
+            min-height: 150px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .result-area.streaming {
+            border-color: #667eea;
+            background: linear-gradient(to bottom, #f0f9ff, #f9fafb);
+        }
+        
+        .result-area.error {
+            border-color: #f87171;
+            background: #fef2f2;
+            color: #991b1b;
+        }
+        
+        .result-area.success {
+            border-color: #4ade80;
+            background: #f0fdf4;
+        }
+        
+        .result-area pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .metric-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #764ba2;
+            margin-bottom: 5px;
+        }
+        
+        .metric-label {
+            font-size: 12px;
+            color: #6b7280;
+            text-transform: uppercase;
+        }
+        
+        .config-panel {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .config-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .config-row input {
+            flex: 1;
+        }
+        
+        .test-cases {
+            display: grid;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .test-case {
+            background: #f3f4f6;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .test-case:hover {
+            background: #e5e7eb;
+        }
+        
+        .test-case-title {
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 5px;
+        }
+        
+        .test-case-desc {
+            font-size: 12px;
+            color: #6b7280;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f4f6;
+            border-top-color: #764ba2;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .chart-container {
+            height: 200px;
+            margin-top: 20px;
+            position: relative;
+        }
+        
+        .performance-bar {
+            display: flex;
+            height: 30px;
+            background: #f3f4f6;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .performance-segment {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            transition: width 0.5s ease;
+        }
+        
+        .segment-good {
+            background: #4ade80;
+        }
+        
+        .segment-warning {
+            background: #fbbf24;
+        }
+        
+        .segment-bad {
+            background: #f87171;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 通义千问 API 测试控制台</h1>
+            <p>测试文本生成和脚本改写功能 | Vercel Serverless Functions</p>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-indicator">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">未连接</span>
+            </div>
+            <div>
+                <span id="apiEndpoint">配置 API 端点...</span>
+            </div>
+        </div>
+
+        <div class="config-panel">
+            <div class="config-row">
+                <input type="text" id="apiUrl" placeholder="API 基础 URL" value="https://jiaoben-7jx4.vercel.app">
+                <input type="password" id="apiKey" placeholder="API Key" value="default-key">
+                <button class="btn btn-secondary" onclick="testConnection()">测试连接</button>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <!-- 文本生成 -->
+            <div class="card">
+                <h2>📝 文本生成</h2>
+                
+                <div class="input-group">
+                    <label>系统提示（可选）</label>
+                    <input type="text" id="systemPrompt" placeholder="你是一个有帮助的助手...">
+                </div>
+                
+                <div class="input-group">
+                    <label>用户输入</label>
+                    <textarea id="userInput" rows="4" placeholder="请输入您的问题或提示词...">请用简洁的语言解释什么是人工智能。</textarea>
+                </div>
+                
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>模型</label>
+                        <select id="model">
+                            <option value="qwen-max">qwen-max</option>
+                            <option value="qwen-plus">qwen-plus</option>
+                            <option value="qwen-turbo">qwen-turbo</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>温度</label>
+                        <input type="number" id="temperature" value="0.7" min="0" max="1" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label>最大令牌</label>
+                        <input type="number" id="maxTokens" value="500" min="1" max="2000">
+                    </div>
+                </div>
+                
+                <div class="test-cases">
+                    <div class="test-case" onclick="loadTextExample('explain')">
+                        <div class="test-case-title">💡 解释概念</div>
+                        <div class="test-case-desc">解释量子计算的基本原理</div>
+                    </div>
+                    <div class="test-case" onclick="loadTextExample('creative')">
+                        <div class="test-case-title">🎨 创意写作</div>
+                        <div class="test-case-desc">写一个关于未来城市的短故事开头</div>
+                    </div>
+                    <div class="test-case" onclick="loadTextExample('code')">
+                        <div class="test-case-title">💻 代码生成</div>
+                        <div class="test-case-desc">生成快速排序算法的Python实现</div>
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="generateText(false)">
+                        <span>🎯</span> 生成文本
+                    </button>
+                    <button class="btn btn-primary" onclick="generateText(true)">
+                        <span>⚡</span> 流式生成
+                    </button>
+                </div>
+                
+                <div id="textResult" class="result-area" style="display:none;">
+                    <pre id="textContent"></pre>
+                </div>
+                
+                <div id="textMetrics" class="metrics" style="display:none;">
+                    <div class="metric-card">
+                        <div class="metric-value" id="textTime">-</div>
+                        <div class="metric-label">响应时间(ms)</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="textTokens">-</div>
+                        <div class="metric-label">生成令牌</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="textChars">-</div>
+                        <div class="metric-label">字符数</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 脚本改写 -->
+            <div class="card">
+                <h2>🎬 脚本改写</h2>
+                
+                <div class="input-group">
+                    <label>原始脚本</label>
+                    <textarea id="originalScript" rows="6" placeholder="输入要改写的脚本...">大家好，今天给大家分享一个生活小技巧。当我们在家做饭时，经常会遇到洋葱切得眼泪直流的问题。其实有一个简单的方法，就是在切洋葱之前，先把洋葱放在冰箱里冷藏15分钟，或者在切的时候旁边放一碗水，这样切的时候就不会流泪了。希望这个小技巧对大家有帮助！</textarea>
+                </div>
+                
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>风格</label>
+                        <select id="scriptStyle">
+                            <option value="humorous">幽默风趣</option>
+                            <option value="educational">教育科普</option>
+                            <option value="emotional">情感丰富</option>
+                            <option value="professional">专业正式</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>目标长度</label>
+                        <input type="number" id="targetLength" placeholder="可选">
+                    </div>
+                    <div class="input-group">
+                        <label>特殊要求</label>
+                        <input type="text" id="additionalReq" placeholder="可选">
+                    </div>
+                </div>
+                
+                <div class="test-cases">
+                    <div class="test-case" onclick="loadScriptExample('product')">
+                        <div class="test-case-title">🛍️ 产品介绍</div>
+                        <div class="test-case-desc">智能手表产品介绍脚本</div>
+                    </div>
+                    <div class="test-case" onclick="loadScriptExample('tutorial')">
+                        <div class="test-case-title">📚 教程脚本</div>
+                        <div class="test-case-desc">摄影技巧教学脚本</div>
+                    </div>
+                    <div class="test-case" onclick="loadScriptExample('story')">
+                        <div class="test-case-title">📖 故事脚本</div>
+                        <div class="test-case-desc">励志故事分享脚本</div>
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="rewriteScript(false)">
+                        <span>✏️</span> 改写脚本
+                    </button>
+                    <button class="btn btn-primary" onclick="rewriteScript(true)">
+                        <span>🌊</span> 流式改写
+                    </button>
+                </div>
+                
+                <div id="scriptResult" class="result-area" style="display:none;">
+                    <pre id="scriptContent"></pre>
+                </div>
+                
+                <div id="scriptMetrics" class="metrics" style="display:none;">
+                    <div class="metric-card">
+                        <div class="metric-value" id="scriptTime">-</div>
+                        <div class="metric-label">处理时间(ms)</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="scriptLength">-</div>
+                        <div class="metric-label">字符数</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="scriptStyleApplied">-</div>
+                        <div class="metric-label">应用风格</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 性能测试 -->
+        <div class="card">
+            <h2>⚡ 性能测试</h2>
+            
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="runPerformanceTest()">
+                    运行性能测试
+                </button>
+                <button class="btn btn-secondary" onclick="runConcurrentTest()">
+                    并发测试 (10请求)
+                </button>
+                <button class="btn btn-secondary" onclick="runStressTest()">
+                    压力测试
+                </button>
+            </div>
+            
+            <div id="performanceResult" class="result-area" style="display:none; margin-top: 20px;">
+                <pre id="performanceContent"></pre>
+            </div>
+            
+            <div class="chart-container" id="performanceChart" style="display:none;">
+                <div class="performance-bar" id="perfBar"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 配置
+        const getApiUrl = () => document.getElementById('apiUrl').value;
+        const getApiKey = () => document.getElementById('apiKey').value;
+        
+        // 更新状态
+        function updateStatus(online, text) {
+            const dot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            const endpoint = document.getElementById('apiEndpoint');
+            
+            dot.className = 'status-dot ' + (online ? 'online' : 'error');
+            statusText.textContent = text;
+            endpoint.textContent = getApiUrl();
+        }
+        
+        // 测试连接
+        async function testConnection() {
+            updateStatus(false, '测试连接中...');
+            
+            try {
+                const response = await fetch(`${getApiUrl()}/api/tongyi/text-generation`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getApiKey()}`
+                    },
+                    body: JSON.stringify({
+                        messages: [{ role: 'user', content: 'test' }],
+                        max_tokens: 1
+                    })
+                });
+                
+                if (response.ok) {
+                    updateStatus(true, '连接成功');
+                } else {
+                    updateStatus(false, `连接失败: ${response.status}`);
+                }
+            } catch (error) {
+                updateStatus(false, `连接错误: ${error.message}`);
+            }
+        }
+        
+        // 加载文本示例
+        function loadTextExample(type) {
+            const examples = {
+                explain: "请用简单易懂的语言解释量子计算的基本原理，并举例说明它与传统计算的区别。",
+                creative: "写一个关于2050年未来城市的短故事开头，描述主人公第一次看到这座城市的场景，要有画面感。",
+                code: "请生成一个快速排序算法的Python实现，包含详细的注释说明每一步的作用。"
+            };
+            
+            document.getElementById('userInput').value = examples[type];
+        }
+        
+        // 加载脚本示例
+        function loadScriptExample(type) {
+            const examples = {
+                product: "这款智能手表不仅能监测您的健康数据，还能接打电话、支付购物，续航长达7天。它采用了最新的芯片技术，响应速度提升50%。无论您是运动爱好者还是商务人士，都能找到适合的功能。",
+                tutorial: "今天教大家一个摄影小技巧：黄金时刻拍摄。日出后和日落前的一小时，光线柔和温暖，是拍摄人像的最佳时机。记得让主体背对太阳，这样能获得柔美的轮廓光。",
+                story: "5年前，我还是一个普通的上班族，每天朝九晚五。直到那天，我决定追随自己的梦想，辞职创业。虽然路途艰辛，但我从未后悔。今天，我想和大家分享这段经历。"
+            };
+            
+            document.getElementById('originalScript').value = examples[type];
+        }
+        
+        // 文本生成
+        async function generateText(streaming) {
+            const resultDiv = document.getElementById('textResult');
+            const contentDiv = document.getElementById('textContent');
+            const metricsDiv = document.getElementById('textMetrics');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = streaming ? 'result-area streaming' : 'result-area';
+            contentDiv.textContent = '生成中...';
+            
+            const systemPrompt = document.getElementById('systemPrompt').value;
+            const userInput = document.getElementById('userInput').value;
+            const model = document.getElementById('model').value;
+            const temperature = parseFloat(document.getElementById('temperature').value);
+            const maxTokens = parseInt(document.getElementById('maxTokens').value);
+            
+            const messages = [];
+            if (systemPrompt) {
+                messages.push({ role: 'system', content: systemPrompt });
+            }
+            messages.push({ role: 'user', content: userInput });
+            
+            const startTime = Date.now();
+            
+            try {
+                const response = await fetch(`${getApiUrl()}/api/tongyi/text-generation`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getApiKey()}`
+                    },
+                    body: JSON.stringify({
+                        messages,
+                        model,
+                        temperature,
+                        max_tokens: maxTokens,
+                        stream: streaming
+                    })
+                });
+                
+                if (streaming) {
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+                    contentDiv.textContent = '';
+                    
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop();
+                        
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                const data = line.slice(6);
+                                if (data === '[DONE]') continue;
+                                
+                                try {
+                                    const chunk = JSON.parse(data);
+                                    if (chunk.content) {
+                                        contentDiv.textContent = chunk.content;
+                                    }
+                                    if (chunk.done && chunk.usage) {
+                                        showTextMetrics(Date.now() - startTime, chunk.usage.completion_tokens, chunk.content.length);
+                                    }
+                                } catch (e) {
+                                    console.error('Parse error:', e);
+                                }
+                            }
+                        }
+                    }
+                    
+                    resultDiv.className = 'result-area success';
+                } else {
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        contentDiv.textContent = data.data.content;
+                        resultDiv.className = 'result-area success';
+                        showTextMetrics(Date.now() - startTime, data.data.usage.completion_tokens, data.data.content.length);
+                    } else {
+                        throw new Error(data.error);
+                    }
+                }
+            } catch (error) {
+                resultDiv.className = 'result-area error';
+                contentDiv.textContent = `错误: ${error.message}`;
+                metricsDiv.style.display = 'none';
+            }
+        }
+        
+        // 显示文本生成指标
+        function showTextMetrics(time, tokens, chars) {
+            const metricsDiv = document.getElementById('textMetrics');
+            document.getElementById('textTime').textContent = time;
+            document.getElementById('textTokens').textContent = tokens || '-';
+            document.getElementById('textChars').textContent = chars;
+            metricsDiv.style.display = 'grid';
+        }
+        
+        // 脚本改写
+        async function rewriteScript(streaming) {
+            const resultDiv = document.getElementById('scriptResult');
+            const contentDiv = document.getElementById('scriptContent');
+            const metricsDiv = document.getElementById('scriptMetrics');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = streaming ? 'result-area streaming' : 'result-area';
+            contentDiv.textContent = '改写中...';
+            
+            const originalScript = document.getElementById('originalScript').value;
+            const style = document.getElementById('scriptStyle').value;
+            const targetLength = document.getElementById('targetLength').value;
+            const additionalReq = document.getElementById('additionalReq').value;
+            
+            const startTime = Date.now();
+            
+            try {
+                const requestBody = {
+                    original_script: originalScript,
+                    style,
+                    stream: streaming
+                };
+                
+                if (targetLength) {
+                    requestBody.target_length = parseInt(targetLength);
+                }
+                if (additionalReq) {
+                    requestBody.additional_requirements = additionalReq;
+                }
+                
+                const response = await fetch(`${getApiUrl()}/api/tongyi/script-rewrite`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getApiKey()}`
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                if (streaming) {
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+                    contentDiv.textContent = '';
+                    
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop();
+                        
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                const data = line.slice(6);
+                                if (data === '[DONE]') continue;
+                                
+                                try {
+                                    const chunk = JSON.parse(data);
+                                    if (chunk.content) {
+                                        contentDiv.textContent += chunk.content;
+                                    }
+                                } catch (e) {
+                                    console.error('Parse error:', e);
+                                }
+                            }
+                        }
+                    }
+                    
+                    resultDiv.className = 'result-area success';
+                    showScriptMetrics(Date.now() - startTime, contentDiv.textContent.length, style);
+                } else {
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        contentDiv.textContent = `【改写后的脚本】\n${data.data.rewritten_script}\n\n【改动说明】\n${data.data.changes_summary}`;
+                        resultDiv.className = 'result-area success';
+                        showScriptMetrics(data.data.processing_time, data.data.character_count, data.data.style_applied);
+                    } else {
+                        throw new Error(data.error);
+                    }
+                }
+            } catch (error) {
+                resultDiv.className = 'result-area error';
+                contentDiv.textContent = `错误: ${error.message}`;
+                metricsDiv.style.display = 'none';
+            }
+        }
+        
+        // 显示脚本改写指标
+        function showScriptMetrics(time, length, style) {
+            const metricsDiv = document.getElementById('scriptMetrics');
+            document.getElementById('scriptTime').textContent = time;
+            document.getElementById('scriptLength').textContent = length;
+            document.getElementById('scriptStyleApplied').textContent = style;
+            metricsDiv.style.display = 'grid';
+        }
+        
+        // 性能测试
+        async function runPerformanceTest() {
+            const resultDiv = document.getElementById('performanceResult');
+            const contentDiv = document.getElementById('performanceContent');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result-area';
+            contentDiv.textContent = '运行性能测试...\n\n';
+            
+            const tests = [
+                { name: '短文本生成 (100 tokens)', tokens: 100 },
+                { name: '中文本生成 (500 tokens)', tokens: 500 },
+                { name: '长文本生成 (1000 tokens)', tokens: 1000 }
+            ];
+            
+            const results = [];
+            
+            for (const test of tests) {
+                const startTime = Date.now();
+                
+                try {
+                    const response = await fetch(`${getApiUrl()}/api/tongyi/text-generation`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${getApiKey()}`
+                        },
+                        body: JSON.stringify({
+                            messages: [{ role: 'user', content: '生成一段测试文本' }],
+                            max_tokens: test.tokens
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    const elapsed = Date.now() - startTime;
+                    
+                    const status = elapsed < 3000 ? '✅' : elapsed < 5000 ? '⚠️' : '❌';
+                    contentDiv.textContent += `${status} ${test.name}: ${elapsed}ms\n`;
+                    
+                    results.push({ name: test.name, time: elapsed });
+                } catch (error) {
+                    contentDiv.textContent += `❌ ${test.name}: 失败 - ${error.message}\n`;
+                }
+                
+                // 避免速率限制
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            
+            contentDiv.textContent += '\n测试完成！\n';
+            showPerformanceChart(results);
+        }
+        
+        // 并发测试
+        async function runConcurrentTest() {
+            const resultDiv = document.getElementById('performanceResult');
+            const contentDiv = document.getElementById('performanceContent');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result-area';
+            contentDiv.textContent = '运行并发测试 (10个请求)...\n\n';
+            
+            const startTime = Date.now();
+            const promises = [];
+            
+            for (let i = 0; i < 10; i++) {
+                promises.push(
+                    fetch(`${getApiUrl()}/api/tongyi/text-generation`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${getApiKey()}`
+                        },
+                        body: JSON.stringify({
+                            messages: [{ role: 'user', content: `并发测试请求 ${i + 1}` }],
+                            max_tokens: 50
+                        })
+                    }).then(r => r.json())
+                );
+            }
+            
+            const results = await Promise.allSettled(promises);
+            const elapsed = Date.now() - startTime;
+            
+            let successCount = 0;
+            let failCount = 0;
+            
+            results.forEach((result, index) => {
+                if (result.status === 'fulfilled' && result.value.success) {
+                    successCount++;
+                } else {
+                    failCount++;
+                }
+            });
+            
+            contentDiv.textContent += `完成！\n`;
+            contentDiv.textContent += `总时间: ${elapsed}ms\n`;
+            contentDiv.textContent += `成功: ${successCount}/10\n`;
+            contentDiv.textContent += `失败: ${failCount}/10\n`;
+            contentDiv.textContent += `平均响应: ${Math.round(elapsed / 10)}ms\n`;
+            
+            if (successCount === 10) {
+                resultDiv.className = 'result-area success';
+                contentDiv.textContent += '\n✅ 并发处理能力优秀！';
+            } else if (successCount > 5) {
+                contentDiv.textContent += '\n⚠️ 部分请求失败，可能触发速率限制';
+            } else {
+                resultDiv.className = 'result-area error';
+                contentDiv.textContent += '\n❌ 并发处理存在问题';
+            }
+        }
+        
+        // 压力测试
+        async function runStressTest() {
+            const resultDiv = document.getElementById('performanceResult');
+            const contentDiv = document.getElementById('performanceContent');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result-area';
+            contentDiv.textContent = '运行压力测试...\n\n';
+            
+            const styles = ['humorous', 'educational', 'emotional', 'professional'];
+            const lengths = [100, 500, 1000, 1500];
+            
+            for (let i = 0; i < 4; i++) {
+                const script = '这是测试脚本内容。'.repeat(Math.floor(lengths[i] / 18));
+                const style = styles[i];
+                
+                const startTime = Date.now();
+                
+                try {
+                    const response = await fetch(`${getApiUrl()}/api/tongyi/script-rewrite`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${getApiKey()}`
+                        },
+                        body: JSON.stringify({
+                            original_script: script.substring(0, lengths[i]),
+                            style: style
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    const elapsed = Date.now() - startTime;
+                    
+                    const status = elapsed < 8000 ? '✅' : '⚠️';
+                    contentDiv.textContent += `${status} ${lengths[i]}字-${style}: ${elapsed}ms\n`;
+                } catch (error) {
+                    contentDiv.textContent += `❌ ${lengths[i]}字-${style}: 失败\n`;
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, 1500));
+            }
+            
+            contentDiv.textContent += '\n压力测试完成！';
+        }
+        
+        // 显示性能图表
+        function showPerformanceChart(results) {
+            const chartDiv = document.getElementById('performanceChart');
+            const barDiv = document.getElementById('perfBar');
+            
+            chartDiv.style.display = 'block';
+            barDiv.innerHTML = '';
+            
+            const maxTime = Math.max(...results.map(r => r.time));
+            
+            results.forEach(result => {
+                const percentage = (result.time / maxTime) * 100;
+                const segment = document.createElement('div');
+                segment.className = 'performance-segment';
+                segment.style.width = percentage + '%';
+                
+                if (result.time < 3000) {
+                    segment.classList.add('segment-good');
+                } else if (result.time < 5000) {
+                    segment.classList.add('segment-warning');
+                } else {
+                    segment.classList.add('segment-bad');
+                }
+                
+                segment.textContent = `${result.time}ms`;
+                barDiv.appendChild(segment);
+            });
+        }
+        
+        // 初始化
+        window.onload = () => {
+            updateStatus(false, '准备就绪');
+            testConnection();
+        };
+    </script>
+</body>
+</html>

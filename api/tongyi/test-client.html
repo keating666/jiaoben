@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tongyi API Test Client</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        h2 {
+            color: #667eea;
+            margin-top: 0;
+        }
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error {
+            color: #d32f2f;
+            background: #ffebee;
+            border-color: #ffcdd2;
+        }
+        .success {
+            color: #2e7d32;
+            background: #e8f5e9;
+            border-color: #c8e6c9;
+        }
+        .streaming {
+            color: #1976d2;
+            background: #e3f2fd;
+            border-color: #bbdefb;
+        }
+        select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 0 10px;
+        }
+        .config {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .config input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 300px;
+            margin: 0 10px;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .metric {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            text-align: center;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .metric-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Tongyi API 测试客户端</h1>
+        
+        <div class="config">
+            <label>API Key: <input type="password" id="apiKey" placeholder="输入您的 API Key" value="default-key"></label>
+            <label>API URL: <input type="text" id="apiUrl" value="http://localhost:3000" placeholder="API 基础 URL"></label>
+        </div>
+
+        <!-- Text Generation Test -->
+        <div class="test-section">
+            <h2>📝 文本生成测试</h2>
+            <textarea id="textPrompt" rows="4" placeholder="输入您的提示词...">请用简洁的语言解释什么是人工智能。</textarea>
+            <div>
+                <label>模型: 
+                    <select id="textModel">
+                        <option value="qwen-max">qwen-max (最强)</option>
+                        <option value="qwen-plus">qwen-plus (均衡)</option>
+                        <option value="qwen-turbo">qwen-turbo (快速)</option>
+                    </select>
+                </label>
+                <label>温度: 
+                    <input type="number" id="temperature" value="0.7" min="0" max="1" step="0.1" style="width: 60px;">
+                </label>
+                <label>最大 Tokens: 
+                    <input type="number" id="maxTokens" value="500" min="1" max="2000" style="width: 80px;">
+                </label>
+            </div>
+            <button onclick="testTextGeneration(false)">🎯 同步生成</button>
+            <button onclick="testTextGeneration(true)">⚡ 流式生成</button>
+            <div id="textResult" class="result" style="display:none;"></div>
+            <div id="textMetrics" class="metrics" style="display:none;">
+                <div class="metric">
+                    <div class="metric-value" id="textTime">-</div>
+                    <div class="metric-label">响应时间 (ms)</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="textTokens">-</div>
+                    <div class="metric-label">生成 Tokens</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Script Rewrite Test -->
+        <div class="test-section">
+            <h2>🎬 脚本改写测试</h2>
+            <textarea id="scriptInput" rows="6" placeholder="输入原始脚本...">大家好，今天我要给大家介绍一个非常实用的生活小技巧。当我们在家做饭时，经常会遇到洋葱切得眼泪直流的问题。其实有一个简单的方法，就是在切洋葱之前，先把洋葱放在冰箱里冷藏15分钟，这样切的时候就不会流泪了。希望这个小技巧对大家有帮助！</textarea>
+            <div>
+                <label>风格: 
+                    <select id="scriptStyle">
+                        <option value="humorous">幽默风趣</option>
+                        <option value="educational">教育科普</option>
+                        <option value="emotional">情感丰富</option>
+                        <option value="professional">专业正式</option>
+                    </select>
+                </label>
+                <label>目标长度: 
+                    <input type="number" id="targetLength" placeholder="可选" style="width: 80px;">
+                </label>
+            </div>
+            <textarea id="additionalReq" rows="2" placeholder="额外要求（可选）..."></textarea>
+            <button onclick="testScriptRewrite(false)">✏️ 同步改写</button>
+            <button onclick="testScriptRewrite(true)">🌊 流式改写</button>
+            <div id="scriptResult" class="result" style="display:none;"></div>
+            <div id="scriptMetrics" class="metrics" style="display:none;">
+                <div class="metric">
+                    <div class="metric-value" id="scriptTime">-</div>
+                    <div class="metric-label">处理时间 (ms)</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="scriptLength">-</div>
+                    <div class="metric-label">字符数</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="scriptStyle">-</div>
+                    <div class="metric-label">应用风格</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Batch Test -->
+        <div class="test-section">
+            <h2>🔬 批量测试</h2>
+            <button onclick="runBatchTest()">运行性能测试</button>
+            <button onclick="runConcurrentTest()">并发测试 (10个请求)</button>
+            <div id="batchResult" class="result" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const getApiKey = () => document.getElementById('apiKey').value;
+        const getApiUrl = () => document.getElementById('apiUrl').value;
+
+        async function testTextGeneration(streaming) {
+            const resultDiv = document.getElementById('textResult');
+            const metricsDiv = document.getElementById('textMetrics');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result streaming';
+            resultDiv.textContent = '处理中...';
+            
+            const prompt = document.getElementById('textPrompt').value;
+            const model = document.getElementById('textModel').value;
+            const temperature = parseFloat(document.getElementById('temperature').value);
+            const maxTokens = parseInt(document.getElementById('maxTokens').value);
+            
+            const startTime = Date.now();
+            
+            try {
+                if (streaming) {
+                    // Streaming mode using EventSource
+                    const response = await fetch(`${getApiUrl()}/api/tongyi/text-generation`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${getApiKey()}`
+                        },
+                        body: JSON.stringify({
+                            messages: [{ role: 'user', content: prompt }],
+                            model,
+                            temperature,
+                            max_tokens: maxTokens,
+                            stream: true
+                        })
+                    });
+                    
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+                    
+                    resultDiv.textContent = '';
+                    
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop();
+                        
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                const data = line.slice(6);
+                                if (data === '[DONE]') continue;
+                                try {
+                                    const chunk = JSON.parse(data);
+                                    if (chunk.error) {
+                                        throw new Error(chunk.error);
+                                    }
+                                    if (chunk.content) {
+                                        resultDiv.textContent = chunk.content;
+                                    }
+                                    if (chunk.done && chunk.usage) {
+                                        const elapsed = Date.now() - startTime;
+                                        document.getElementById('textTime').textContent = elapsed;
+                                        document.getElementById('textTokens').textContent = chunk.usage.completion_tokens;
+                                        metricsDiv.style.display = 'grid';
+                                    }
+                                } catch (e) {
+                                    console.error('Parse error:', e);
+                                }
+                            }
+                        }
+                    }
+                    
+                    resultDiv.className = 'result success';
+                } else {
+                    // Non-streaming mode
+                    const response = await fetch(`${getApiUrl()}/api/tongyi/text-generation`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${getApiKey()}`
+                        },
+                        body: JSON.stringify({
+                            messages: [{ role: 'user', content: prompt }],
+                            model,
+                            temperature,
+                            max_tokens: maxTokens,
+                            stream: false
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    const elapsed = Date.now() - startTime;
+                    
+                    if (data.success) {
+                        resultDiv.className = 'result success';
+                        resultDiv.textContent = data.data.content;
+                        document.getElementById('textTime').textContent = elapsed;
+                        document.getElementById('textTokens').textContent = data.data.usage.completion_tokens;
+                        metricsDiv.style.display = 'grid';
+                    } else {
+                        throw new Error(data.error);
+                    }
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `错误: ${error.message}`;
+                metricsDiv.style.display = 'none';
+            }
+        }
+
+        async function testScriptRewrite(streaming) {
+            const resultDiv = document.getElementById('scriptResult');
+            const metricsDiv = document.getElementById('scriptMetrics');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result streaming';
+            resultDiv.textContent = '处理中...';
+            
+            const originalScript = document.getElementById('scriptInput').value;
+            const style = document.getElementById('scriptStyle').value;
+            const targetLength = document.getElementById('targetLength').value;
+            const additionalReq = document.getElementById('additionalReq').value;
+            
+            const startTime = Date.now();
+            
+            try {
+                const requestBody = {
+                    original_script: originalScript,
+                    style,
+                    stream: streaming
+                };
+                
+                if (targetLength) {
+                    requestBody.target_length = parseInt(targetLength);
+                }
+                if (additionalReq) {
+                    requestBody.additional_requirements = additionalReq;
+                }
+                
+                const response = await fetch(`${getApiUrl()}/api/tongyi/script-rewrite`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getApiKey()}`
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                if (streaming) {
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+                    resultDiv.textContent = '';
+                    
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop();
+                        
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                const data = line.slice(6);
+                                if (data === '[DONE]') continue;
+                                try {
+                                    const chunk = JSON.parse(data);
+                                    if (chunk.error) {
+                                        throw new Error(chunk.error);
+                                    }
+                                    if (chunk.content) {
+                                        resultDiv.textContent += chunk.content;
+                                    }
+                                } catch (e) {
+                                    console.error('Parse error:', e);
+                                }
+                            }
+                        }
+                    }
+                    
+                    const elapsed = Date.now() - startTime;
+                    document.getElementById('scriptTime').textContent = elapsed;
+                    document.getElementById('scriptLength').textContent = resultDiv.textContent.length;
+                    document.getElementById('scriptStyle').textContent = style;
+                    metricsDiv.style.display = 'grid';
+                    resultDiv.className = 'result success';
+                } else {
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        resultDiv.className = 'result success';
+                        resultDiv.textContent = `改写后的脚本:\n${data.data.rewritten_script}\n\n改动说明:\n${data.data.changes_summary}`;
+                        document.getElementById('scriptTime').textContent = data.data.processing_time;
+                        document.getElementById('scriptLength').textContent = data.data.character_count;
+                        document.getElementById('scriptStyle').textContent = data.data.style_applied;
+                        metricsDiv.style.display = 'grid';
+                    } else {
+                        throw new Error(data.error);
+                    }
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `错误: ${error.message}`;
+                metricsDiv.style.display = 'none';
+            }
+        }
+
+        async function runBatchTest() {
+            const resultDiv = document.getElementById('batchResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.textContent = '运行批量测试...\n';
+            
+            const testCases = [
+                { length: 100, style: 'humorous' },
+                { length: 500, style: 'educational' },
+                { length: 1000, style: 'emotional' },
+                { length: 2000, style: 'professional' }
+            ];
+            
+            for (const testCase of testCases) {
+                const script = '这是一个测试脚本。'.repeat(Math.floor(testCase.length / 18));
+                const startTime = Date.now();
+                
+                try {
+                    const response = await fetch(`${getApiUrl()}/api/tongyi/script-rewrite`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${getApiKey()}`
+                        },
+                        body: JSON.stringify({
+                            original_script: script.substring(0, testCase.length),
+                            style: testCase.style,
+                            stream: false
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    const elapsed = Date.now() - startTime;
+                    const passed = elapsed < 8000 ? '✅' : '⚠️';
+                    
+                    resultDiv.textContent += `${passed} ${testCase.length}字 (${testCase.style}): ${elapsed}ms\n`;
+                } catch (error) {
+                    resultDiv.textContent += `❌ ${testCase.length}字 (${testCase.style}): ${error.message}\n`;
+                }
+                
+                // Delay between requests to avoid rate limiting
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            
+            resultDiv.textContent += '\n批量测试完成！';
+        }
+
+        async function runConcurrentTest() {
+            const resultDiv = document.getElementById('batchResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.textContent = '运行并发测试 (10个请求)...\n';
+            
+            const promises = [];
+            const startTime = Date.now();
+            
+            for (let i = 0; i < 10; i++) {
+                promises.push(
+                    fetch(`${getApiUrl()}/api/tongyi/text-generation`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${getApiKey()}`
+                        },
+                        body: JSON.stringify({
+                            messages: [{ role: 'user', content: `测试请求 ${i + 1}` }],
+                            max_tokens: 50,
+                            stream: false
+                        })
+                    }).then(r => r.json())
+                );
+            }
+            
+            try {
+                const results = await Promise.allSettled(promises);
+                const elapsed = Date.now() - startTime;
+                
+                let successCount = 0;
+                let failCount = 0;
+                
+                results.forEach((result, index) => {
+                    if (result.status === 'fulfilled' && result.value.success) {
+                        successCount++;
+                    } else {
+                        failCount++;
+                        resultDiv.textContent += `请求 ${index + 1}: 失败\n`;
+                    }
+                });
+                
+                resultDiv.textContent += `\n并发测试完成！\n`;
+                resultDiv.textContent += `总时间: ${elapsed}ms\n`;
+                resultDiv.textContent += `成功: ${successCount}/10\n`;
+                resultDiv.textContent += `失败: ${failCount}/10\n`;
+                resultDiv.textContent += `平均响应时间: ${Math.round(elapsed / 10)}ms`;
+                
+                if (successCount === 10) {
+                    resultDiv.className = 'result success';
+                } else if (successCount > 5) {
+                    resultDiv.className = 'result';
+                } else {
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent += `\n错误: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
