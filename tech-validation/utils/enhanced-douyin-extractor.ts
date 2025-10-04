@@ -214,14 +214,16 @@ export class EnhancedDouyinExtractor extends DouyinLinkExtractor {
       cleaned = `https://${cleaned}`;
     }
     
-    // 5. 规范化短链接
+    // 5. 规范化短链接（保留查询参数）
     if (cleaned.includes('v.douyin.com')) {
-      const shortLinkMatch = cleaned.match(/v\.douyin\.com\/([\w\d]+)/);
+      const shortLinkMatch = cleaned.match(/v\.douyin\.com\/([\w\d]+)(.*)/);
       if (shortLinkMatch) {
-        cleaned = `https://v.douyin.com/${shortLinkMatch[1]}`;
+        const id = shortLinkMatch[1];
+        const queryAndHash = shortLinkMatch[2] || '';
+        cleaned = `https://v.douyin.com/${id}${queryAndHash}`;
       }
     }
-    
+
     return cleaned;
   }
 
@@ -232,22 +234,24 @@ export class EnhancedDouyinExtractor extends DouyinLinkExtractor {
     try {
       const urlObj = new URL(url);
       const params = urlObj.searchParams;
-      
+
       // 需要删除的追踪参数
       const trackingParams = [
         'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
         'share_app_id', 'share_link_id', 'share_token',
         'tt_from', 'u_code', 'timestamp',
       ];
-      
+
       trackingParams.forEach(param => params.delete(param));
-      
+
       // 重要参数保留（如视频ID相关）
-      urlObj.search = params.toString();
-      return urlObj.toString().replace(/\?$/, ''); // 移除空的?
+      const queryString = params.toString();
+      urlObj.search = queryString ? `?${queryString}` : '';
+
+      return urlObj.toString();
     } catch {
       // URL解析失败，返回简单清理版本
-      return url.replace(/[&?]utm_[^&]*/g, '');
+      return url.replace(/[&?]utm_[^&]*/g, '').replace(/\?$/, '');
     }
   }
 

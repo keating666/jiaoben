@@ -14,31 +14,31 @@ async function runBenchmark() {
     {
       name: '简单链接',
       text: 'https://v.douyin.com/iRyLb8kf/',
-      iterations: 10000
+      iterations: 10000,
     },
     {
       name: '复杂文本',
       text: `看看这个视频 https://v.douyin.com/abc123/ 很有趣！
       还有这个 7.53 MQc:/ 复制打开抖音
-      #美食探店# #周末去哪儿# 
+      #美食探店# #周末去哪儿#
       关注@美食博主 的作品`,
-      iterations: 5000
+      iterations: 5000,
     },
     {
       name: '长文本',
-      text: 'a'.repeat(1000) + ' https://v.douyin.com/test/ ' + 'b'.repeat(1000),
-      iterations: 1000
+      text: `${'a'.repeat(1000)} https://v.douyin.com/test/ ${'b'.repeat(1000)}`,
+      iterations: 1000,
     },
     {
       name: '多链接',
       text: Array(20).fill('https://v.douyin.com/test/').join(' '),
-      iterations: 2000
+      iterations: 2000,
     },
     {
       name: '恶意输入',
-      text: '#'.repeat(1000) + '测试' + '#'.repeat(1000),
-      iterations: 100
-    }
+      text: `${'#'.repeat(1000)}测试${'#'.repeat(1000)}`,
+      iterations: 100,
+    },
   ];
   
   // 对每个测试用例进行基准测试
@@ -50,6 +50,7 @@ async function runBenchmark() {
     
     // 测试增强版
     const enhancedStart = performance.now();
+
     for (let i = 0; i < testCase.iterations; i++) {
       await EnhancedDouyinExtractor.smartExtract(testCase.text);
     }
@@ -58,6 +59,7 @@ async function runBenchmark() {
     
     // 测试健壮版
     const robustStart = performance.now();
+
     for (let i = 0; i < testCase.iterations; i++) {
       await RobustDouyinExtractor.smartExtract(testCase.text);
     }
@@ -73,7 +75,7 @@ async function runBenchmark() {
     const enhancedResult = await EnhancedDouyinExtractor.smartExtract(testCase.text);
     const robustResult = await RobustDouyinExtractor.smartExtract(testCase.text);
     
-    console.log(`\n结果一致性检查:`);
+    console.log('\n结果一致性检查:');
     console.log(`- 链接数量: 增强版=${enhancedResult.links.length}, 健壮版=${robustResult.links.length}`);
     console.log(`- 口令数量: 增强版=${enhancedResult.commands.length}, 健壮版=${robustResult.commands.length}`);
   }
@@ -89,8 +91,8 @@ async function runBenchmark() {
   
   const testTexts = [
     'https://v.douyin.com/abc123/',
-    'https://v.douyin.com/' + 'a'.repeat(100) + '/',
-    'https://v.douyin.com/' + 'a'.repeat(1000) + '/',
+    `https://v.douyin.com/${  'a'.repeat(100)  }/`,
+    `https://v.douyin.com/${  'a'.repeat(1000)  }/`,
   ];
   
   for (const { name, pattern } of patterns) {
@@ -99,11 +101,13 @@ async function runBenchmark() {
     
     // 验证安全性
     const validation = RegexSafety.validatePattern(pattern);
+
     console.log(`安全性: ${validation.safe ? '✅ 安全' : `❌ 不安全 - ${validation.reason}`}`);
     
     // 性能测试
     if (validation.safe) {
       const benchmark = RegexSafety.benchmarkPattern(pattern, testTexts);
+
       console.log(`平均耗时: ${benchmark.avgTime.toFixed(3)}ms`);
       console.log(`最大耗时: ${benchmark.maxTime.toFixed(3)}ms`);
       console.log(`性能评级: ${benchmark.safe ? '✅ 良好' : '⚠️ 需要优化'}`);
@@ -119,6 +123,7 @@ async function runBenchmark() {
     
     // 执行大量提取
     const promises = [];
+
     for (let i = 0; i < 1000; i++) {
       promises.push(RobustDouyinExtractor.smartExtract('https://v.douyin.com/test/'));
     }
