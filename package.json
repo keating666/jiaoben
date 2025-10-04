@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "AI API 技术验证和集成项目",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "build": "npm run build:api && npm run build:tech",
     "build:api": "echo 'API is JavaScript, no build needed'",
