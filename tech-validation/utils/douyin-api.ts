@@ -1,5 +1,3 @@
-import { promises as fs } from 'fs';
-
 export interface DouyinVideoInfo {
   videoUrl: string;
   title: string;
@@ -21,13 +19,16 @@ export class DouyinAPI {
       
       // 方案1：解析抖音分享链接获取视频ID
       const videoId = await this.extractVideoId(shareUrl);
+
       if (!videoId) {
         console.error('无法提取视频ID');
+
         return null;
       }
       
       // 使用抖音网页接口获取信息
       const webUrl = `https://www.douyin.com/video/${videoId}`;
+
       console.log('📱 访问抖音网页:', webUrl);
       
       // 模拟视频信息（实际项目中应该调用真实API）
@@ -39,10 +40,11 @@ export class DouyinAPI {
         videoUrl: shareUrl,
         title: '抖音视频',
         duration: 30, // 默认30秒，实际应该从API获取
-        downloadUrl: shareUrl
+        downloadUrl: shareUrl,
       };
     } catch (error) {
       console.error('❌ 获取抖音视频信息失败:', error);
+
       return null;
     }
   }
@@ -57,14 +59,17 @@ export class DouyinAPI {
         // 在没有 fetch 的情况下，暂时返回模拟数据
         // 实际部署时应该使用其他方案
         console.log('⚠️  使用模拟数据（实际部署需要真实API）');
+
         return '7399605830471871799'; // 模拟视频ID
       }
       
       // 直接从URL提取
       const match = shareUrl.match(/video\/(\d+)/);
+
       return match ? match[1] : null;
     } catch (error) {
       console.error('提取视频ID失败:', error);
+
       return null;
     }
   }
@@ -82,6 +87,7 @@ export class DouyinAPI {
     
     // 创建一个模拟的音频文件用于测试
     const { createMockAudioFile } = await import('./mock-audio');
+
     await createMockAudioFile(outputPath);
     console.log('⚠️  使用模拟音频文件（实际部署需要真实下载服务）');
   }

@@ -1,17 +1,20 @@
-import { describe, it, expect, jest } from '@jest/globals';
+import { describe, it, expect } from '@jest/globals';
+
 import { RobustDouyinExtractor } from '../utils/robust-douyin-extractor';
 
 describe('RobustDouyinExtractor - 健壮性测试', () => {
   describe('输入验证', () => {
     it('应该拒绝空输入', async () => {
       const result = await RobustDouyinExtractor.smartExtract('');
+
       expect(result.links).toHaveLength(0);
       expect(result.suggestions).toBeDefined();
     });
-    
+
     it('应该拒绝非字符串输入', async () => {
-      // @ts-ignore - 故意传入错误类型
+      // @ts-expect-error - 故意传入错误类型以测试错误处理
       const result = await RobustDouyinExtractor.smartExtract(null);
+
       expect(result.links).toHaveLength(0);
       expect(result.suggestions).toBeDefined();
     });
@@ -19,6 +22,7 @@ describe('RobustDouyinExtractor - 健壮性测试', () => {
     it('应该拒绝超长输入', async () => {
       const longText = 'a'.repeat(51000);
       const result = await RobustDouyinExtractor.smartExtract(longText);
+
       expect(result.links).toHaveLength(0);
       expect(result.suggestions?.[0]).toContain('错误');
     });
@@ -26,13 +30,14 @@ describe('RobustDouyinExtractor - 健壮性测试', () => {
     it('应该处理包含控制字符的输入', async () => {
       const maliciousText = 'https://v.douyin.com/test/\x00\x01\x02';
       const result = await RobustDouyinExtractor.smartExtract(maliciousText);
+
       expect(result.links).toHaveLength(0);
     });
   });
   
   describe('性能测试', () => {
     it('应该快速处理长文本', async () => {
-      const longText = 'a'.repeat(10000) + ' https://v.douyin.com/test/ ' + 'b'.repeat(10000);
+      const longText = `${'a'.repeat(10000)  } https://v.douyin.com/test/ ${  'b'.repeat(10000)}`;
       const start = Date.now();
       const result = await RobustDouyinExtractor.smartExtract(longText);
       const duration = Date.now() - start;
@@ -58,7 +63,7 @@ describe('RobustDouyinExtractor - 健壮性测试', () => {
   
   describe('恶意输入防护', () => {
     it('应该防御正则DoS攻击 - 嵌套量词', async () => {
-      const malicious = 'https://v.douyin.com/' + 'a'.repeat(1000) + '////';
+      const malicious = `https://v.douyin.com/${  'a'.repeat(1000)  }////`;
       const start = Date.now();
       const result = await RobustDouyinExtractor.smartExtract(malicious);
       const duration = Date.now() - start;
@@ -68,11 +73,11 @@ describe('RobustDouyinExtractor - 健壮性测试', () => {
     });
     
     it('应该防御正则DoS攻击 - 大量重复', async () => {
-      const malicious = '#'.repeat(10000) + '内容' + '#'.repeat(10000);
+      const malicious = `${'#'.repeat(10000)  }内容${  '#'.repeat(10000)}`;
       const start = Date.now();
-      const result = await RobustDouyinExtractor.smartExtract(malicious);
+      await RobustDouyinExtractor.smartExtract(malicious);
       const duration = Date.now() - start;
-      
+
       expect(duration).toBeLessThan(1000);
     });
     
@@ -102,7 +107,7 @@ describe('RobustDouyinExtractor - 健壮性测试', () => {
     
     it.skip('应该拒绝过长的链接ID', async () => {
       // TODO: 需要在提取器中添加ID长度验证逻辑
-      const text = 'https://v.douyin.com/' + 'a'.repeat(100) + '/';
+      const text = `https://v.douyin.com/${  'a'.repeat(100)  }/`;
       const result = await RobustDouyinExtractor.smartExtract(text);
 
       expect(result.links).toHaveLength(0);
@@ -150,7 +155,7 @@ describe('RobustDouyinExtractor - 健壮性测试', () => {
   describe('错误恢复', () => {
     it('应该在正则执行失败时返回安全结果', async () => {
       // 模拟一个会导致问题的输入
-      const problematicText = '(((((' + 'a'.repeat(100) + ')))))';
+      const problematicText = `(((((${  'a'.repeat(100)  })))))`;
       const result = await RobustDouyinExtractor.smartExtract(problematicText);
       
       expect(result).toBeDefined();
@@ -209,12 +214,12 @@ describe('RobustDouyinExtractor - 健壮性测试', () => {
   describe('并发安全', () => {
     it('应该安全处理并发请求', async () => {
       const promises = Array(50).fill(null).map((_, i) => 
-        RobustDouyinExtractor.smartExtract(`https://v.douyin.com/test${i}/`)
+        RobustDouyinExtractor.smartExtract(`https://v.douyin.com/test${i}/`),
       );
       
       const results = await Promise.all(promises);
       
-      expect(results.every(r => r.links.length === 1)).toBe(true);
+      expect(results.every((r) => r.links.length === 1)).toBe(true);
       expect(results.every((r, i) => r.links[0].url === `https://v.douyin.com/test${i}`)).toBe(true);
     });
   });

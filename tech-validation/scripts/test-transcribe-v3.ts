@@ -1,8 +1,8 @@
 #!/usr/bin/env node
+import path from 'path';
+
 import axios from 'axios';
 import dotenv from 'dotenv';
-import { promises as fs } from 'fs';
-import path from 'path';
 
 // 加载环境变量
 dotenv.config({ path: path.join(__dirname, '../.env') });
@@ -20,15 +20,15 @@ const TEST_CONFIG = {
       name: '测试1: 抖音短链接提取',
       data: {
         mixedText: '看这个视频 https://v.douyin.com/iRyLb8kf/ 太好笑了 #搞笑',
-        style: 'humorous'
-      }
+        style: 'humorous',
+      },
     },
     {
       name: '测试2: 直接视频URL',
       data: {
         videoUrl: 'https://v.douyin.com/iRyLb8kf/',
-        style: 'default'
-      }
+        style: 'default',
+      },
     },
     {
       name: '测试3: 复杂混合文本',
@@ -37,17 +37,17 @@ const TEST_CONFIG = {
         链接在这里👉 https://v.douyin.com/iRyLb8kf/ 
         大家快去看看吧~ 
         #搞笑 #日常 #分享`,
-        style: 'professional'
-      }
+        style: 'professional',
+      },
     },
     {
       name: '测试4: 无效输入（应该报错）',
       data: {
         mixedText: '这里没有任何视频链接',
-        style: 'default'
-      }
-    }
-  ]
+        style: 'default',
+      },
+    },
+  ],
 };
 
 // 颜色输出
@@ -59,7 +59,7 @@ const colors = {
   yellow: '\x1b[33m',
   blue: '\x1b[34m',
   magenta: '\x1b[35m',
-  cyan: '\x1b[36m'
+  cyan: '\x1b[36m',
 };
 
 // 打印分隔线
@@ -97,7 +97,7 @@ function printInfo(message: string) {
 // 测试单个案例
 async function testCase(url: string, testCase: any, apiToken: string) {
   console.log(`\n${colors.bright}${colors.magenta}📝 ${testCase.name}${colors.reset}`);
-  console.log(`请求数据:`, JSON.stringify(testCase.data, null, 2));
+  console.log('请求数据:', JSON.stringify(testCase.data, null, 2));
   
   const startTime = Date.now();
   
@@ -105,10 +105,10 @@ async function testCase(url: string, testCase: any, apiToken: string) {
     const response = await axios.post(url, testCase.data, {
       headers: {
         'Authorization': `Bearer ${apiToken}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       timeout: 60000, // 60秒超时
-      validateStatus: () => true // 接受所有状态码
+      validateStatus: () => true, // 接受所有状态码
     });
     
     const duration = Date.now() - startTime;
@@ -120,6 +120,7 @@ async function testCase(url: string, testCase: any, apiToken: string) {
       printSuccess('请求成功');
       
       const data = response.data;
+
       if (data.success && data.data) {
         console.log('\n处理结果:');
         console.log(`- 处理时间: ${data.data.processingTime}ms`);
@@ -136,7 +137,7 @@ async function testCase(url: string, testCase: any, apiToken: string) {
         // 显示前100个字符的文本
         if (data.data.originalText) {
           console.log('\n原始文本预览:');
-          console.log(data.data.originalText.substring(0, 100) + '...');
+          console.log(`${data.data.originalText.substring(0, 100)  }...`);
         }
       }
     } else {
@@ -153,6 +154,7 @@ async function testCase(url: string, testCase: any, apiToken: string) {
     
   } catch (error: any) {
     const duration = Date.now() - startTime;
+
     printError(`请求异常 (${duration}ms)`);
     
     if (error.code === 'ECONNREFUSED') {
@@ -172,8 +174,8 @@ async function testServiceStatus(baseUrl: string, apiToken: string) {
   try {
     const response = await axios.get(`${baseUrl.replace('-v3', '-v3/status')}`, {
       headers: {
-        'Authorization': `Bearer ${apiToken}`
-      }
+        'Authorization': `Bearer ${apiToken}`,
+      },
     });
     
     if (response.status === 200) {
@@ -196,14 +198,14 @@ async function runTests() {
     'TIKHUB_API_TOKEN',
     'YUNMAO_API_KEY',
     'YUNMAO_API_SECRET',
-    'TONGYI_API_KEY'
+    'TONGYI_API_KEY',
   ];
   
-  const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+  const missingVars = requiredEnvVars.filter((varName) => !process.env[varName]);
   
   if (missingVars.length > 0) {
     printError('缺少必需的环境变量:');
-    missingVars.forEach(varName => console.log(`  - ${varName}`));
+    missingVars.forEach((varName) => console.log(`  - ${varName}`));
     console.log('\n请在 tech-validation/.env 文件中配置这些变量');
     process.exit(1);
   }
@@ -228,6 +230,7 @@ async function runTests() {
   
   // 使用测试 API Token
   const apiToken = process.env.TEST_API_TOKEN || 'test-api-key-123';
+
   console.log(`API Token: ${apiToken.substring(0, 10)}...`);
   
   // 测试服务状态
@@ -240,7 +243,7 @@ async function runTests() {
     await testCase(testUrl, testCaseItem, apiToken);
     
     // 添加延迟避免请求过快
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
   }
   
   // 总结
@@ -253,7 +256,7 @@ async function runTests() {
 }
 
 // 运行测试
-runTests().catch(error => {
+runTests().catch((error) => {
   printError('测试运行失败');
   console.error(error);
   process.exit(1);

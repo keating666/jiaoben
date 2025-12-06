@@ -19,10 +19,12 @@ export class RegexSafety {
       { pattern: /\+\+/, reason: '包含占有量词' },
       { pattern: /\{(\d+),\}/g, reason: '包含大量重复', check: (match: RegExpMatchArray) => {
         const min = parseInt(match[1]);
+
         return min > 100;
       }},
       { pattern: /\{(\d+),(\d+)\}/g, reason: '包含大量重复', check: (match: RegExpMatchArray) => {
         const max = parseInt(match[2]);
+
         return max > 1000;
       }},
       { pattern: /(\[[^\]]*\])\*/, reason: '字符类的贪婪匹配可能导致回溯' },
@@ -56,7 +58,7 @@ export class RegexSafety {
     options: {
       timeout?: number;
       maxMatches?: number;
-    } = {}
+    } = {},
   ): RegExpExecArray[] {
     const timeout = options.timeout || this.MAX_EXECUTION_TIME;
     const maxMatches = options.maxMatches || 1000;
@@ -69,6 +71,7 @@ export class RegexSafety {
     pattern.lastIndex = 0;
     
     let match;
+
     while ((match = pattern.exec(text)) !== null) {
       matches.push(match);
       iterations++;
@@ -110,7 +113,7 @@ export class RegexSafety {
       timeout?: number;
       maxMatchesPerPattern?: number;
       totalTimeout?: number;
-    } = {}
+    } = {},
   ): Map<RegExp, RegExpExecArray[]> {
     const results = new Map<RegExp, RegExpExecArray[]>();
     const totalStartTime = Date.now();
@@ -125,6 +128,7 @@ export class RegexSafety {
       
       // 验证正则安全性
       const validation = this.validatePattern(pattern);
+
       if (!validation.safe) {
         console.warn(`跳过不安全的正则: ${pattern.source} - ${validation.reason}`);
         results.set(pattern, []);
@@ -134,7 +138,7 @@ export class RegexSafety {
       // 执行正则
       const matches = this.safeExec(pattern, text, {
         timeout: options.timeout,
-        maxMatches: options.maxMatchesPerPattern
+        maxMatches: options.maxMatchesPerPattern,
       });
       
       results.set(pattern, matches);
@@ -147,10 +151,11 @@ export class RegexSafety {
    * 创建性能优化的正则
    */
   static optimizePattern(pattern: RegExp): RegExp {
-    let source = pattern.source;
-    let flags = pattern.flags;
+    const source = pattern.source;
+    const flags = pattern.flags;
     
     // 优化常见的性能问题
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const optimizations = [
       // 将贪婪量词改为非贪婪
       { from: /\+(?!\?)/, to: '+?' },
@@ -173,7 +178,7 @@ export class RegexSafety {
    */
   static benchmarkPattern(
     pattern: RegExp, 
-    testTexts: string[]
+    testTexts: string[],
   ): {
     avgTime: number;
     maxTime: number;
@@ -189,6 +194,7 @@ export class RegexSafety {
       try {
         const matches = this.safeExec(pattern, text, { timeout: 100 });
         const endTime = performance.now();
+
         times.push(endTime - startTime);
         
         if (matches.length === 0 && endTime - startTime > 50) {
@@ -204,7 +210,7 @@ export class RegexSafety {
       avgTime: times.reduce((a, b) => a + b, 0) / times.length,
       maxTime: Math.max(...times),
       minTime: Math.min(...times),
-      safe
+      safe,
     };
   }
 }

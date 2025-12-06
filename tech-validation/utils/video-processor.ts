@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
+
 import { v4 as uuidv4 } from 'uuid';
 
 export interface VideoMetadata {
@@ -20,8 +21,10 @@ export class VideoProcessor {
 
   private static createError(code: string, message: string, details?: any): VideoProcessingError {
     const error = new Error(message) as VideoProcessingError;
+
     error.code = code;
     error.details = details;
+
     return error;
   }
 
@@ -42,6 +45,7 @@ export class VideoProcessor {
           
           // 检查服务健康状态
           const isHealthy = await railwayService.checkHealth();
+
           if (!isHealthy) {
             throw new Error('Railway 服务不可用');
           }
@@ -57,7 +61,7 @@ export class VideoProcessor {
             duration: result.video_info.duration,
             title: result.video_info.title,
             format: 'mp3',
-            url: videoUrl
+            url: videoUrl,
             // audioData: result.audio?.data, // 音频数据（hex格式）- VideoMetadata接口不包含此字段
           };
         } catch (error) {
@@ -148,17 +152,19 @@ export class VideoProcessor {
         const { v4: uuidv4 } = await import('uuid');
         
         const audioPath = `/tmp/mock_audio_${uuidv4()}.mp3`;
+
         await createMockAudioFile(audioPath);
         
         console.log(`✅ 模拟音频创建完成: ${audioPath}`);
         
         return {
           audioPath,
-          metadata
+          metadata,
         };
       } else {
         // 本地开发环境使用 youtube-dl-exec
         const youtubedl = (await import('youtube-dl-exec')).default;
+
         await youtubedl(videoUrl, {
           extractAudio: true,
           audioFormat: 'mp3',
@@ -225,6 +231,7 @@ export class VideoProcessor {
     try {
       if (process.env.VERCEL) {
         console.log('⚠️  Vercel 环境检测：缺少 Python 运行时');
+
         return {
           available: false,
           missing: ['Python 运行时（Vercel 限制）'],

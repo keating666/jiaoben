@@ -25,7 +25,7 @@ export class RobustDouyinExtractor extends EnhancedDouyinExtractor {
     /https?:\/\/www\.iesdouyin\.com\/share\/video\/\d{15,20}\/?/gi,
     
     // 用户主页（限制用户ID长度）
-    /https?:\/\/www\.douyin\.com\/user\/[\w\-]{1,50}\/?/gi,
+    /https?:\/\/www\.douyin\.com\/user\/[\w-]{1,50}\/?/gi,
     
     // 话题链接
     /https?:\/\/www\.douyin\.com\/hashtag\/\d{1,20}\/?/gi,
@@ -105,12 +105,13 @@ export class RobustDouyinExtractor extends EnhancedDouyinExtractor {
     if (!text || typeof text !== 'string') {
       throw new Error('输入必须是非空字符串');
     }
-    
+
     if (text.length > this.MAX_TEXT_LENGTH) {
       throw new Error(`输入文本过长，最大支持 ${this.MAX_TEXT_LENGTH} 字符`);
     }
-    
+
     // 检查是否包含控制字符（可能是恶意输入）
+    // eslint-disable-next-line no-control-regex
     if (/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/.test(text)) {
       throw new Error('输入包含非法控制字符');
     }
@@ -148,7 +149,7 @@ export class RobustDouyinExtractor extends EnhancedDouyinExtractor {
     
     // 并行处理各个块
     const chunkResults = await Promise.all(
-      chunks.map(chunk => this.robustExtract(chunk))
+      chunks.map((chunk) => this.robustExtract(chunk)),
     );
     
     // 合并结果
@@ -171,16 +172,18 @@ export class RobustDouyinExtractor extends EnhancedDouyinExtractor {
       {
         timeout: 100,
         maxMatchesPerPattern: this.MAX_LINKS,
-        totalTimeout: 1000
-      }
+        totalTimeout: 1000,
+      },
     );
     
     // 处理链接结果
-    for (const [pattern, matches] of linkResults) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    for (const [_pattern, matches] of linkResults) {
       for (const match of matches) {
-        if (links.length >= this.MAX_LINKS) break;
-        
-        const cleanUrl = this.robustCleanUrl(match[0], text, match.index!);
+        if (links.length >= this.MAX_LINKS) {break;}
+
+        const cleanUrl = this.robustCleanUrl(match[0], text, match.index);
+
         if (cleanUrl && !processedUrls.has(cleanUrl)) {
           processedUrls.add(cleanUrl);
           links.push({
@@ -193,7 +196,7 @@ export class RobustDouyinExtractor extends EnhancedDouyinExtractor {
         }
       }
     }
-    
+
     // 2. 提取口令（使用安全执行器）
     const commandResults = RegexSafety.safeExecMultiple(
       this.ROBUST_COMMAND_PATTERNS,
@@ -201,23 +204,25 @@ export class RobustDouyinExtractor extends EnhancedDouyinExtractor {
       {
         timeout: 100,
         maxMatchesPerPattern: this.MAX_COMMANDS,
-        totalTimeout: 1000
-      }
+        totalTimeout: 1000,
+      },
     );
-    
+
     // 处理口令结果
-    for (const [pattern, matches] of commandResults) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    for (const [_pattern, matches] of commandResults) {
       for (const match of matches) {
-        if (commands.length >= this.MAX_COMMANDS) break;
+        if (commands.length >= this.MAX_COMMANDS) {break;}
         
         const content = this.extractCommandContent(match[0]);
+
         if (content && !processedCommands.has(content)) {
           processedCommands.add(content);
           commands.push({
             type: this.detectCommandType(match[0]),
             content,
             fullText: match[0],
-            position: match.index!,
+            position: match.index,
           });
         }
       }
@@ -250,8 +255,10 @@ export class RobustDouyinExtractor extends EnhancedDouyinExtractor {
       }
       
       // 智能截断
-      const afterUrl = fullText.substring(position + url.length, position + url.length + 10);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _afterUrl = fullText.substring(position + url.length, position + url.length + 10);
       const cutoffMatch = cleaned.match(/^(https?:\/\/[^\s\u4e00-\u9fa5，。！？、）)》】]{1,200})/);
+
       if (cutoffMatch) {
         cleaned = cutoffMatch[1];
       }
@@ -273,11 +280,11 @@ export class RobustDouyinExtractor extends EnhancedDouyinExtractor {
         // 检查是否是抖音域名
         const validDomains = [
           'douyin.com', 'douyinvod.com', 'iesdouyin.com', 
-          'amemv.com', 'tiktok.com'
+          'amemv.com', 'tiktok.com',
         ];
         const hostname = urlObj.hostname.toLowerCase();
-        const isValid = validDomains.some(domain => 
-          hostname.endsWith(domain) || hostname.endsWith(`.${domain}`)
+        const isValid = validDomains.some((domain) => 
+          hostname.endsWith(domain) || hostname.endsWith(`.${domain}`),
         );
         
         if (!isValid) {
@@ -290,6 +297,7 @@ export class RobustDouyinExtractor extends EnhancedDouyinExtractor {
       }
     } catch (error) {
       logger.warn('RobustDouyinExtractor', 'robustCleanUrl', 'URL清理失败', { url });
+
       return null;
     }
   }
@@ -317,6 +325,7 @@ export class RobustDouyinExtractor extends EnhancedDouyinExtractor {
     for (const result of results) {
       for (const command of result.commands) {
         const key = `${command.type}:${command.content}`;
+
         if (!commandSet.has(key)) {
           commandSet.add(key);
           allCommands.push(command);
@@ -329,7 +338,7 @@ export class RobustDouyinExtractor extends EnhancedDouyinExtractor {
     
     // 合并建议
     const allSuggestions = results
-      .flatMap(r => r.suggestions || [])
+      .flatMap((r) => r.suggestions || [])
       .filter((v, i, a) => a.indexOf(v) === i); // 去重
     
     return {
@@ -348,8 +357,8 @@ export class RobustDouyinExtractor extends EnhancedDouyinExtractor {
   static async benchmark(): Promise<void> {
     const testCases = [
       { name: '短文本', text: 'https://v.douyin.com/test/' },
-      { name: '中等文本', text: 'a'.repeat(1000) + 'https://v.douyin.com/test/' },
-      { name: '长文本', text: 'a'.repeat(10000) + 'https://v.douyin.com/test/' },
+      { name: '中等文本', text: `${'a'.repeat(1000)  }https://v.douyin.com/test/` },
+      { name: '长文本', text: `${'a'.repeat(10000)  }https://v.douyin.com/test/` },
       { name: '多链接', text: Array(50).fill('https://v.douyin.com/test/').join(' ') },
       { name: '复杂口令', text: Array(50).fill('#测试话题#').join(' ') },
     ];

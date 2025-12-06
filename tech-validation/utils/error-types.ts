@@ -18,7 +18,7 @@ export abstract class BaseError extends Error {
     userMessage: string,
     retryable: boolean = false,
     context?: Record<string, any>,
-    cause?: Error
+    cause?: Error,
   ) {
     super(message);
     this.name = this.constructor.name;
@@ -44,7 +44,7 @@ export abstract class BaseError extends Error {
       timestamp: this.timestamp,
       retryable: this.retryable,
       context: this.context,
-      stack: process.env.NODE_ENV === 'development' ? this.stack : undefined
+      stack: process.env.NODE_ENV === 'development' ? this.stack : undefined,
     };
   }
 }
@@ -58,7 +58,7 @@ export class NetworkError extends BaseError {
       '网络连接出现问题，请检查网络后重试',
       true,
       context,
-      cause
+      cause,
     );
   }
 }
@@ -70,7 +70,7 @@ export class TimeoutError extends BaseError {
       `操作超时: ${operation} (${timeoutMs}ms)`,
       '处理时间过长，请稍后重试',
       true,
-      { ...context, operation, timeoutMs }
+      { ...context, operation, timeoutMs },
     );
   }
 }
@@ -88,7 +88,7 @@ export class ServiceError extends BaseError {
     statusCode?: number,
     retryable: boolean = true,
     context?: Record<string, any>,
-    cause?: Error
+    cause?: Error,
   ) {
     super(
       code,
@@ -96,7 +96,7 @@ export class ServiceError extends BaseError {
       userMessage,
       retryable,
       { ...context, service, statusCode },
-      cause
+      cause,
     );
     this.service = service;
     this.statusCode = statusCode;
@@ -112,7 +112,7 @@ export class ServiceUnavailableError extends ServiceError {
       '服务暂时不可用，正在为您切换备用服务',
       503,
       true,
-      context
+      context,
     );
   }
 }
@@ -124,11 +124,11 @@ export class RateLimitError extends ServiceError {
     super(
       'RATE_LIMIT_ERROR',
       service,
-      `API请求频率超限`,
+      'API请求频率超限',
       '请求过于频繁，请稍后再试',
       429,
       true,
-      { ...context, retryAfter }
+      { ...context, retryAfter },
     );
     this.retryAfter = retryAfter;
   }
@@ -143,7 +143,7 @@ export class QuotaExceededError extends ServiceError {
       '今日配额已用完，请明天再试或联系管理员',
       429,
       false,
-      { ...context, quotaType }
+      { ...context, quotaType },
     );
   }
 }
@@ -156,7 +156,7 @@ export class AuthenticationError extends BaseError {
       `认证失败: ${service}${reason ? ` - ${reason}` : ''}`,
       '认证失败，请检查API密钥配置',
       false,
-      { ...context, service }
+      { ...context, service },
     );
   }
 }
@@ -168,7 +168,7 @@ export class ApiKeyInvalidError extends BaseError {
       `认证失败: ${service} - API密钥无效或已过期`,
       'API密钥无效或已过期',
       false,
-      { ...context, service }
+      { ...context, service },
     );
   }
 }
@@ -184,7 +184,7 @@ export class ValidationError extends BaseError {
       message,
       '输入数据格式有误，请检查后重试',
       false,
-      { ...context, field, value }
+      { ...context, field, value },
     );
     this.field = field;
     this.value = value;
@@ -199,7 +199,7 @@ export class ParseError extends BaseError {
       '数据解析失败，请检查输入格式',
       false,
       { ...context, dataType },
-      cause
+      cause,
     );
   }
 }
@@ -217,7 +217,7 @@ export class VideoNotFoundError extends BusinessError {
       'VIDEO_NOT_FOUND',
       `视频不存在: ${videoId}`,
       '视频不存在或已被删除',
-      { ...context, videoId, platform }
+      { ...context, videoId, platform },
     );
   }
 }
@@ -229,7 +229,7 @@ export class VideoProcessingError extends BusinessError {
       `视频处理失败 [${stage}]: ${reason}`,
       '视频处理失败，请稍后重试',
       { ...context, stage },
-      cause
+      cause,
     );
   }
 }
@@ -241,7 +241,7 @@ export class TranscriptionError extends BusinessError {
       `转录失败: ${reason}`,
       '音频转文字失败，请检查视频是否包含有效音频',
       context,
-      cause
+      cause,
     );
   }
 }
@@ -255,7 +255,7 @@ export class SystemError extends BaseError {
       '系统内部错误，请联系技术支持',
       true,
       context,
-      cause
+      cause,
     );
   }
 }
@@ -267,7 +267,7 @@ export class ResourceExhaustedError extends BaseError {
       `资源耗尽: ${resource}`,
       '系统资源不足，请稍后重试',
       true,
-      { ...context, resource }
+      { ...context, resource },
     );
   }
 }
@@ -288,11 +288,11 @@ export class ErrorHandler {
       'ETIMEDOUT',
       'ENOTFOUND',
       'ENETUNREACH',
-      'socket hang up'
+      'socket hang up',
     ];
     
-    return retryableMessages.some(msg => 
-      error.message.includes(msg) || error.message.includes(msg)
+    return retryableMessages.some((msg) => 
+      error.message.includes(msg) || error.message.includes(msg),
     );
   }
 
@@ -324,6 +324,7 @@ export class ErrorHandler {
     
     // 添加随机抖动（±20%）
     const jitter = delay * 0.2 * (Math.random() - 0.5);
+
     return Math.floor(delay + jitter);
   }
 
@@ -336,9 +337,9 @@ export class ErrorHandler {
       error: error instanceof BaseError ? error.toJSON() : {
         name: error.name,
         message: error.message,
-        stack: error.stack
+        stack: error.stack,
       },
-      context
+      context,
     };
     
     // 根据错误级别使用不同的日志级别

@@ -5,6 +5,7 @@
 
 import { promises as fs } from 'fs';
 import { join } from 'path';
+
 import { v4 as uuidv4 } from 'uuid';
 
 export interface ReplitServiceConfig {
@@ -28,7 +29,7 @@ export class ReplitVideoService {
     this.config = {
       baseUrl: process.env.REPLIT_VIDEO_SERVICE_URL || 'https://your-repl-name.repl.co',
       timeout: 120000, // 2 分钟超时
-      ...config
+      ...config,
     };
   }
   
@@ -38,13 +39,15 @@ export class ReplitVideoService {
   async checkHealth(): Promise<boolean> {
     try {
       const response = await fetch(`${this.config.baseUrl}/health`, {
-        signal: AbortSignal.timeout(5000)
+        signal: AbortSignal.timeout(5000),
       });
       
       const data = await response.json() as any;
+
       return (data.status === 'healthy' || data.status === 'ok') && (data.ffmpeg_available || data.ffmpeg);
     } catch (error) {
       console.error('Replit 服务健康检查失败:', error as Error);
+
       return false;
     }
   }
@@ -59,17 +62,20 @@ export class ReplitVideoService {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ video_url: videoUrl }),
-      signal: AbortSignal.timeout(30000)
+      signal: AbortSignal.timeout(30000),
     });
     
     if (!response.ok) {
       let errorMessage = '获取视频信息失败';
+
       try {
         const error = await response.json() as any;
+
         errorMessage = error.message || errorMessage;
       } catch (e) {
         // 如果响应不是 JSON，尝试读取文本
         const text = await response.text();
+
         console.error('Replit 服务返回非 JSON 响应:', text.substring(0, 200));
       }
       throw new Error(errorMessage);
@@ -80,6 +86,7 @@ export class ReplitVideoService {
       return await response.json() as VideoInfo;
     } catch (e) {
       const text = await response.text();
+
       console.error('Replit 返回无效 JSON:', text.substring(0, 200));
       throw new Error('Replit 服务返回格式错误');
     }
@@ -104,11 +111,12 @@ export class ReplitVideoService {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ video_url: videoUrl }),
-      signal: AbortSignal.timeout(this.config.timeout!)
+      signal: AbortSignal.timeout(this.config.timeout!),
     });
     
     if (!response.ok) {
       const error = await response.json() as any;
+
       throw new Error(error.message || '视频处理失败');
     }
     
@@ -120,6 +128,7 @@ export class ReplitVideoService {
     // 保存音频文件到本地
     const audioBuffer = await response.arrayBuffer();
     const audioPath = join('/tmp', `audio_${sessionId}.mp3`);
+
     await fs.writeFile(audioPath, Buffer.from(audioBuffer));
     
     console.log(`✅ 音频下载完成: ${audioPath} (${(audioBuffer.byteLength / 1024 / 1024).toFixed(2)} MB)`);
@@ -129,8 +138,8 @@ export class ReplitVideoService {
       metadata: {
         duration,
         title,
-        sessionId
-      }
+        sessionId,
+      },
     };
   }
 }

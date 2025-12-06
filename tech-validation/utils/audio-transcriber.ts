@@ -1,5 +1,4 @@
 import { readFileSync } from 'fs';
-
 import { SpeechToTextRequest, SpeechToTextResponse } from '../interfaces/api-types';
 
 import { MiniMaxClientV2 } from './minimax-client-v2';

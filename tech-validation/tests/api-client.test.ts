@@ -1,5 +1,6 @@
-import { describe, it, beforeEach, expect, jest } from '@jest/globals';
+import { describe, it, beforeEach, expect } from '@jest/globals';
 import axios from 'axios';
+import { jest } from '@jest/globals';
 
 import { EnhancedApiClient } from '../utils/enhanced-api-client';
 import { ApiClient } from '../utils/api-client';

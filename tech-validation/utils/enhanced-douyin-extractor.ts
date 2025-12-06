@@ -46,7 +46,7 @@ export class EnhancedDouyinExtractor extends DouyinLinkExtractor {
     
     // ===== 特殊链接格式 =====
     // 用户主页链接
-    /https?:\/\/www\.douyin\.com\/user\/[\w\-]+\/?/gi,
+    /https?:\/\/www\.douyin\.com\/user\/[\w-]+\/?/gi,
     
     // 话题链接
     /https?:\/\/www\.douyin\.com\/hashtag\/\d+\/?/gi,
@@ -129,7 +129,7 @@ export class EnhancedDouyinExtractor extends DouyinLinkExtractor {
    */
   static async smartExtract(text: string): Promise<EnhancedExtractResult> {
     logger.info('EnhancedDouyinExtractor', 'smartExtract', '开始智能提取', { 
-      textLength: text.length 
+      textLength: text.length, 
     });
 
     // 1. 提取标准链接
@@ -190,7 +190,7 @@ export class EnhancedDouyinExtractor extends DouyinLinkExtractor {
 
     logger.info('EnhancedDouyinExtractor', 'extractEnhancedLinks', '提取到链接', { 
       count: links.length,
-      links: links.map(l => l.url),
+      links: links.map((l) => l.url),
     });
 
     return links;
@@ -201,12 +201,14 @@ export class EnhancedDouyinExtractor extends DouyinLinkExtractor {
    */
   private static cleanAndNormalizeUrl(url: string, fullText: string, position: number): string {
     let cleaned = url.trim();
-    
+
     // 1. 智能截断：检查URL后面的字符，避免误包含
-    const afterUrl = fullText.substring(position + url.length, position + url.length + 10);
-    
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _afterUrl = fullText.substring(position + url.length, position + url.length + 10);
+
     // 如果后面紧跟中文或标点，需要智能截断
     const cutoffMatch = cleaned.match(/^(https?:\/\/[^\s\u4e00-\u9fa5，。！？、）)》】]+)/);
+
     if (cutoffMatch) {
       cleaned = cutoffMatch[1];
     }
@@ -225,9 +227,11 @@ export class EnhancedDouyinExtractor extends DouyinLinkExtractor {
     // 5. 规范化短链接（移除尾部斜杠，保留查询参数）
     if (cleaned.includes('v.douyin.com')) {
       const shortLinkMatch = cleaned.match(/v\.douyin\.com\/([\w\d]+)\/?(\?.*)?$/);
+
       if (shortLinkMatch) {
         const id = shortLinkMatch[1];
         const query = shortLinkMatch[2] || '';
+
         cleaned = `https://v.douyin.com/${id}${query}`;
       }
     }
@@ -235,8 +239,10 @@ export class EnhancedDouyinExtractor extends DouyinLinkExtractor {
     // 6. 规范化 TikTok 链接（移除尾部斜杠）
     if (cleaned.includes('vm.tiktok.com')) {
       const tiktokMatch = cleaned.match(/vm\.tiktok\.com\/([\w\d]+)/);
+
       if (tiktokMatch) {
         const id = tiktokMatch[1];
+
         cleaned = `https://vm.tiktok.com/${id}`;
       }
     }
@@ -259,10 +265,11 @@ export class EnhancedDouyinExtractor extends DouyinLinkExtractor {
         'tt_from', 'u_code', 'timestamp',
       ];
 
-      trackingParams.forEach(param => params.delete(param));
+      trackingParams.forEach((param) => params.delete(param));
 
       // 重要参数保留（如视频ID相关）
       const queryString = params.toString();
+
       urlObj.search = queryString ? `?${queryString}` : '';
 
       return urlObj.toString();
@@ -276,11 +283,12 @@ export class EnhancedDouyinExtractor extends DouyinLinkExtractor {
    * 检测链接类型
    */
   protected static detectLinkType(url: string): 'video' | 'user' | 'live' | 'hashtag' | 'short' | 'unknown' {
-    if (url.includes('/video/')) return 'video';
-    if (url.includes('/user/')) return 'user';
-    if (url.includes('/hashtag/')) return 'hashtag';
-    if (url.includes('live.douyin.com')) return 'live';
-    if (url.includes('v.douyin.com')) return 'short';
+    if (url.includes('/video/')) {return 'video';}
+    if (url.includes('/user/')) {return 'user';}
+    if (url.includes('/hashtag/')) {return 'hashtag';}
+    if (url.includes('live.douyin.com')) {return 'live';}
+    if (url.includes('v.douyin.com')) {return 'short';}
+
     return 'unknown';
   }
 
@@ -344,38 +352,44 @@ export class EnhancedDouyinExtractor extends DouyinLinkExtractor {
 
     // 1. dOU口令格式: dOU口令：ABcd1234
     const douMatch = fullText.match(/dOU口令[:：]?\s*([\w\d]+)/i);
+
     if (douMatch) {
       return douMatch[1];
     }
 
     // 2. 分享码/邀请码格式: 分享码：XYZ789
     const shareMatch = fullText.match(/(?:分享码|邀请码)[:：]?\s*([\w\d]+)/);
+
     if (shareMatch) {
       return shareMatch[1];
     }
 
     // 3. 数字+代码格式: 4.98 XhC:/ 复制打开抖音
     const numCodeMatch = fullText.match(/[\d.]+\s+([\w:/]+)/);
+
     if (numCodeMatch) {
       return numCodeMatch[1];
     }
 
     // 4. 淘口令格式: ￥AbCd1234￥ 或 $VGc7HhU8rQW$
     const taoMatch = fullText.match(/[￥¥$]([\w\d]+)[￥¥$]/);
+
     if (taoMatch) {
       return taoMatch[1];
     }
 
     // 5. 长按复制格式: 长按复制此段话$VGc7HhU8rQW$打开抖音
     const copyMatch = fullText.match(/长按复制此段话(.+?)打开抖音/);
+
     if (copyMatch) {
       // 提取中间的口令部分
       const innerMatch = copyMatch[1].match(/[￥¥$]([\w\d]+)[￥¥$]/);
+
       return innerMatch ? innerMatch[1] : copyMatch[1].trim();
     }
 
     // 6. 默认：移除标记符号后返回
-    let content = fullText
+    const content = fullText
       .replace(/[#＃%％￥¥$]/g, '')
       .replace(/复制此链接|打开抖音|复制这段话|长按复制此段话|长按复制此条消息/g, '')
       .trim();
@@ -387,7 +401,8 @@ export class EnhancedDouyinExtractor extends DouyinLinkExtractor {
    * 检测口令类型
    */
   protected static detectCommandType(text: string): 'command' | 'copy-text' | 'search' {
-    if (text.includes('复制')) return 'copy-text';
+    if (text.includes('复制')) {return 'copy-text';}
+
     return 'command';
   }
 
@@ -397,7 +412,7 @@ export class EnhancedDouyinExtractor extends DouyinLinkExtractor {
   protected static calculateConfidence(
     links: ExtractedLink[], 
     commands: DouyinCommand[], 
-    text: string
+    text: string,
   ): number {
     // 基础分数
     let score = 0;
@@ -406,7 +421,7 @@ export class EnhancedDouyinExtractor extends DouyinLinkExtractor {
     if (links.length > 0) {
       score += 0.9;
       // 短链接更可信
-      if (links.some(l => l.type === 'short')) {
+      if (links.some((l) => l.type === 'short')) {
         score += 0.05;
       }
     }
@@ -418,7 +433,8 @@ export class EnhancedDouyinExtractor extends DouyinLinkExtractor {
     
     // 文本包含抖音相关词汇
     const douyinKeywords = ['抖音', '视频', '作品', '直播', '分享'];
-    const hasKeywords = douyinKeywords.some(kw => text.includes(kw));
+    const hasKeywords = douyinKeywords.some((kw) => text.includes(kw));
+
     if (hasKeywords) {
       score += 0.1;
     }
@@ -433,7 +449,7 @@ export class EnhancedDouyinExtractor extends DouyinLinkExtractor {
   protected static generateSuggestions(
     links: ExtractedLink[], 
     commands: DouyinCommand[], 
-    text: string
+    text: string,
   ): string[] {
     const suggestions: string[] = [];
     
@@ -448,7 +464,7 @@ export class EnhancedDouyinExtractor extends DouyinLinkExtractor {
     // 找到口令
     if (commands.length > 0 && links.length === 0) {
       suggestions.push('检测到抖音口令，请在抖音APP中打开');
-      if (commands.some(c => c.type === 'search')) {
+      if (commands.some((c) => c.type === 'search')) {
         suggestions.push('检测到搜索关键词，请在抖音APP中搜索');
       }
     }
@@ -466,11 +482,12 @@ export class EnhancedDouyinExtractor extends DouyinLinkExtractor {
    */
   protected static determineMethod(
     links: ExtractedLink[], 
-    commands: DouyinCommand[]
+    commands: DouyinCommand[],
   ): 'regex' | 'command' | 'mixed' {
-    if (links.length > 0 && commands.length > 0) return 'mixed';
-    if (links.length > 0) return 'regex';
-    if (commands.length > 0) return 'command';
+    if (links.length > 0 && commands.length > 0) {return 'mixed';}
+    if (links.length > 0) {return 'regex';}
+    if (commands.length > 0) {return 'command';}
+
     return 'regex';
   }
 

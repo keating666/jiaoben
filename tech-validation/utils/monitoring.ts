@@ -47,7 +47,7 @@ export class MonitoringService extends EventEmitter {
       rate: 0.1,  // 默认10%采样率
       alwaysSample: ['error', 'api_call', 'video_process'],
       neverSample: ['health_check'],
-      ...samplingConfig
+      ...samplingConfig,
     };
 
     // 定期刷新指标（批量处理提高性能）
@@ -58,13 +58,13 @@ export class MonitoringService extends EventEmitter {
    * 记录关键业务指标
    */
   recordMetric(name: string, value: number, tags?: Record<string, string>): void {
-    if (!this.shouldSample(name)) return;
+    if (!this.shouldSample(name)) {return;}
 
     const metric: Metric = {
       name,
       value,
       timestamp: Date.now(),
-      tags
+      tags,
     };
 
     this.metricsBuffer.push(metric);
@@ -84,10 +84,11 @@ export class MonitoringService extends EventEmitter {
       startTime: Date.now(),
       tags: tags || {},
       status: 'running',
-      parentId
+      parentId,
     };
 
     this.spans.set(span.id, span);
+
     return span.id;
   }
 
@@ -95,10 +96,11 @@ export class MonitoringService extends EventEmitter {
    * 结束跟踪操作
    */
   endSpan(spanId: string, status: 'success' | 'error' = 'success', error?: Error): void {
-    if (spanId === 'no-op-span') return;
+    if (spanId === 'no-op-span') {return;}
 
     const span = this.spans.get(spanId);
-    if (!span) return;
+
+    if (!span) {return;}
 
     span.endTime = Date.now();
     span.duration = span.endTime - span.startTime;
@@ -111,7 +113,7 @@ export class MonitoringService extends EventEmitter {
     // 记录性能指标
     this.recordMetric(`${span.operationName}.duration`, span.duration, {
       status,
-      ...span.tags
+      ...span.tags,
     });
 
     // 清理内存（防止泄漏）
@@ -128,20 +130,20 @@ export class MonitoringService extends EventEmitter {
     API_CALL: {
       TikHub: ['resolve_video', 'parse_response'],
       Yunmao: ['create_task', 'wait_completion', 'get_result'],
-      TongYi: ['generate_script', 'parse_response']
+      TongYi: ['generate_script', 'parse_response'],
     },
     
     // 业务流程监控点
     BUSINESS: {
       VideoProcess: ['link_extract', 'url_resolve', 'transcribe', 'script_generate'],
-      ErrorHandle: ['retry_attempt', 'fallback_trigger', 'error_logged']
+      ErrorHandle: ['retry_attempt', 'fallback_trigger', 'error_logged'],
     },
     
     // 系统资源监控点
     SYSTEM: {
       Memory: ['heap_used', 'heap_total'],
-      Request: ['concurrent_count', 'queue_size']
-    }
+      Request: ['concurrent_count', 'queue_size'],
+    },
   };
 
   /**
@@ -151,7 +153,7 @@ export class MonitoringService extends EventEmitter {
     this.recordMetric('error.count', 1, {
       error_type: error.name,
       error_code: (error as any).code || 'UNKNOWN',
-      ...context
+      ...context,
     });
 
     // 错误总是记录（不受采样影响）
@@ -165,7 +167,7 @@ export class MonitoringService extends EventEmitter {
     const now = Date.now();
     const metrics = this.metrics.get(name) || [];
     
-    return metrics.filter(m => now - m.timestamp <= duration);
+    return metrics.filter((m) => now - m.timestamp <= duration);
   }
 
   /**
@@ -178,18 +180,19 @@ export class MonitoringService extends EventEmitter {
     successRate: number;
   } {
     const metrics = this.getMetrics(`${operationName}.duration`);
+
     if (metrics.length === 0) {
       return { count: 0, avgDuration: 0, p95Duration: 0, successRate: 0 };
     }
 
-    const durations = metrics.map(m => m.value).sort((a, b) => a - b);
-    const successCount = metrics.filter(m => m.tags?.status === 'success').length;
+    const durations = metrics.map((m) => m.value).sort((a, b) => a - b);
+    const successCount = metrics.filter((m) => m.tags?.status === 'success').length;
 
     return {
       count: metrics.length,
       avgDuration: durations.reduce((a, b) => a + b, 0) / durations.length,
       p95Duration: durations[Math.floor(durations.length * 0.95)] || 0,
-      successRate: successCount / metrics.length
+      successRate: successCount / metrics.length,
     };
   }
 
@@ -211,7 +214,7 @@ export class MonitoringService extends EventEmitter {
       avgResponseTime: durationMetrics.length > 0 
         ? durationMetrics.reduce((a, b) => a + b.value, 0) / durationMetrics.length 
         : 0,
-      activeSpans: Array.from(this.spans.values()).filter(s => s.status === 'running').length
+      activeSpans: Array.from(this.spans.values()).filter((s) => s.status === 'running').length,
     };
   }
 
@@ -219,12 +222,12 @@ export class MonitoringService extends EventEmitter {
 
   private shouldSample(operationName: string): boolean {
     // 总是采样的操作
-    if (this.samplingConfig.alwaysSample.some(op => operationName.includes(op))) {
+    if (this.samplingConfig.alwaysSample.some((op) => operationName.includes(op))) {
       return true;
     }
 
     // 从不采样的操作
-    if (this.samplingConfig.neverSample.some(op => operationName.includes(op))) {
+    if (this.samplingConfig.neverSample.some((op) => operationName.includes(op))) {
       return false;
     }
 
@@ -237,20 +240,22 @@ export class MonitoringService extends EventEmitter {
   }
 
   private flushMetrics(): void {
-    if (this.metricsBuffer.length === 0) return;
+    if (this.metricsBuffer.length === 0) {return;}
 
     // 批量处理指标
-    this.metricsBuffer.forEach(metric => {
+    this.metricsBuffer.forEach((metric) => {
       if (!this.metrics.has(metric.name)) {
         this.metrics.set(metric.name, []);
       }
       
       const metricArray = this.metrics.get(metric.name)!;
+
       metricArray.push(metric);
       
       // 保留最近1小时的数据
       const oneHourAgo = Date.now() - 3600000;
-      const filtered = metricArray.filter(m => m.timestamp > oneHourAgo);
+      const filtered = metricArray.filter((m) => m.timestamp > oneHourAgo);
+
       this.metrics.set(metric.name, filtered);
     });
 
@@ -271,7 +276,7 @@ export class MonitoringService extends EventEmitter {
       }
     });
     
-    toDelete.forEach(id => this.spans.delete(id));
+    toDelete.forEach((id) => this.spans.delete(id));
   }
 
   /**
@@ -287,7 +292,7 @@ export class MonitoringService extends EventEmitter {
 // 单例实例
 export const monitoring = new MonitoringService({
   rate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-  alwaysSample: ['error', 'api_call', 'video_process', 'fallback_trigger']
+  alwaysSample: ['error', 'api_call', 'video_process', 'fallback_trigger'],
 });
 
 // 装饰器：自动监控方法执行
@@ -295,7 +300,7 @@ export function Monitor(operationName?: string) {
   return function (
     target: any,
     propertyName: string,
-    descriptor: PropertyDescriptor
+    descriptor: PropertyDescriptor,
   ) {
     const originalMethod = descriptor.value;
     const opName = operationName || `${target.constructor.name}.${propertyName}`;
@@ -303,18 +308,20 @@ export function Monitor(operationName?: string) {
     descriptor.value = async function (...args: any[]) {
       const spanId = monitoring.startSpan(opName, {
         class: target.constructor.name,
-        method: propertyName
+        method: propertyName,
       });
 
       try {
         const result = await originalMethod.apply(this, args);
+
         monitoring.endSpan(spanId, 'success');
+
         return result;
       } catch (error) {
         monitoring.endSpan(spanId, 'error', error as Error);
         monitoring.recordError(error as Error, {
           class: target.constructor.name,
-          method: propertyName
+          method: propertyName,
         });
         throw error;
       }

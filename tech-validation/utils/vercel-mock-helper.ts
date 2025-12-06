@@ -3,7 +3,7 @@
  * 仅在视频下载失败时提供备用方案
  */
 
-import { createMockAudioFile, MOCK_TRANSCRIPT } from './mock-audio';
+import { MOCK_TRANSCRIPT } from './mock-audio';
 import { TranscriptionResult } from './audio-transcriber';
 
 export interface MockVideoInfo {

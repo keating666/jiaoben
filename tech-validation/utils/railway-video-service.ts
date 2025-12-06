@@ -39,6 +39,7 @@ export class RailwayVideoService {
   async checkHealth(): Promise<boolean> {
     if (!this.baseUrl) {
       logger.warn('RailwayVideoService', 'checkHealth', 'RAILWAY_VIDEO_SERVICE_URL 未配置');
+
       return false;
     }
 
@@ -58,9 +59,11 @@ export class RailwayVideoService {
       }
 
       const data = await response.json() as any;
+
       return data.status === 'healthy' && data.ffmpeg_available;
     } catch (error) {
       logger.error('RailwayVideoService', 'checkHealth', '健康检查失败', error as Error);
+
       return false;
     }
   }
@@ -130,6 +133,7 @@ export class RailwayVideoService {
   static async saveAudioToFile(hexData: string, filePath: string): Promise<void> {
     const fs = await import('fs/promises');
     const buffer = this.hexToBuffer(hexData);
+
     await fs.writeFile(filePath, buffer);
   }
 }

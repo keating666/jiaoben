@@ -27,12 +27,12 @@ export class VideoDownloader {
       
       return {
         success: true,
-        filePath: options.outputPath || '/tmp/video.mp4'
+        filePath: options.outputPath || '/tmp/video.mp4',
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -43,6 +43,7 @@ export class VideoDownloader {
   static isValidUrl(url: string): boolean {
     try {
       const parsed = new URL(url);
+
       return ['http:', 'https:'].includes(parsed.protocol);
     } catch {
       return false;
@@ -52,12 +53,12 @@ export class VideoDownloader {
   /**
    * Get video metadata without downloading
    */
-  static async getMetadata(url: string): Promise<any> {
+  static async getMetadata(_url: string): Promise<any> {
     // Placeholder for metadata extraction
     return {
       duration: 0,
       format: 'mp4',
-      title: 'Video'
+      title: 'Video',
     };
   }
 }

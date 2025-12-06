@@ -1,13 +1,14 @@
-import axios from 'axios';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+
+import axios from 'axios';
 
 // 测试配置
 const TEST_CONFIG = {
   apiEndpoint: process.env.API_ENDPOINT || 'http://localhost:3000/api/video/transcribe',
   apiToken: process.env.TEST_API_TOKEN || 'test-token-123',
   outputDir: path.join(__dirname, 'test-outputs'),
-  timeout: 55000 // 55秒超时（低于Vercel的60秒限制）
+  timeout: 55000, // 55秒超时（低于Vercel的60秒限制）
 };
 
 // 测试用例
@@ -18,13 +19,13 @@ const TEST_CASES = [
     input: {
       url: 'https://v.douyin.com/iRyBWfGS/',
       style: 'default',
-      language: 'zh'
+      language: 'zh',
     },
     expectations: {
       hasTranscript: true,
       hasScript: true,
-      scriptSections: ['introduction', 'scenes', 'conclusion']
-    }
+      scriptSections: ['introduction', 'scenes', 'conclusion'],
+    },
   },
   {
     name: '错误的视频URL测试',
@@ -32,12 +33,12 @@ const TEST_CASES = [
     input: {
       url: 'https://invalid-url.com/video',
       style: 'default',
-      language: 'zh'
+      language: 'zh',
     },
     expectations: {
       shouldFail: true,
-      errorCode: 'VIDEO_DOWNLOAD_ERROR'
-    }
+      errorCode: 'VIDEO_DOWNLOAD_ERROR',
+    },
   },
   {
     name: '缺少API Token测试',
@@ -45,14 +46,14 @@ const TEST_CASES = [
     input: {
       url: 'https://v.douyin.com/test/',
       style: 'default',
-      language: 'zh'
+      language: 'zh',
     },
     skipAuth: true,
     expectations: {
       shouldFail: true,
-      errorCode: 'UNAUTHORIZED'
-    }
-  }
+      errorCode: 'UNAUTHORIZED',
+    },
+  },
 ];
 
 // 测试执行函数
@@ -68,7 +69,7 @@ async function runE2ETest() {
     total: TEST_CASES.length,
     passed: 0,
     failed: 0,
-    details: [] as any[]
+    details: [] as any[],
   };
 
   // 执行每个测试用例
@@ -77,18 +78,18 @@ async function runE2ETest() {
     console.log(`   描述: ${testCase.description}`);
     
     const startTime = Date.now();
-    let testResult: any = {
+    const testResult: any = {
       name: testCase.name,
       status: 'PENDING',
       duration: 0,
       error: null,
-      response: null
+      response: null,
     };
 
     try {
       // 准备请求头
       const headers: any = {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       };
       
       if (!testCase.skipAuth) {
@@ -103,13 +104,13 @@ async function runE2ETest() {
         {
           headers,
           timeout: TEST_CONFIG.timeout,
-          validateStatus: () => true // 接受所有状态码
-        }
+          validateStatus: () => true, // 接受所有状态码
+        },
       );
 
       testResult.response = {
         status: response.status,
-        data: response.data
+        data: response.data,
       };
       testResult.duration = Date.now() - startTime;
 
@@ -166,8 +167,9 @@ async function runE2ETest() {
             // 保存成功的输出
             const outputFile = path.join(
               TEST_CONFIG.outputDir,
-              `${testCase.name.replace(/[^a-z0-9]/gi, '_')}_output.json`
+              `${testCase.name.replace(/[^a-z0-9]/gi, '_')}_output.json`,
             );
+
             await fs.writeFile(outputFile, JSON.stringify(data, null, 2));
             console.log(`   📁 输出已保存到: ${outputFile}`);
           } else {
@@ -198,7 +200,7 @@ async function runE2ETest() {
   }
 
   // 生成测试报告
-  console.log('\n' + '='.repeat(60));
+  console.log(`\n${  '='.repeat(60)}`);
   console.log('📊 测试报告总结');
   console.log('='.repeat(60));
   console.log(`总测试数: ${results.total}`);
@@ -208,13 +210,16 @@ async function runE2ETest() {
   
   // 保存详细报告
   const reportPath = path.join(TEST_CONFIG.outputDir, 'test-report.json');
+
   await fs.writeFile(reportPath, JSON.stringify(results, null, 2));
   console.log(`\n📁 详细报告已保存到: ${reportPath}`);
   
   // 性能分析
-  const successfulTests = results.details.filter(r => r.status === 'PASSED' && !r.response?.data?.error);
+  const successfulTests = results.details.filter((r) => r.status === 'PASSED' && !r.response?.data?.error);
+
   if (successfulTests.length > 0) {
     const avgDuration = successfulTests.reduce((sum, r) => sum + r.duration, 0) / successfulTests.length;
+
     console.log(`\n⏱️  平均响应时间: ${avgDuration.toFixed(0)}ms`);
   }
   

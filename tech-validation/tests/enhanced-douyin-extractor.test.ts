@@ -1,4 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
+
 import { EnhancedDouyinExtractor } from '../utils/enhanced-douyin-extractor';
 
 describe('EnhancedDouyinExtractor', () => {

@@ -88,9 +88,9 @@ describe('Circuit Breaker 测试', () => {
 
     // 下一次调用应该尝试执行（半开状态）
     const testOperation = async () => 'success';
-    const result = await breaker.execute(testOperation, 'test-op');
+    const _result = await breaker.execute(testOperation, 'test-op');
 
-    expect(result).toBe('success');
+    expect(_result).toBe('success');
     expect(breaker.getState()).toBe('CLOSED');
   });
 
