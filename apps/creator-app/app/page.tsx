@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 export default function Home() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -30,14 +32,18 @@ export default function Home() {
         </div>
 
         <div className="space-y-4 max-w-md mx-auto">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-3">
-              即将上线
-            </h2>
-            <p className="text-gray-600">
-              我们正在打造一个强大的 AI 工具，帮助创作者快速生成高质量的短视频脚本
-            </p>
-          </div>
+          {/* CTA Button */}
+          <Link
+            href="/script"
+            className="block w-full py-4 px-6 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-lg shadow-lg transition transform hover:scale-105"
+          >
+            <span className="flex items-center justify-center gap-2">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              开始生成脚本
+            </span>
+          </Link>
 
           <div className="bg-white rounded-lg shadow-md p-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-3">
@@ -61,6 +67,12 @@ export default function Home() {
                 <span>IP 诊断报告</span>
               </li>
             </ul>
+          </div>
+
+          <div className="bg-white/50 rounded-lg p-4">
+            <p className="text-sm text-gray-600">
+              粘贴抖音、TikTok 等短视频链接，AI 自动分析并生成分镜头脚本
+            </p>
           </div>
 
           <div className="text-sm text-gray-500 pt-4">
