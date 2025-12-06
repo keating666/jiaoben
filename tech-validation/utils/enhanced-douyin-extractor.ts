@@ -34,6 +34,9 @@ export class EnhancedDouyinExtractor extends DouyinLinkExtractor {
     // ===== 标准链接格式 =====
     // 短链接（最常见）
     /https?:\/\/v\.douyin\.com\/[\w\d]+\/?/gi,
+
+    // 无协议短链接
+    /(?<![/\w])v\.douyin\.com\/[\w\d]+\/?/gi,
     
     // 完整视频链接
     /https?:\/\/www\.douyin\.com\/video\/\d+\/?/gi,
@@ -64,44 +67,49 @@ export class EnhancedDouyinExtractor extends DouyinLinkExtractor {
   ];
 
   // 抖音口令模式（基于真实案例增强）
+  // 注意：更完整的模式放在前面，避免被简单模式先匹配
   private static readonly COMMAND_PATTERNS = [
-    // 标准口令格式：#在抖音，记录美好生活#
-    /[#＃]{1}[^#＃]+[#＃]{1}/g,
-    
+    // === 完整句子模式（优先匹配）===
+    // 长按复制格式
+    /长按复制此段话.+?打开抖音/g,
+    /长按复制此条消息.+?打开抖音/g,
+
+    // 带中文的口令（使用非贪婪匹配）
+    /复制这段话[￥¥$#＃].+?打开抖音/g,
+
+    // 复制整段话格式
+    /复制整段话[￥¥$#＃][^￥¥$#＃]+[￥¥$#＃]/g,
+
+    // === 数字代码格式 ===
     // 数字+代码格式：7.53 MQc:/ 复制此链接
     /[\d.]+\s+[\w:/]+\s*复制此链接/g,
-    
-    // 更多数字代码格式变体
-    /[\d.]+\s+[\w:/]+\s*复制打开抖音/g,
-    /[\d.]+\s+[\w:/]+\s*打开Dou音/g,
-    /[\d.]+\s+[\w:/]+\s*打开抖音/g,
-    
+
+    // 更多数字代码格式变体（支持中间有其他内容如日期）
+    /[\d.]+\s+[\w:/]+.*复制打开抖音/g,
+    /[\d.]+\s+[\w:/]+.*打开Dou音/g,
+    /[\d.]+\s+[\w:/]+.*打开抖音/g,
+
+    // === 标签和口令格式 ===
+    // 标准口令格式：#在抖音，记录美好生活#
+    /[#＃]{1}[^#＃]+[#＃]{1}/g,
+
     // 淘口令格式：￥AbCd1234￥
     /[￥¥$]{1}[\w\d]+[￥¥$]{1}/g,
-    
+
     // 新版口令：%%开头
     /%%[\w\d\u4e00-\u9fa5]+%%/g,
-    
-    // dOU口令格式
-    /dOU口令[:]?\s*[\w\d]+/g,
-    
-    // 带中文的口令
-    /复制这段话[￥¥$#＃][^￥¥$#＃打开抖音]+打开抖音/g,
-    
-    // 长按复制格式
-    /长按复制此段话[^打开抖音]+打开抖音/g,
-    /长按复制此条消息[^打开抖音]+打开抖音/g,
-    
+
+    // dOU口令格式（支持中英文冒号）
+    /dOU口令[:：]?\s*[\w\d]+/g,
+
+    // === 特殊格式 ===
     // 带特殊字符的分享格式（如 u0000ey, WZ, CZ, pqZ）
     /[uU]0{3,4}[\w]+/g,
     /[A-Z]{2}\s*[:：]\s*[\w\d]+/g,
-    
-    // 复制整段话格式
-    /复制整段话[￥¥$#＃][^￥¥$#＃]+[￥¥$#＃]/g,
-    
-    // 分享码格式
-    /分享码[:]?\s*[\w\d]+/g,
-    /邀请码[:]?\s*[\w\d]+/g,
+
+    // 分享码格式（支持中英文冒号）
+    /分享码[:：]?\s*[\w\d]+/g,
+    /邀请码[:：]?\s*[\w\d]+/g,
   ];
 
   // 特殊文本模式
@@ -214,13 +222,22 @@ export class EnhancedDouyinExtractor extends DouyinLinkExtractor {
       cleaned = `https://${cleaned}`;
     }
     
-    // 5. 规范化短链接（保留查询参数）
+    // 5. 规范化短链接（移除尾部斜杠，保留查询参数）
     if (cleaned.includes('v.douyin.com')) {
-      const shortLinkMatch = cleaned.match(/v\.douyin\.com\/([\w\d]+)(.*)/);
+      const shortLinkMatch = cleaned.match(/v\.douyin\.com\/([\w\d]+)\/?(\?.*)?$/);
       if (shortLinkMatch) {
         const id = shortLinkMatch[1];
-        const queryAndHash = shortLinkMatch[2] || '';
-        cleaned = `https://v.douyin.com/${id}${queryAndHash}`;
+        const query = shortLinkMatch[2] || '';
+        cleaned = `https://v.douyin.com/${id}${query}`;
+      }
+    }
+
+    // 6. 规范化 TikTok 链接（移除尾部斜杠）
+    if (cleaned.includes('vm.tiktok.com')) {
+      const tiktokMatch = cleaned.match(/vm\.tiktok\.com\/([\w\d]+)/);
+      if (tiktokMatch) {
+        const id = tiktokMatch[1];
+        cleaned = `https://vm.tiktok.com/${id}`;
       }
     }
 
@@ -323,15 +340,47 @@ export class EnhancedDouyinExtractor extends DouyinLinkExtractor {
    * 提取口令内容
    */
   protected static extractCommandContent(fullText: string): string {
-    // 移除标记符号
+    // 针对不同格式使用不同的提取策略
+
+    // 1. dOU口令格式: dOU口令：ABcd1234
+    const douMatch = fullText.match(/dOU口令[:：]?\s*([\w\d]+)/i);
+    if (douMatch) {
+      return douMatch[1];
+    }
+
+    // 2. 分享码/邀请码格式: 分享码：XYZ789
+    const shareMatch = fullText.match(/(?:分享码|邀请码)[:：]?\s*([\w\d]+)/);
+    if (shareMatch) {
+      return shareMatch[1];
+    }
+
+    // 3. 数字+代码格式: 4.98 XhC:/ 复制打开抖音
+    const numCodeMatch = fullText.match(/[\d.]+\s+([\w:/]+)/);
+    if (numCodeMatch) {
+      return numCodeMatch[1];
+    }
+
+    // 4. 淘口令格式: ￥AbCd1234￥ 或 $VGc7HhU8rQW$
+    const taoMatch = fullText.match(/[￥¥$]([\w\d]+)[￥¥$]/);
+    if (taoMatch) {
+      return taoMatch[1];
+    }
+
+    // 5. 长按复制格式: 长按复制此段话$VGc7HhU8rQW$打开抖音
+    const copyMatch = fullText.match(/长按复制此段话(.+?)打开抖音/);
+    if (copyMatch) {
+      // 提取中间的口令部分
+      const innerMatch = copyMatch[1].match(/[￥¥$]([\w\d]+)[￥¥$]/);
+      return innerMatch ? innerMatch[1] : copyMatch[1].trim();
+    }
+
+    // 6. 默认：移除标记符号后返回
     let content = fullText
       .replace(/[#＃%％￥¥$]/g, '')
-      .replace(/复制此链接|打开抖音|复制这段话/g, '')
+      .replace(/复制此链接|打开抖音|复制这段话|长按复制此段话|长按复制此条消息/g, '')
       .trim();
-    
-    // 提取核心内容
-    const codeMatch = content.match(/[\w:/]+/);
-    return codeMatch ? codeMatch[0] : content;
+
+    return content || fullText;
   }
 
   /**
