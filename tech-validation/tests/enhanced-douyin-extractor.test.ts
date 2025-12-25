@@ -8,7 +8,7 @@ describe('EnhancedDouyinExtractor', () => {
       const result = await EnhancedDouyinExtractor.smartExtract(text);
       
       expect(result.links).toHaveLength(1);
-      expect(result.links[0].url).toBe('https://v.douyin.com/iRyLb8kf');
+      expect(result.links[0].url).toBe('https://v.douyin.com/iRyLb8kf/');
       expect(result.links[0].type).toBe('short');
       expect(result.confidence).toBeGreaterThan(0.9);
     });
@@ -43,17 +43,17 @@ describe('EnhancedDouyinExtractor', () => {
     it('应该处理链接后紧跟中文的情况', async () => {
       const text = '看https://v.douyin.com/iRyLb8kf/这个视频真的很搞笑';
       const result = await EnhancedDouyinExtractor.smartExtract(text);
-      
+
       expect(result.links).toHaveLength(1);
-      expect(result.links[0].url).toBe('https://v.douyin.com/iRyLb8kf');
+      expect(result.links[0].url).toBe('https://v.douyin.com/iRyLb8kf/');
     });
 
     it('应该处理链接被标点符号包围的情况', async () => {
       const text = '【重要】https://v.douyin.com/iRyLb8kf/！！必看！！';
       const result = await EnhancedDouyinExtractor.smartExtract(text);
-      
+
       expect(result.links).toHaveLength(1);
-      expect(result.links[0].url).toBe('https://v.douyin.com/iRyLb8kf');
+      expect(result.links[0].url).toBe('https://v.douyin.com/iRyLb8kf/');
     });
 
     it('应该处理多个链接', async () => {
@@ -175,9 +175,9 @@ describe('EnhancedDouyinExtractor', () => {
     it('应该处理没有协议的链接', async () => {
       const text = '看这个 v.douyin.com/iRyLb8kf/';
       const result = await EnhancedDouyinExtractor.smartExtract(text);
-      
+
       expect(result.links).toHaveLength(1);
-      expect(result.links[0].url).toBe('https://v.douyin.com/iRyLb8kf');
+      expect(result.links[0].url).toBe('https://v.douyin.com/iRyLb8kf/');
     });
 
     it('应该去重复链接', async () => {
@@ -194,17 +194,17 @@ describe('EnhancedDouyinExtractor', () => {
     it('应该处理特殊字符包围的链接', async () => {
       const text = '《https://v.douyin.com/iRyLb8kf/》';
       const result = await EnhancedDouyinExtractor.smartExtract(text);
-      
+
       expect(result.links).toHaveLength(1);
-      expect(result.links[0].url).toBe('https://v.douyin.com/iRyLb8kf');
+      expect(result.links[0].url).toBe('https://v.douyin.com/iRyLb8kf/');
     });
 
     it('应该处理国际版TikTok链接', async () => {
       const text = '这是TikTok链接 https://vm.tiktok.com/ZMN123abc/';
       const result = await EnhancedDouyinExtractor.smartExtract(text);
-      
+
       expect(result.links).toHaveLength(1);
-      expect(result.links[0].url).toBe('https://vm.tiktok.com/ZMN123abc');
+      expect(result.links[0].url).toBe('https://vm.tiktok.com/ZMN123abc/');
     });
   });
 
