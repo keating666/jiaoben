@@ -56,11 +56,11 @@ jobs:
         ls -la apps/creator-app/out/
 
     - name: Deploy to Cloudflare Pages
-      uses: cloudflare/wrangler-action@v3
-      with:
-        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        command: pages deploy apps/creator-app/out --project-name=jiaoben-creator --commit-dirty=true
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      run: |
+        npx wrangler pages deploy apps/creator-app/out --project-name=jiaoben-creator --commit-dirty=true
 
     - name: Report Success
       if: success()
@@ -101,11 +101,11 @@ jobs:
         ls -la apps/admin-app/out/
 
     - name: Deploy to Cloudflare Pages
-      uses: cloudflare/wrangler-action@v3
-      with:
-        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        command: pages deploy apps/admin-app/out --project-name=jiaoben-admin --commit-dirty=true
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      run: |
+        npx wrangler pages deploy apps/admin-app/out --project-name=jiaoben-admin --commit-dirty=true
 
     - name: Report Success
       if: success()
