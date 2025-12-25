@@ -1,0 +1,114 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/creator-app/**'
+      - 'apps/admin-app/**'
+      - '.github/workflows/deploy-pages.yml'
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'Which app to deploy'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+          - both
+          - creator-app
+          - admin-app
+
+env:
+  NODE_VERSION: '18.x'
+
+jobs:
+  deploy-creator:
+    name: Deploy Creator App
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || github.event.inputs.app == 'both' || github.event.inputs.app == 'creator-app' }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build creator-app
+      run: |
+        cd apps/creator-app
+        npm run build
+
+    - name: Verify build output
+      run: |
+        if [ ! -f "apps/creator-app/out/index.html" ]; then
+          echo "❌ Build output not found!"
+          exit 1
+        fi
+        echo "✅ Build output verified"
+        ls -la apps/creator-app/out/
+
+    - name: Deploy to Cloudflare Pages
+      uses: cloudflare/wrangler-action@v3
+      with:
+        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        command: pages deploy apps/creator-app/out --project-name=jiaoben-creator --commit-dirty=true
+
+    - name: Report Success
+      if: success()
+      run: |
+        echo "✅ Creator App deployed successfully!"
+        echo "🌐 URL: https://jiaoben-creator.pages.dev"
+
+  deploy-admin:
+    name: Deploy Admin App
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || github.event.inputs.app == 'both' || github.event.inputs.app == 'admin-app' }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build admin-app
+      run: |
+        cd apps/admin-app
+        npm run build
+
+    - name: Verify build output
+      run: |
+        if [ ! -f "apps/admin-app/out/index.html" ]; then
+          echo "❌ Build output not found!"
+          exit 1
+        fi
+        echo "✅ Build output verified"
+        ls -la apps/admin-app/out/
+
+    - name: Deploy to Cloudflare Pages
+      uses: cloudflare/wrangler-action@v3
+      with:
+        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        command: pages deploy apps/admin-app/out --project-name=jiaoben-admin --commit-dirty=true
+
+    - name: Report Success
+      if: success()
+      run: |
+        echo "✅ Admin App deployed successfully!"
+        echo "🌐 URL: https://jiaoben-admin.pages.dev"
