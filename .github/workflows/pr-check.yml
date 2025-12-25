@@ -136,20 +136,18 @@ jobs:
           }
           
   # 依赖检查（仅公共仓库或启用 Advanced Security 的私有仓库）
-  dependency-review:
-    name: Dependency Review
-    runs-on: ubuntu-latest
-    # 私有仓库需要 GitHub Advanced Security，跳过此检查
-    if: github.event.repository.visibility == 'public'
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Dependency Review
-      uses: actions/dependency-review-action@v3
-      with:
-        fail-on-severity: moderate
+  # 注意：私有仓库需要 GitHub Advanced Security 才能使用此功能
+  # dependency-review:
+  #   name: Dependency Review
+  #   runs-on: ubuntu-latest
+  #   if: github.event.repository.visibility == 'public'
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
+  #   - name: Dependency Review
+  #     uses: actions/dependency-review-action@v3
+  #     with:
+  #       fail-on-severity: moderate
         
   # 代码复杂度检查
   complexity:
