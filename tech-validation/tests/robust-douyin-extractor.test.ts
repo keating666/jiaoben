@@ -100,8 +100,7 @@ describe('RobustDouyinExtractor - 健壮性测试', () => {
       expect(result.links).toHaveLength(1);
     });
     
-    it.skip('应该拒绝过长的链接ID', async () => {
-      // TODO: 需要在提取器中添加ID长度验证逻辑
+    it('应该拒绝过长的链接ID', async () => {
       const text = 'https://v.douyin.com/' + 'a'.repeat(100) + '/';
       const result = await RobustDouyinExtractor.smartExtract(text);
 

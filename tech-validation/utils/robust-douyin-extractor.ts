@@ -13,30 +13,33 @@ export class RobustDouyinExtractor extends EnhancedDouyinExtractor {
   private static readonly MAX_COMMANDS = 100;
   private static readonly CHUNK_SIZE = 5000;
   
+  // 链接ID最大长度
+  private static readonly MAX_LINK_ID_LENGTH = 20;
+
   // 优化后的URL模式（添加了长度限制）
   private static readonly ROBUST_URL_PATTERNS = [
-    // 短链接（限制ID长度）
+    // 短链接（限制ID长度为1-20）
     /https?:\/\/v\.douyin\.com\/[\w\d]{1,20}\/?/gi,
-    
-    // 完整视频链接（限制ID长度）
+
+    // 完整视频链接（限制ID长度为15-20）
     /https?:\/\/www\.douyin\.com\/video\/\d{15,20}\/?/gi,
-    
+
     // 分享链接
     /https?:\/\/www\.iesdouyin\.com\/share\/video\/\d{15,20}\/?/gi,
-    
-    // 用户主页（限制用户ID长度）
+
+    // 用户主页（限制用户ID长度为1-50）
     /https?:\/\/www\.douyin\.com\/user\/[\w\-]{1,50}\/?/gi,
-    
+
     // 话题链接
     /https?:\/\/www\.douyin\.com\/hashtag\/\d{1,20}\/?/gi,
-    
+
     // 直播链接
     /https?:\/\/live\.douyin\.com\/\d{1,20}\/?/gi,
     /https?:\/\/webcast\.amemv\.com\/douyin\/webcast\/reflow\/\w{1,50}/gi,
-    
+
     // 抖音极速版
     /https?:\/\/v\.douyinvod\.com\/[\w\d]{1,20}\/?/gi,
-    
+
     // TikTok
     /https?:\/\/vm\.tiktok\.com\/[\w\d]{1,20}\/?/gi,
   ];
@@ -243,47 +246,56 @@ export class RobustDouyinExtractor extends EnhancedDouyinExtractor {
   private static robustCleanUrl(url: string, fullText: string, position: number): string | null {
     try {
       let cleaned = url.trim();
-      
+
       // 长度检查
       if (cleaned.length > 500) {
         return null;
       }
-      
+
+      // 检查原始URL中的ID长度（拒绝过长的ID）
+      const originalIdMatch = fullText.substring(position).match(/v\.douyin\.com\/([\w\d]+)/);
+      if (originalIdMatch && originalIdMatch[1].length > this.MAX_LINK_ID_LENGTH) {
+        logger.warn('RobustDouyinExtractor', 'robustCleanUrl', '链接ID过长，已拒绝', {
+          idLength: originalIdMatch[1].length,
+          maxLength: this.MAX_LINK_ID_LENGTH
+        });
+        return null;
+      }
+
       // 智能截断
-      const afterUrl = fullText.substring(position + url.length, position + url.length + 10);
       const cutoffMatch = cleaned.match(/^(https?:\/\/[^\s\u4e00-\u9fa5，。！？、）)》】]{1,200})/);
       if (cutoffMatch) {
         cleaned = cutoffMatch[1];
       }
-      
+
       // 使用Unicode属性移除尾部标点
       cleaned = cleaned.replace(/[\p{P}\s]+$/u, '');
-      
+
       // 清理追踪参数
       cleaned = this.cleanTrackingParams(cleaned);
-      
+
       // 确保协议
       if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
         cleaned = `https://${cleaned}`;
       }
-      
+
       // 验证URL格式
       try {
         const urlObj = new URL(cleaned);
         // 检查是否是抖音域名
         const validDomains = [
-          'douyin.com', 'douyinvod.com', 'iesdouyin.com', 
+          'douyin.com', 'douyinvod.com', 'iesdouyin.com',
           'amemv.com', 'tiktok.com'
         ];
         const hostname = urlObj.hostname.toLowerCase();
-        const isValid = validDomains.some(domain => 
+        const isValid = validDomains.some(domain =>
           hostname.endsWith(domain) || hostname.endsWith(`.${domain}`)
         );
-        
+
         if (!isValid) {
           return null;
         }
-        
+
         return cleaned;
       } catch {
         return null;
