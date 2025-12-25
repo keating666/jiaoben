@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare API 测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .cf-logo {
+            width: 32px;
+            height: 32px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            font-family: 'Monaco', 'Menlo', monospace;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #f97316;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+        
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(249, 115, 22, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        button.primary {
+            grid-column: 1 / -1;
+            font-size: 16px;
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .result.show {
+            display: block;
+        }
+        
+        .result h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .result pre {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 14px;
+            line-height: 1.5;
+            font-family: 'Monaco', 'Menlo', monospace;
+        }
+        
+        .error {
+            background: #fee;
+            border-left: 4px solid #f44;
+        }
+        
+        .success {
+            background: #efe;
+            border-left: 4px solid #4a4;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #f97316;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .tips {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <svg class="cf-logo" viewBox="0 0 48 48" fill="none">
+                <path fill="#F6821F" d="M24 9.5c-8 0-14.5 6.5-14.5 14.5S16 38.5 24 38.5 38.5 32 38.5 24 32 9.5 24 9.5z"/>
+                <path fill="#FBAE40" d="M31.3 17.3c.5-1.1.7-2.1.7-2.8 0-.3 0-.5-.1-.7-.1-.3-.3-.5-.6-.6-.6-.2-1.4.1-2.3.7-1.4.9-2.9 2.5-4.3 4.4-1.1-1.1-2.2-1.9-3.3-2.4-.9-.4-1.7-.6-2.3-.5-.3 0-.5.1-.7.3-.2.2-.3.4-.3.7-.1.6.1 1.4.5 2.3.5 1.1 1.3 2.2 2.4 3.3-1.9 1.4-3.5 2.9-4.4 4.3-.6.9-.9 1.7-.7 2.3.1.3.3.5.6.6.2.1.4.1.7.1.7 0 1.7-.2 2.8-.7 1.4-.6 2.9-1.6 4.4-2.9 1.5 1.3 3 2.3 4.4 2.9 1.1.5 2.1.7 2.8.7.3 0 .5 0 .7-.1.3-.1.5-.3.6-.6.2-.6-.1-1.4-.7-2.3-.9-1.4-2.5-2.9-4.4-4.3 1.1-1.1 1.9-2.2 2.4-3.3.4-.9.6-1.7.5-2.3 0-.3-.1-.5-.3-.7-.2-.2-.4-.3-.7-.3-.6-.1-1.4.1-2.3.5-1.1.5-2.2 1.3-3.3 2.4 1.4-1.9 2.9-3.5 4.3-4.4.9-.6 1.7-.9 2.3-.7.3.1.5.3.6.6.1.2.1.4.1.7 0 .7-.2 1.7-.7 2.8-.6 1.4-1.6 2.9-2.9 4.4 1.3-1.5 2.3-3 2.9-4.4z"/>
+            </svg>
+            Cloudflare Worker API 测试
+        </h1>
+        
+        <div class="input-group">
+            <label for="video-url">视频链接：</label>
+            <input type="text" id="video-url" placeholder="https://v.douyin.com/..." value="https://v.douyin.com/iRyBWfGS/" />
+        </div>
+        
+        <div class="input-group">
+            <label for="api-params">额外参数（JSON，可选）：</label>
+            <textarea id="api-params" placeholder='{"style": "humorous", "language": "zh"}'>{
+  "style": "default",
+  "language": "zh"
+}</textarea>
+        </div>
+        
+        <div class="button-group">
+            <button onclick="testTencentASR()">🎤 腾讯云 ASR</button>
+            <button onclick="testTongyiScript()">📝 通义千问脚本</button>
+            <button onclick="testFullPipeline()" class="primary">🚀 完整流程测试</button>
+        </div>
+        
+        <div id="result" class="result">
+            <h3>响应结果：</h3>
+            <pre id="result-content"></pre>
+        </div>
+        
+        <div class="tips">
+            💡 <strong>提示</strong>：此页面直接调用部署在 Cloudflare Worker 的生产 API
+        </div>
+    </div>
+    
+    <script>
+        // Cloudflare Worker API 配置
+        const WORKER_BASE = 'https://jiaoben-api.keating8500.workers.dev';
+        
+        // 如果是本地测试，可以修改为本地 Worker 地址
+        // const WORKER_BASE = 'http://localhost:8787';
+        
+        function showLoading() {
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('result-content');
+            resultDiv.classList.add('show');
+            resultContent.innerHTML = '<div class="loading"><div class="spinner"></div>处理中，请稍候...</div>';
+            resultContent.className = '';
+        }
+        
+        function showResult(success, data, elapsed) {
+            const resultContent = document.getElementById('result-content');
+            resultContent.className = success ? 'success' : 'error';
+            const icon = success ? '✅' : '❌';
+            const status = success ? '成功' : '错误';
+            resultContent.innerHTML = `<strong>${icon} ${status} (${elapsed}ms)</strong>\n\n${JSON.stringify(data, null, 2)}`;
+        }
+        
+        function showError(message, elapsed) {
+            const resultContent = document.getElementById('result-content');
+            resultContent.className = 'error';
+            resultContent.innerHTML = `<strong>❌ 请求失败 (${elapsed}ms)</strong>\n\n${message}`;
+        }
+        
+        async function makeRequest(endpoint, body) {
+            const startTime = Date.now();
+            showLoading();
+            
+            try {
+                const response = await fetch(`${WORKER_BASE}${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(body)
+                });
+                
+                const elapsed = Date.now() - startTime;
+                const data = await response.json();
+                
+                showResult(response.ok, data, elapsed);
+                return data;
+            } catch (error) {
+                const elapsed = Date.now() - startTime;
+                showError(error.message, elapsed);
+                throw error;
+            }
+        }
+        
+        function getInputData() {
+            const videoUrl = document.getElementById('video-url').value;
+            const paramsText = document.getElementById('api-params').value;
+            
+            let extraParams = {};
+            if (paramsText) {
+                try {
+                    extraParams = JSON.parse(paramsText);
+                } catch (e) {
+                    alert('额外参数格式错误，请输入有效的 JSON');
+                    return null;
+                }
+            }
+            
+            return {
+                video_url: videoUrl,
+                ...extraParams
+            };
+        }
+        
+        async function testTencentASR() {
+            const data = getInputData();
+            if (!data) return;
+            
+            await makeRequest('/api/tencent/asr', {
+                video_url: data.video_url,
+                format: 'mp3'
+            });
+        }
+        
+        async function testTongyiScript() {
+            const data = getInputData();
+            if (!data) return;
+            
+            // 这里可以先调用 ASR 获取文本，然后生成脚本
+            // 为了演示，我们假设已有文本
+            await makeRequest('/api/tongyi/script', {
+                text: "这是一段示例视频文本内容...",
+                style: data.style || 'default'
+            });
+        }
+        
+        async function testFullPipeline() {
+            const data = getInputData();
+            if (!data) return;
+            
+            // 完整流程：视频 -> 音频 -> 文字 -> 脚本
+            await makeRequest('/api/video/process', data);
+        }
+        
+        // 支持快捷键
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                testFullPipeline();
+            }
+        });
+        
+        // 页面加载时检查 Worker 可用性
+        window.addEventListener('load', async function() {
+            try {
+                const response = await fetch(`${WORKER_BASE}/health`, {
+                    method: 'GET'
+                });
+                if (!response.ok) {
+                    console.warn('Cloudflare Worker 可能未就绪');
+                }
+            } catch (error) {
+                console.warn('无法连接到 Cloudflare Worker:', error);
+            }
+        });
+    </script>
+</body>
+</html>

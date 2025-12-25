@@ -13,7 +13,10 @@ jobs:
   pr-labeler:
     name: PR Size and Labels
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: read
+      pull-requests: write
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -132,17 +135,17 @@ jobs:
             console.log('Unable to comment on PR:', error.message);
           }
           
-  # 依赖检查
+  # 依赖检查（仅公共仓库或启用 Advanced Security 的私有仓库）
   dependency-review:
     name: Dependency Review
     runs-on: ubuntu-latest
-    # 只在公共仓库或启用了 Advanced Security 的私有仓库运行
-    if: github.event.repository.visibility == 'public' || github.event.repository.private == false
-    
+    # 私有仓库需要 GitHub Advanced Security，跳过此检查
+    if: github.event.repository.visibility == 'public'
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Dependency Review
       uses: actions/dependency-review-action@v3
       with:

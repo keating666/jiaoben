@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API 快速测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 28px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .result.show {
+            display: block;
+        }
+        
+        .result h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .result pre {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .error {
+            background: #fee;
+            border-left: 4px solid #f44;
+        }
+        
+        .success {
+            background: #efe;
+            border-left: 4px solid #4a4;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 API 快速测试</h1>
+        
+        <div class="input-group">
+            <label for="api-select">选择 API：</label>
+            <select id="api-select">
+                <option value="video-transcribe">视频转分镜头脚本</option>
+                <option value="tongyi-text">通义千问文本生成</option>
+                <option value="ip-diagnosis">IP 诊断服务</option>
+            </select>
+        </div>
+        
+        <div class="input-group">
+            <label for="api-url">API 地址：</label>
+            <input type="text" id="api-url" value="http://localhost:3000/api/video/transcribe" />
+        </div>
+        
+        <div class="input-group">
+            <label for="api-token">API Token（可选）：</label>
+            <input type="text" id="api-token" placeholder="Bearer token..." />
+        </div>
+        
+        <div class="input-group">
+            <label for="request-body">请求内容（JSON）：</label>
+            <textarea id="request-body">{
+  "video_url": "https://v.douyin.com/iRyBWfGS/",
+  "style": "default",
+  "language": "zh"
+}</textarea>
+        </div>
+        
+        <button id="test-btn" onclick="runTest()">发送测试请求</button>
+        
+        <div id="result" class="result">
+            <h3>响应结果：</h3>
+            <pre id="result-content"></pre>
+        </div>
+    </div>
+    
+    <script>
+        // API 配置
+        const apiConfigs = {
+            'video-transcribe': {
+                url: '/api/video/transcribe',
+                body: {
+                    video_url: "https://v.douyin.com/iRyBWfGS/",
+                    style: "default",
+                    language: "zh"
+                }
+            },
+            'tongyi-text': {
+                url: '/api/tongyi/text-generation',
+                body: {
+                    prompt: "写一个简短的产品介绍",
+                    max_tokens: 200
+                }
+            },
+            'ip-diagnosis': {
+                url: '/api/ip/diagnosis',
+                body: {
+                    user_info: {
+                        age: 32,
+                        profession: "数字营销专家",
+                        goals: "年收入100万"
+                    }
+                }
+            }
+        };
+        
+        // API 选择变化时更新配置
+        document.getElementById('api-select').addEventListener('change', function(e) {
+            const config = apiConfigs[e.target.value];
+            if (config) {
+                // 智能判断是本地还是线上环境
+                const baseUrl = window.location.hostname === 'localhost' 
+                    ? 'http://localhost:3000' 
+                    : '';
+                document.getElementById('api-url').value = baseUrl + config.url;
+                document.getElementById('request-body').value = JSON.stringify(config.body, null, 2);
+            }
+        });
+        
+        async function runTest() {
+            const url = document.getElementById('api-url').value;
+            const token = document.getElementById('api-token').value;
+            const bodyText = document.getElementById('request-body').value;
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('result-content');
+            const button = document.getElementById('test-btn');
+            
+            // 验证输入
+            if (!url) {
+                alert('请输入 API 地址');
+                return;
+            }
+            
+            let body;
+            try {
+                body = JSON.parse(bodyText);
+            } catch (e) {
+                alert('请求内容不是有效的 JSON 格式');
+                return;
+            }
+            
+            // 显示加载状态
+            button.disabled = true;
+            button.textContent = '请求中...';
+            resultDiv.classList.add('show');
+            resultContent.innerHTML = '<div class="loading"><div class="spinner"></div>处理中，请稍候...</div>';
+            resultContent.className = '';
+            
+            const startTime = Date.now();
+            
+            try {
+                // 构建请求头
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                if (token) {
+                    headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+                }
+                
+                // 发送请求
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(body)
+                });
+                
+                const elapsed = Date.now() - startTime;
+                const data = await response.json();
+                
+                // 显示结果
+                if (response.ok) {
+                    resultContent.className = 'success';
+                    resultContent.innerHTML = `<strong>✅ 成功 (${elapsed}ms)</strong>\n\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultContent.className = 'error';
+                    resultContent.innerHTML = `<strong>❌ 错误 ${response.status} (${elapsed}ms)</strong>\n\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                const elapsed = Date.now() - startTime;
+                resultContent.className = 'error';
+                resultContent.innerHTML = `<strong>❌ 请求失败 (${elapsed}ms)</strong>\n\n${error.message}\n\n提示：\n1. 检查 API 地址是否正确\n2. 确认服务是否在运行\n3. 检查网络连接`;
+            } finally {
+                button.disabled = false;
+                button.textContent = '发送测试请求';
+            }
+        }
+        
+        // 支持快捷键
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                runTest();
+            }
+        });
+    </script>
+</body>
+</html>
